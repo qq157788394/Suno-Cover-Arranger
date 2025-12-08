@@ -14,7 +14,7 @@ const { REACT_APP_ENV = 'dev' } = process.env;
  * @description 部署时的路径，如果部署在非根目录下，需要配置这个变量
  * @doc https://umijs.org/docs/api/config#publicpath
  */
-const PUBLIC_PATH: string = '/';
+const PUBLIC_PATH: string = '/Suno-Cover-Arranger/';
 
 export default defineConfig({
   /**
@@ -23,6 +23,14 @@ export default defineConfig({
    * @doc https://umijs.org/docs/api/config#hash
    */
   hash: true,
+  /**
+   * @name 使用 hash 路由
+   * @description 使用 hash 路由可以避免 GitHub Pages 的路由问题
+   * @doc https://umijs.org/docs/api/config#history
+   */
+  history: {
+    type: 'hash',
+  },
 
   publicPath: PUBLIC_PATH,
 
@@ -177,7 +185,10 @@ export default defineConfig({
   mako: {},
   esbuildMinifyIIFE: true,
   requestRecord: {},
-  exportStatic: {},
+  exportStatic: {
+    htmlSuffix: true,
+    dynamicRoot: false,
+  },
   define: {
     'process.env.CI': process.env.CI,
   },
