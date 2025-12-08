@@ -1,9 +1,9 @@
 {
-  "name": "ant-design-pro",
-  "version": "6.0.0",
+  "name": "suno-cover-arranger",
+  "version": "1.0.0",
   "private": true,
-  "description": "An out-of-box UI solution for enterprise applications",
-  "repository": "git@github.com:ant-design/ant-design-pro.git",
+  "description": "Suno翻唱编曲大师 - 用中文思考，用英文说服Suno。帮翻唱创作者，把'感觉'和'编曲想法'变成可直接粘贴进Suno的Styles & Lyrics提示词。",
+  "repository": "git@github.com:qq157788394/Suno-Cover-Arranger.git",
   "scripts": {
     "analyze": "cross-env ANALYZE=1 max build",
     "biome:lint": "npx @biomejs/biome lint",
