@@ -332,26 +332,34 @@ const SunoCover: React.FC = () => {
                 max={3}
               >
                 {(meta, _index, _action, _count) => (
-                  <Space
+                  <Row
                     key={meta.key}
-                    align="center"
-                    size="middle"
+                    align="middle"
+                    gutter={16}
                     style={{ width: '100%' }}
                   >
-                    <ProFormText
-                      {...meta}
-                      name={[meta.name, 'title']}
-                      placeholder="歌曲名"
-                      rules={[{ required: true, message: '歌曲名称不能为空' }]}
-                      style={{ flex: 1, marginBottom: 0 }}
-                    />
-                    <ProFormText
-                      {...meta}
-                      name={[meta.name, 'artist']}
-                      placeholder="演唱者（可选）"
-                      style={{ flex: 1, marginBottom: 0 }}
-                    />
-                  </Space>
+                    <Col span={12}>
+                      <ProFormText
+                        {...meta}
+                        name={[meta.name, 'title']}
+                        placeholder="歌曲名"
+                        rules={[
+                          { required: true, message: '歌曲名称不能为空' },
+                        ]}
+                        style={{ marginBottom: 0 }}
+                        fieldProps={{ style: { width: '100%' } }}
+                      />
+                    </Col>
+                    <Col span={12}>
+                      <ProFormText
+                        {...meta}
+                        name={[meta.name, 'artist']}
+                        placeholder="演唱者（可选）"
+                        style={{ marginBottom: 0 }}
+                        fieldProps={{ style: { width: '100%' } }}
+                      />
+                    </Col>
+                  </Row>
                 )}
               </ProFormList>
 
