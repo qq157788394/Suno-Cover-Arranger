@@ -155,23 +155,11 @@ export default defineConfig({
     { src: join(PUBLIC_PATH, 'scripts/loading.js'), async: true },
   ],
   /**
-   * @name 配置meta标签
-   * @description 配置HTML的meta标签，包括favicon
-   * @doc https://umijs.org/docs/api/config#meta
+   * @name 配置HTML头部的link标签
+   * @description 用于配置favicon等link标签
+   * @doc https://umijs.org/docs/api/config#links
    */
-  meta: [
-    {
-      name: 'description',
-      content: 'Suno翻唱编曲大师 - 用中文思考，用英文说服Suno',
-    },
-    { name: 'keywords', content: 'Suno, 翻唱, 编曲, AI, 提示词' },
-    { property: 'og:title', content: 'Suno翻唱编曲大师' },
-    { property: 'og:description', content: '用中文思考，用英文说服Suno' },
-    { property: 'og:type', content: 'website' },
-    { name: 'twitter:card', content: 'summary' },
-    { name: 'twitter:title', content: 'Suno翻唱编曲大师' },
-    { name: 'twitter:description', content: '用中文思考，用英文说服Suno' },
-    // 配置favicon
+  links: [
     {
       rel: 'icon',
       type: 'image/x-icon',
