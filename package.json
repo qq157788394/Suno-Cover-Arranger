@@ -7,7 +7,7 @@
   "scripts": {
     "analyze": "cross-env ANALYZE=1 max build",
     "biome:lint": "npx @biomejs/biome lint",
-    "build": "max build",
+    "build": "cross-env NODE_ENV=production UMI_ENV=prod max build",
     "deploy": "npm run build && npm run gh-pages",
     "dev": "npm run start:dev",
     "gh-pages": "gh-pages -d dist",
@@ -29,7 +29,8 @@
     "test": "jest",
     "test:coverage": "npm run jest -- --coverage",
     "test:update": "npm run jest -- -u",
-    "tsc": "tsc --noEmit"
+    "tsc": "tsc --noEmit",
+    "prod": "npm run build && max preview --port 8080"
   },
   "browserslist": [
     "defaults"
