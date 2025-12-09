@@ -332,7 +332,12 @@ const SunoCover: React.FC = () => {
                 max={3}
               >
                 {(meta, _index, _action, _count) => (
-                  <Space key={meta.key} align="center" size="middle">
+                  <Space
+                    key={meta.key}
+                    align="center"
+                    size="middle"
+                    style={{ width: '100%' }}
+                  >
                     <ProFormText
                       {...meta}
                       name={[meta.name, 'title']}
