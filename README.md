@@ -320,6 +320,45 @@ npm run lint:fix
 - Safari
 - Edge
 
+## 分支管理规范
+
+### 1. 分支命名与作用
+
+- **develop 分支**：
+  - 开发分支，用于开发新功能、修复bug
+  - 所有新功能开发都应在 develop 分支上进行
+  - 测试通过后，合并到 main 分支
+  - 不直接部署到生产环境
+
+- **main 分支**：
+  - 主分支，用于存储稳定版本
+  - 只接收来自 develop 分支的合并
+  - 用于部署到生产环境
+  - 保持代码的稳定性和可靠性
+
+- **gh-pages 分支**：
+  - 用于部署 GitHub Pages
+  - 由 CI/CD 或手动部署命令自动生成
+  - 不直接修改该分支的代码
+
+### 2. 开发流程
+
+1. 在 develop 分支上开发新功能
+2. 测试通过后，合并到 main 分支
+3. 使用 `npm run deploy` 命令部署到 gh-pages 分支
+4. 确保 main 分支与 develop 分支保持同步
+
+### 3. 部署规范
+
+- **部署命令**：`npm run deploy`
+- **部署前检查**：
+  - 确保代码通过 lint 检查：`npm run lint`
+  - 确保构建成功：`npm run build`
+  - 确保功能测试通过
+- **部署后验证**：
+  - 访问 GitHub Pages 地址验证页面显示正常
+  - 测试核心功能是否正常
+
 ## 许可证
 
 MIT License
