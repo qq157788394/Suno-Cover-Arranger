@@ -1,21 +1,47 @@
-import { configUmiAlias, createConfig } from '@umijs/max/test';
+const { createConfig } = require('@umijs/test');
 
-export default async (): Promise<any> => {
-  const config = await configUmiAlias({
-    ...createConfig({
-      target: 'browser',
-    }),
+module.exports = async () => {
+  const config = createConfig({
+    target: 'browser',
+    jsTransformer: 'ts-jest',
   });
+
   return {
     ...config,
+    setupFilesAfterEnv: ['<rootDir>/tests/setupTests.jsx'],
     testEnvironmentOptions: {
-      ...(config?.testEnvironmentOptions || {}),
       url: 'http://localhost:8000',
     },
-    setupFiles: [...(config.setupFiles || []), './tests/setupTests.jsx'],
+    moduleNameMapper: {
+      ...config.moduleNameMapper,
+      '^@/(.*)$': '<rootDir>/src/$1',
+    },
     globals: {
-      ...config.globals,
       localStorage: null,
+      React: require('react'),
+    },
+    transform: {
+      '^.+\\.(ts|tsx)$': [
+        'ts-jest',
+        {
+          tsconfig: 'tsconfig.json',
+          babelConfig: {
+            presets: [
+              ['@babel/preset-env', { targets: { node: 'current' } }],
+              ['@babel/preset-react', { runtime: 'automatic' }],
+            ],
+          },
+        },
+      ],
+      '^.+\\.(js|jsx)$': [
+        'babel-jest',
+        {
+          presets: [
+            ['@babel/preset-env', { targets: { node: 'current' } }],
+            ['@babel/preset-react', { runtime: 'automatic' }],
+          ],
+        },
+      ],
     },
   };
 };
