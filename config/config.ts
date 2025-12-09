@@ -14,8 +14,9 @@ const { REACT_APP_ENV = 'dev' } = process.env;
  * @description 部署时的路径，如果部署在非根目录下，需要配置这个变量
  * @doc https://umijs.org/docs/api/config#publicpath
  */
-const PUBLIC_PATH: string =
-  REACT_APP_ENV === 'dev' ? '/' : '/Suno-Cover-Arranger/';
+// 无论环境如何，都使用固定的 PUBLIC_PATH 配置，确保部署到 GitHub Pages 时路径正确
+// 这样可以避免环境变量问题导致的路径错误
+const PUBLIC_PATH: string = '/Suno-Cover-Arranger/';
 
 export default defineConfig({
   /**
