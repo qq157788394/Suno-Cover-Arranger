@@ -155,11 +155,30 @@ export default defineConfig({
     { src: join(PUBLIC_PATH, 'scripts/loading.js'), async: true },
   ],
   /**
-   * @name 配置favicon
-   * @description 配置浏览器页签上的图标
-   * @doc https://umijs.org/docs/api/config#favicon
+   * @name 配置meta标签
+   * @description 配置HTML的meta标签，包括favicon
+   * @doc https://umijs.org/docs/api/config#meta
    */
-  favicon: join(__dirname, '../public/favicon.ico'),
+  meta: [
+    {
+      name: 'description',
+      content: 'Suno翻唱编曲大师 - 用中文思考，用英文说服Suno',
+    },
+    { name: 'keywords', content: 'Suno, 翻唱, 编曲, AI, 提示词' },
+    { property: 'og:title', content: 'Suno翻唱编曲大师' },
+    { property: 'og:description', content: '用中文思考，用英文说服Suno' },
+    { property: 'og:type', content: 'website' },
+    { name: 'twitter:card', content: 'summary' },
+    { name: 'twitter:title', content: 'Suno翻唱编曲大师' },
+    { name: 'twitter:description', content: '用中文思考，用英文说服Suno' },
+    // 配置favicon
+    {
+      rel: 'icon',
+      type: 'image/x-icon',
+      href: join(PUBLIC_PATH, 'favicon.ico'),
+    },
+    { rel: 'shortcut icon', href: join(PUBLIC_PATH, 'favicon.ico') },
+  ],
   //================ pro 插件配置 =================
   presets: ['umi-presets-pro'],
   /**
