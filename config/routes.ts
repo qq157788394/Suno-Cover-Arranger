@@ -18,6 +18,12 @@ export default [
     component: './suno-cover',
   },
   {
+    name: '生成记录',
+    icon: 'FileTextOutlined',
+    path: '/record',
+    component: './record',
+  },
+  {
     name: '项目介绍',
     icon: 'InfoCircleOutlined',
     path: '/about',

@@ -1,26 +1,30 @@
-import { CopyOutlined, MinusOutlined, PlusOutlined } from '@ant-design/icons';
-import { PageContainer } from '@ant-design/pro-components';
+import { CopyOutlined } from '@ant-design/icons';
+import {
+  PageContainer,
+  ProCard,
+  ProForm,
+  ProFormCheckbox,
+  ProFormList,
+  ProFormSelect,
+  ProFormText,
+  ProFormTextArea,
+} from '@ant-design/pro-components';
 import {
   Button,
-  Card,
-  Checkbox,
   Col,
   Divider,
   Flex,
   Form,
-  Input,
   message,
   Row,
-  Select,
   Space,
   Spin,
 } from 'antd';
 import React, { useEffect, useState } from 'react';
-
+import type { PromptRecord } from '@/services/db';
+import { db } from '@/services/db';
 import { callDeepSeekAPI, type GenerateRequest } from '@/services/deepseek';
 import { mockGenerate } from '@/services/mockData';
-
-const { TextArea } = Input;
 
 const SunoCover: React.FC = () => {
   // 表单实例
@@ -30,16 +34,49 @@ const SunoCover: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [stylesResult, setStylesResult] = useState('');
   const [lyricsResult, setLyricsResult] = useState('');
-  const [isApiKeyVisible, setIsApiKeyVisible] = useState(false);
 
-  // 从localStorage加载API Key
+  // 从localStorage加载API Key和记录数据
   useEffect(() => {
+    // 加载API Key
     const savedApiKey = localStorage.getItem('deepseekApiKey');
     if (savedApiKey) {
       form.setFieldsValue({
         apiKey: savedApiKey,
         rememberApiKey: true,
       });
+    }
+
+    // 加载记录数据
+    const selectedRecord = localStorage.getItem('selectedPromptRecord');
+    if (selectedRecord) {
+      try {
+        const record: PromptRecord = JSON.parse(selectedRecord);
+
+        // 填充表单数据
+        form.setFieldsValue({
+          song_language: record.userInput.songLanguage,
+          target_artist: record.userInput.targetSinger,
+          reference_songs: record.userInput.referenceSongs.map((song) => {
+            const [title, artist] = song.split(' - ');
+            return {
+              title: title.trim(),
+              artist: artist?.trim() || '',
+            };
+          }),
+          style_note: record.userInput.styleDescription,
+          extra_note: record.userInput.scene,
+          lyrics_raw: record.userInput.lyrics,
+        });
+
+        // 填充结果数据
+        setStylesResult(record.deepSeekResult.styles);
+        setLyricsResult(record.deepSeekResult.lyrics);
+
+        // 清空localStorage中的记录数据
+        localStorage.removeItem('selectedPromptRecord');
+      } catch (error) {
+        console.error('解析记录数据失败:', error);
+      }
     }
   }, [form]);
 
@@ -59,6 +96,39 @@ const SunoCover: React.FC = () => {
       setStylesResult(result.styles);
       setLyricsResult(result.lyrics);
       message.success('生成成功！');
+
+      // 保存记录到数据库
+      try {
+        // 模拟当前用户ID，实际应用中应该从登录状态获取
+        const userId = 1;
+
+        // 转换参考歌曲为字符串数组
+        const referenceSongs = values.reference_songs
+          .filter((song) => song.title)
+          .map(
+            (song) => `${song.title}${song.artist ? ` - ${song.artist}` : ''}`,
+          );
+
+        await db.createPromptRecord({
+          userId,
+          userInput: {
+            songLanguage: values.song_language,
+            targetSinger: values.target_artist,
+            referenceSongs,
+            styleDescription: values.style_note || '',
+            lyrics: values.lyrics_raw,
+            scene: values.extra_note || '',
+          },
+          deepSeekResult: {
+            styles: result.styles,
+            lyrics: result.lyrics,
+          },
+        });
+        console.log('记录已保存到数据库');
+      } catch (dbError) {
+        console.error('保存记录到数据库失败:', dbError);
+        // 数据库保存失败不影响用户体验，仅记录日志
+      }
     } catch (error) {
       // 捕获并显示具体的错误信息
       console.error('API调用失败:', error);
@@ -94,6 +164,49 @@ const SunoCover: React.FC = () => {
       setStylesResult(result.styles);
       setLyricsResult(result.lyrics);
       message.success('模拟生成成功！');
+
+      // 保存记录到数据库
+      try {
+        // 模拟当前用户ID，实际应用中应该从登录状态获取
+        const userId = 1;
+
+        // 从表单获取数据，使用getFieldsValue而不是validateFields，避免必填字段验证失败
+        const formValues = form.getFieldsValue();
+
+        // 转换参考歌曲为字符串数组
+        const referenceSongs = (formValues.reference_songs || [])
+          .filter((song: any) => song.title)
+          .map(
+            (song: any) =>
+              `${song.title}${song.artist ? ` - ${song.artist}` : ''}`,
+          );
+
+        // 确保必填字段有默认值
+        const songLanguage = formValues.song_language || 'Mandarin';
+        const targetSinger = formValues.target_artist || '未知歌手';
+        const lyrics = formValues.lyrics_raw || '无歌词';
+
+        await db.createPromptRecord({
+          userId,
+          userInput: {
+            songLanguage,
+            targetSinger,
+            referenceSongs,
+            styleDescription: formValues.style_note || '',
+            lyrics,
+            scene: formValues.extra_note || '',
+          },
+          deepSeekResult: {
+            styles: result.styles,
+            lyrics: result.lyrics,
+          },
+        });
+        console.log('模拟记录已保存到数据库');
+        message.success('记录已保存到数据库！');
+      } catch (dbError) {
+        console.error('保存模拟记录到数据库失败:', dbError);
+        message.error('保存记录到数据库失败，请检查控制台日志。');
+      }
     } catch (error) {
       console.error('模拟生成失败:', error);
       message.error('模拟生成失败，请稍后重试。');
@@ -120,10 +233,9 @@ const SunoCover: React.FC = () => {
       <Row gutter={[24, 0]}>
         {/* 左侧输入表单 */}
         <Col span={8}>
-          <Card
+          <ProCard
             title="翻唱设置"
             actions={[
-              // 使用div包装按钮，实现自定义样式
               <Flex
                 key="buttons"
                 vertical
@@ -156,7 +268,7 @@ const SunoCover: React.FC = () => {
               </Flex>,
             ]}
           >
-            <Form
+            <ProForm
               form={form}
               layout="vertical"
               onFinish={handleSubmit}
@@ -165,57 +277,49 @@ const SunoCover: React.FC = () => {
                 reference_songs: [{ title: '', artist: '' }],
                 rememberApiKey: false,
               }}
+              submitter={false}
             >
               {/* DeepSeek API Key */}
-              <Form.Item
+              <ProFormText.Password
                 name="apiKey"
                 label="DeepSeek API Key"
+                placeholder="请输入DeepSeek API Key"
                 rules={[{ required: true, message: '请输入DeepSeek API Key' }]}
-              >
-                <Input.Password
-                  placeholder="请输入DeepSeek API Key"
-                  visibilityToggle={{
-                    visible: isApiKeyVisible,
-                    onVisibleChange: setIsApiKeyVisible,
-                  }}
-                />
-              </Form.Item>
+              />
 
-              <Form.Item name="rememberApiKey" valuePropName="checked">
-                <Checkbox>记住在本机</Checkbox>
-              </Form.Item>
+              <ProFormCheckbox name="rememberApiKey" label="记住在本机" />
 
               <Divider />
 
               {/* 歌曲语言 */}
-              <Form.Item
+              <ProFormSelect
                 name="song_language"
                 label="歌曲语言"
+                placeholder="请选择歌曲语言"
                 rules={[{ required: true, message: '请选择歌曲语言' }]}
-              >
-                <Select placeholder="请选择歌曲语言">
-                  <Select.Option value="Mandarin">华语（普通话）</Select.Option>
-                  <Select.Option value="Cantonese">粤语</Select.Option>
-                  <Select.Option value="Minnan">闽南语</Select.Option>
-                  <Select.Option value="English">英语</Select.Option>
-                  <Select.Option value="Korean">韩语</Select.Option>
-                  <Select.Option value="Japanese">日语</Select.Option>
-                  <Select.Option value="Other">其他</Select.Option>
-                </Select>
-              </Form.Item>
+                options={[
+                  { value: 'Mandarin', label: '华语（普通话）' },
+                  { value: 'Cantonese', label: '粤语' },
+                  { value: 'Minnan', label: '闽南语' },
+                  { value: 'English', label: '英语' },
+                  { value: 'Korean', label: '韩语' },
+                  { value: 'Japanese', label: '日语' },
+                  { value: 'Other', label: '其他' },
+                ]}
+              />
 
               {/* 参考艺术家 */}
-              <Form.Item
+              <ProFormText
                 name="target_artist"
                 label="模仿哪位艺术家？"
+                placeholder="例如：张惠妹、陈奕迅、周杰伦……"
                 rules={[{ required: true, message: '请输入模仿艺术家名称' }]}
-              >
-                <Input placeholder="例如：张惠妹、陈奕迅、周杰伦……" />
-              </Form.Item>
+              />
 
               {/* 参考歌曲 */}
-              <Form.List
+              <ProFormList
                 name="reference_songs"
+                label="参考歌曲（0-3首，可选）"
                 rules={[
                   {
                     validator: (_, songs) => {
@@ -226,117 +330,76 @@ const SunoCover: React.FC = () => {
                     },
                   },
                 ]}
+                initialValue={[{ title: '', artist: '' }]}
+                creatorButtonProps={{
+                  creatorButtonText: '添加参考歌曲',
+                  type: 'dashed',
+                  block: true,
+                }}
+                deleteIconProps={{
+                  tooltipText: '删除参考歌曲',
+                }}
+                copyIconProps={false}
+                max={3}
               >
-                {(fields, { add, remove }, { errors }) => (
-                  <>
-                    <Form.Item label="参考歌曲（0-3首，可选）">
-                      <Space
-                        direction="vertical"
-                        style={{ width: '100%' }}
-                        size="middle"
-                      >
-                        {fields.map(({ key, name, ...restField }) => (
-                          <Space
-                            key={key}
-                            style={{ width: '100%' }}
-                            align="center"
-                            size="middle"
-                          >
-                            <Form.Item
-                              {...restField}
-                              name={[name, 'title']}
-                              rules={[
-                                { required: true, message: '歌曲名不能为空' },
-                              ]}
-                              style={{ flex: 1, marginBottom: 0 }}
-                            >
-                              <Input
-                                placeholder="歌曲名"
-                                style={{ width: '100%' }}
-                              />
-                            </Form.Item>
-                            <Form.Item
-                              {...restField}
-                              name={[name, 'artist']}
-                              style={{ flex: 1, marginBottom: 0 }}
-                            >
-                              <Input
-                                placeholder="演唱者（选填）"
-                                style={{ width: '100%' }}
-                              />
-                            </Form.Item>
-                            <Form.Item style={{ marginBottom: 0 }}>
-                              <Button
-                                type="text"
-                                danger
-                                icon={<MinusOutlined />}
-                                onClick={() => remove(name)}
-                                disabled={fields.length === 1}
-                                size="small"
-                              >
-                                删除
-                              </Button>
-                            </Form.Item>
-                          </Space>
-                        ))}
-                        <Form.Item>
-                          <Button
-                            type="dashed"
-                            onClick={() => add()}
-                            disabled={fields.length >= 3}
-                            block
-                            icon={<PlusOutlined />}
-                          >
-                            添加参考歌曲
-                          </Button>
-                        </Form.Item>
-                      </Space>
-                    </Form.Item>
-                    <Form.ErrorList errors={errors} />
-                  </>
+                {(meta, _index, _action, _count) => (
+                  <Space
+                    key={meta.key}
+                    style={{ width: '100%' }}
+                    align="center"
+                    size="middle"
+                  >
+                    <ProFormText
+                      {...meta}
+                      name={[meta.name, 'title']}
+                      placeholder="歌曲名"
+                      rules={[{ required: true, message: '歌曲名不能为空' }]}
+                      style={{ flex: 1, marginBottom: 0 }}
+                    />
+                    <ProFormText
+                      {...meta}
+                      name={[meta.name, 'artist']}
+                      placeholder="演唱者（选填）"
+                      style={{ flex: 1, marginBottom: 0 }}
+                    />
+                  </Space>
                 )}
-              </Form.List>
+              </ProFormList>
 
               {/* 风格备注 */}
-              <Form.Item name="style_note" label="风格备注（选填）">
-                <TextArea
-                  placeholder="例如：主歌要像《人质》一样极度克制，副歌接近《听海》的情绪爆发。"
-                  rows={3}
-                />
-              </Form.Item>
+              <ProFormTextArea
+                name="style_note"
+                label="风格备注（选填）"
+                placeholder="例如：主歌要像《人质》一样极度克制，副歌接近《听海》的情绪爆发。"
+                rows={3}
+              />
 
               {/* 附加说明 */}
-              <Form.Item
+              <ProFormTextArea
                 name="extra_note"
                 label="特殊说明（场景/受众等，可选）"
-              >
-                <TextArea
-                  placeholder="例如：演唱会现场，录音室版本……"
-                  rows={2}
-                />
-              </Form.Item>
+                placeholder="例如：演唱会现场，录音室版本……"
+                rows={2}
+              />
 
               {/* 歌词全文 */}
-              <Form.Item
+              <ProFormTextArea
                 name="lyrics_raw"
                 label="段落和歌词"
+                placeholder="请输入歌词，自行用任意标签划分段落，如：【主歌】、【副歌】、[Verse]、[Chorus] 等"
                 rules={[
                   { required: true, message: '请输入歌词' },
                   { max: 2000, message: '歌词长度不能超过2000字' },
                 ]}
-              >
-                <TextArea
-                  placeholder="请输入歌词，自行用任意标签划分段落，如：【主歌】、【副歌】、[Verse]、[Chorus] 等"
-                  rows={8}
-                />
-              </Form.Item>
-            </Form>
-          </Card>
+                rows={8}
+              />
+            </ProForm>
+          </ProCard>
         </Col>
 
         {/* 中间Styles输出 */}
         <Col span={8}>
-          <Card
+          <ProCard
             title="Styles（可直接复制投喂Suno）"
             extra={
               <Button
@@ -351,19 +414,17 @@ const SunoCover: React.FC = () => {
             }
             style={{ marginBottom: 24 }}
           >
-            <TextArea
+            <ProFormTextArea
               value={stylesResult}
               readOnly
               placeholder="生成的Styles将显示在这里..."
-              style={{ height: '100%', resize: 'none' }}
-              autoSize={{ minRows: 40, maxRows: Infinity }}
             />
-          </Card>
+          </ProCard>
         </Col>
 
         {/* 右侧Lyrics输出 */}
         <Col span={8}>
-          <Card
+          <ProCard
             title="Lyrics（可直接复制投喂Suno）"
             extra={
               <Button
@@ -378,14 +439,12 @@ const SunoCover: React.FC = () => {
             }
             style={{ marginBottom: 24 }}
           >
-            <TextArea
+            <ProFormTextArea
               value={lyricsResult}
               readOnly
               placeholder="生成的Lyrics将显示在这里..."
-              style={{ height: '100%', resize: 'none' }}
-              autoSize={{ minRows: 40, maxRows: Infinity }}
             />
-          </Card>
+          </ProCard>
         </Col>
       </Row>
     </PageContainer>

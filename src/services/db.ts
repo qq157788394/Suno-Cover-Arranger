@@ -27,11 +27,35 @@ interface StyleConfig {
   updatedAt: Date;
 }
 
+interface PromptRecord {
+  id?: number;
+  userId: number;
+  // 用户提交的内容
+  userInput: {
+    songLanguage: string;
+    targetSinger: string;
+    referenceSongs: string[];
+    styleDescription: string;
+    lyrics: string;
+    scene?: string;
+  };
+  // DeepSeek返回的结果
+  deepSeekResult: {
+    styles: string;
+    lyrics: string;
+  };
+  // 生成时间
+  createdAt: Date;
+  // 可选的标签或备注
+  tags?: string[];
+}
+
 // 创建数据库类
 class AppDatabase extends Dexie {
   users: Dexie.Table<User, number>;
   projects: Dexie.Table<Project, number>;
   styleConfigs: Dexie.Table<StyleConfig, number>;
+  promptRecords: Dexie.Table<PromptRecord, number>;
 
   constructor() {
     super('SunoCoverArrangerDB');
@@ -40,13 +64,15 @@ class AppDatabase extends Dexie {
     this.version(1).stores({
       users: '++id, name, email, createdAt',
       projects: '++id, title, userId, createdAt, updatedAt',
-      styleConfigs: '++id, name, userId, isDefault, createdAt, updatedAt'
+      styleConfigs: '++id, name, userId, isDefault, createdAt, updatedAt',
+      promptRecords: '++id, userId, createdAt'
     });
 
     // 初始化表
     this.users = this.table('users');
     this.projects = this.table('projects');
     this.styleConfigs = this.table('styleConfigs');
+    this.promptRecords = this.table('promptRecords');
   }
 
   // 用户相关操作
@@ -156,10 +182,71 @@ class AppDatabase extends Dexie {
       .where({ userId, isDefault: true })
       .first();
   }
+
+  // 提示词生成记录相关操作
+  async createPromptRecord(record: Omit<PromptRecord, 'id' | 'createdAt'>): Promise<PromptRecord> {
+    const newRecord = {
+      ...record,
+      createdAt: new Date()
+    };
+    const id = await this.promptRecords.add(newRecord);
+    return { ...newRecord, id };
+  }
+
+  async getPromptRecord(id: number): Promise<PromptRecord | undefined> {
+    return this.promptRecords.get(id);
+  }
+
+  async updatePromptRecord(id: number, updates: Partial<PromptRecord>): Promise<number> {
+    return this.promptRecords.update(id, updates);
+  }
+
+  async deletePromptRecord(id: number): Promise<void> {
+    await this.promptRecords.delete(id);
+  }
+
+  async getUserPromptRecords(userId: number, limit?: number): Promise<PromptRecord[]> {
+    const query = this.promptRecords
+      .where('userId')
+      .equals(userId)
+      .sortBy('createdAt')
+      .then(records => records.reverse()); // 先排序，再反转，实现倒序
+
+    if (limit) {
+      return (await query).slice(0, limit);
+    }
+    return query;
+  }
+
+  async searchPromptRecords(userId: number, keyword: string, limit?: number): Promise<PromptRecord[]> {
+    const allRecords = await this.getUserPromptRecords(userId);
+    
+    const filteredRecords = allRecords.filter(record => {
+      const searchText = JSON.stringify(record).toLowerCase();
+      return searchText.includes(keyword.toLowerCase());
+    });
+
+    if (limit) {
+      return filteredRecords.slice(0, limit);
+    }
+    return filteredRecords;
+  }
+
+  async getRecentPromptRecords(userId: number, days: number = 7): Promise<PromptRecord[]> {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+
+    return this.promptRecords
+      .where('userId')
+      .equals(userId)
+      .and(record => record.createdAt >= cutoffDate)
+      .sortBy('createdAt')
+      .then(records => records.reverse());
+  }
 }
 
 // 导出单例实例
 export const db = new AppDatabase();
 
 // 导出类型
-export type { User, Project, StyleConfig };
+export type { User, Project, StyleConfig, PromptRecord };
