@@ -24,6 +24,12 @@ export default [
     component: './record',
   },
   {
+    name: 'AI 设置',
+    icon: 'SettingOutlined',
+    path: '/ai-setting',
+    component: './ai-setting',
+  },
+  {
     name: '项目介绍',
     icon: 'InfoCircleOutlined',
     path: '/about',

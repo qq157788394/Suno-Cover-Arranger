@@ -1,6 +1,6 @@
 {
   "name": "suno-cover-arranger",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "description": "Suno翻唱编曲大师 - 用中文思考，用英文说服Suno。帮翻唱创作者，把'感觉'和'编曲想法'变成可直接粘贴进Suno的Styles & Lyrics提示词。",
   "repository": "git@github.com:qq157788394/Suno-Cover-Arranger.git",

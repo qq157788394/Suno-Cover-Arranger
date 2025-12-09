@@ -100,7 +100,7 @@ const RecordPage: React.FC = () => {
       return records;
     } catch (error) {
       message.error('获取记录失败');
-      console.error('获取记录失败:', error);
+      console.error('获取记录失败：', error);
       return [];
     } finally {
       setLoading(false);
@@ -130,7 +130,7 @@ const RecordPage: React.FC = () => {
   const handleDelete = async (record: PromptRecord) => {
     Modal.confirm({
       title: '确认删除',
-      content: '确定要删除这条记录吗？此操作不可恢复。',
+      content: '确定要删除这条记录吗？该操作无法恢复。',
       okText: '删除',
       okType: 'danger',
       cancelText: '取消',
@@ -142,7 +142,7 @@ const RecordPage: React.FC = () => {
           setReloadKey((prevKey) => prevKey + 1);
         } catch (error) {
           message.error('删除失败');
-          console.error('删除失败:', error);
+          console.error('删除失败：', error);
         }
       },
     });
@@ -186,7 +186,7 @@ const RecordPage: React.FC = () => {
       hideInSearch: true,
     },
     {
-      title: '生成时间',
+      title: '时间',
       dataIndex: 'createdAt',
       key: 'createdAt',
       width: 180,
@@ -235,12 +235,13 @@ const RecordPage: React.FC = () => {
               { value: 'Japanese', label: '日语' },
               { value: 'Other', label: '其他' },
             ],
+            maxTagCount: 'responsive',
           },
         },
       } as any),
     },
     {
-      title: '目标歌手',
+      title: '模仿歌手',
       dataIndex: ['userInput', 'targetSinger'],
       key: 'targetSinger',
       width: 150,
@@ -250,7 +251,7 @@ const RecordPage: React.FC = () => {
       },
     },
     {
-      title: '风格描述',
+      title: '风格备注',
       dataIndex: ['userInput', 'styleDescription'],
       key: 'styleDescription',
       width: 200,
@@ -267,7 +268,7 @@ const RecordPage: React.FC = () => {
       hideInSearch: true,
       render: (_, record) => (
         <Space size="middle">
-          <Tooltip title="查看详情">
+          <Tooltip title="查看提示词">
             <Button
               type="primary"
               icon={<EyeOutlined />}

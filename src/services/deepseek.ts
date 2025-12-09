@@ -125,7 +125,6 @@ export const generateUserPrompt = (values: GenerateRequest): string => {
     'Return your answer in EXACTLY this Markdown structure and nothing else:\n\n' +
     '### Styles\n' +
     '```text\n' +
-    'Characters: <N>\n' +
     '(put the Styles paragraph here in English, MUST be under 900 characters)\n' +
     '```\n\n' +
     '### Lyrics\n' +

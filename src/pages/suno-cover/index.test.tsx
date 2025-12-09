@@ -63,24 +63,6 @@ describe('SunoCover Component', () => {
     ).toBeInTheDocument();
   });
 
-  it('should load API Key from localStorage', () => {
-    // Set up mock localStorage
-    localStorageMock.setItem('deepseekApiKey', 'test-api-key');
-
-    render(<SunoCover />);
-
-    // Check if the API Key input is filled with the saved value
-    const apiKeyInput = screen.getByPlaceholderText(
-      '请输入DeepSeek API Key',
-    ) as HTMLInputElement;
-    expect(apiKeyInput).toBeInTheDocument();
-    // Note: We can't directly check the value of a password input in testing-library
-
-    // Check if the remember checkbox is checked
-    const rememberCheckbox = screen.getByText('记住在本机');
-    expect(rememberCheckbox).toBeInTheDocument();
-  });
-
   it('should show loading state when generating', async () => {
     // Mock the API call to return after a delay
     (callDeepSeekAPI as jest.Mock).mockResolvedValue({
@@ -88,14 +70,12 @@ describe('SunoCover Component', () => {
       lyrics: 'Test lyrics',
     });
 
+    // Set API Key in localStorage
+    localStorageMock.setItem('deepseekApiKey', 'test-api-key');
+
     render(<SunoCover />);
 
     // Fill in the required fields
-    const apiKeyInput = screen.getByPlaceholderText(
-      '请输入DeepSeek API Key',
-    ) as HTMLInputElement;
-    fireEvent.change(apiKeyInput, { target: { value: 'test-api-key' } });
-
     const targetArtistInput = screen.getByPlaceholderText(
       '例如：张惠妹、陈奕迅、周杰伦……',
     );

@@ -12,15 +12,16 @@ import {
 import {
   Button,
   Col,
-  Divider,
   Flex,
   Form,
+  Modal,
   message,
   Row,
   Space,
   Spin,
 } from 'antd';
 import React, { useEffect, useState } from 'react';
+import { history } from 'umi';
 import type { PromptRecord } from '@/services/db';
 import { db } from '@/services/db';
 import { callDeepSeekAPI, type GenerateRequest } from '@/services/deepseek';
@@ -35,17 +36,8 @@ const SunoCover: React.FC = () => {
   const [stylesResult, setStylesResult] = useState('');
   const [lyricsResult, setLyricsResult] = useState('');
 
-  // 从localStorage加载API Key和记录数据
+  // 从localStorage加载记录数据
   useEffect(() => {
-    // 加载API Key
-    const savedApiKey = localStorage.getItem('deepseekApiKey');
-    if (savedApiKey) {
-      form.setFieldsValue({
-        apiKey: savedApiKey,
-        rememberApiKey: true,
-      });
-    }
-
     // 加载记录数据
     const selectedRecord = localStorage.getItem('selectedPromptRecord');
     if (selectedRecord) {
@@ -75,27 +67,39 @@ const SunoCover: React.FC = () => {
         // 清空localStorage中的记录数据
         localStorage.removeItem('selectedPromptRecord');
       } catch (error) {
-        console.error('解析记录数据失败:', error);
+        console.error('数据解析失败：', error);
       }
     }
   }, [form]);
 
   // 表单提交处理
   const handleSubmit = async (values: GenerateRequest) => {
-    // 保存API Key到localStorage
-    if (values.rememberApiKey) {
-      localStorage.setItem('deepseekApiKey', values.apiKey);
-    } else {
-      localStorage.removeItem('deepseekApiKey');
+    // 从localStorage获取API Key
+    const apiKey = localStorage.getItem('deepseekApiKey') || '';
+    if (!apiKey) {
+      Modal.confirm({
+        title: '尚未设置 DeepSeek API Key',
+        content: '设置完成后即可使用该功能，是否现在去设置？',
+        okText: '去设置',
+        cancelText: '取消',
+        onOk() {
+          history.push('/ai-setting');
+        },
+        onCancel() {
+          // 取消操作，不做任何处理
+        },
+      });
+      return;
     }
 
     // 调用API
     setLoading(true);
     try {
-      const result = await callDeepSeekAPI(values);
+      // 将API Key添加到values中
+      const result = await callDeepSeekAPI({ ...values, apiKey });
       setStylesResult(result.styles);
       setLyricsResult(result.lyrics);
-      message.success('生成成功！');
+      message.success('提示词已成功生成生成成功！');
 
       // 保存记录到数据库
       try {
@@ -124,18 +128,18 @@ const SunoCover: React.FC = () => {
             lyrics: result.lyrics,
           },
         });
-        console.log('记录已保存到数据库');
+        console.log('记录已成功保存');
       } catch (dbError) {
-        console.error('保存记录到数据库失败:', dbError);
+        console.error('记录保存失败：', dbError);
         // 数据库保存失败不影响用户体验，仅记录日志
       }
     } catch (error) {
       // 捕获并显示具体的错误信息
-      console.error('API调用失败:', error);
+      console.error('DeepSeek API 调用失败：', error);
       const errorMessage =
         error instanceof Error
           ? error.message
-          : '调用DeepSeek API失败，请检查API Key或稍后重试。';
+          : '调用 DeepSeek API 失败，请检查 API Key 或稍后再试。';
       message.error(errorMessage);
     } finally {
       setLoading(false);
@@ -147,10 +151,10 @@ const SunoCover: React.FC = () => {
     navigator.clipboard
       .writeText(text)
       .then(() => {
-        message.success(`${type}已复制到剪贴板！`);
+        message.success(`${type}已成功复制到剪贴板`);
       })
       .catch(() => {
-        message.error('复制失败，请手动复制。');
+        message.error('复制失败，请手动复制');
       });
   };
 
@@ -163,7 +167,7 @@ const SunoCover: React.FC = () => {
       // 回填页面内容
       setStylesResult(result.styles);
       setLyricsResult(result.lyrics);
-      message.success('模拟生成成功！');
+      message.success('模拟生成已完成');
 
       // 保存记录到数据库
       try {
@@ -183,7 +187,7 @@ const SunoCover: React.FC = () => {
 
         // 确保必填字段有默认值
         const songLanguage = formValues.song_language || 'Mandarin';
-        const targetSinger = formValues.target_artist || '未知歌手';
+        const targetSinger = formValues.target_artist || '未知艺术家';
         const lyrics = formValues.lyrics_raw || '无歌词';
 
         await db.createPromptRecord({
@@ -202,14 +206,14 @@ const SunoCover: React.FC = () => {
           },
         });
         console.log('模拟记录已保存到数据库');
-        message.success('记录已保存到数据库！');
+        message.success('记录已成功保存');
       } catch (dbError) {
         console.error('保存模拟记录到数据库失败:', dbError);
-        message.error('保存记录到数据库失败，请检查控制台日志。');
+        message.error('记录保存失败，请查看控制台日志');
       }
     } catch (error) {
       console.error('模拟生成失败:', error);
-      message.error('模拟生成失败，请稍后重试。');
+      message.error('模拟生成失败，请稍后再试');
     } finally {
       setLoading(false);
     }
@@ -224,17 +228,12 @@ const SunoCover: React.FC = () => {
   return (
     <PageContainer>
       {/* 全屏加载器 */}
-      <Spin
-        spinning={loading}
-        fullscreen
-        tip="生成中，请耐心等待"
-        size="large"
-      />
+      <Spin spinning={loading} fullscreen tip="正在生成，请稍候" size="large" />
       <Row gutter={[24, 0]}>
         {/* 左侧输入表单 */}
         <Col span={8}>
           <ProCard
-            title="翻唱设置"
+            title="翻唱配置"
             actions={[
               <Flex
                 key="buttons"
@@ -275,22 +274,9 @@ const SunoCover: React.FC = () => {
               initialValues={{
                 song_language: 'Mandarin',
                 reference_songs: [{ title: '', artist: '' }],
-                rememberApiKey: false,
               }}
               submitter={false}
             >
-              {/* DeepSeek API Key */}
-              <ProFormText.Password
-                name="apiKey"
-                label="DeepSeek API Key"
-                placeholder="请输入DeepSeek API Key"
-                rules={[{ required: true, message: '请输入DeepSeek API Key' }]}
-              />
-
-              <ProFormCheckbox name="rememberApiKey" label="记住在本机" />
-
-              <Divider />
-
               {/* 歌曲语言 */}
               <ProFormSelect
                 name="song_language"
@@ -311,20 +297,23 @@ const SunoCover: React.FC = () => {
               {/* 参考艺术家 */}
               <ProFormText
                 name="target_artist"
-                label="模仿哪位艺术家？"
-                placeholder="例如：张惠妹、陈奕迅、周杰伦……"
-                rules={[{ required: true, message: '请输入模仿艺术家名称' }]}
+                label="想模仿哪位艺术家？"
+                placeholder="例如：张惠妹、陈奕迅、周杰伦等"
+                rules={[{ required: true, message: '请填写模仿的艺术家姓名' }]}
+                fieldProps={{ showCount: true }}
               />
 
               {/* 参考歌曲 */}
               <ProFormList
                 name="reference_songs"
-                label="参考歌曲（0-3首，可选）"
+                label="参考歌曲（可选，最多 3 首）"
                 rules={[
                   {
                     validator: (_, songs) => {
                       if (songs && songs.length > 3) {
-                        return Promise.reject(new Error('参考歌曲最多3首'));
+                        return Promise.reject(
+                          new Error('最多可添加 3 首参考歌曲'),
+                        );
                       }
                       return Promise.resolve();
                     },
@@ -337,29 +326,24 @@ const SunoCover: React.FC = () => {
                   block: true,
                 }}
                 deleteIconProps={{
-                  tooltipText: '删除参考歌曲',
+                  tooltipText: '删除该参考歌曲',
                 }}
                 copyIconProps={false}
                 max={3}
               >
                 {(meta, _index, _action, _count) => (
-                  <Space
-                    key={meta.key}
-                    style={{ width: '100%' }}
-                    align="center"
-                    size="middle"
-                  >
+                  <Space key={meta.key} align="center" size="middle">
                     <ProFormText
                       {...meta}
                       name={[meta.name, 'title']}
                       placeholder="歌曲名"
-                      rules={[{ required: true, message: '歌曲名不能为空' }]}
+                      rules={[{ required: true, message: '歌曲名称不能为空' }]}
                       style={{ flex: 1, marginBottom: 0 }}
                     />
                     <ProFormText
                       {...meta}
                       name={[meta.name, 'artist']}
-                      placeholder="演唱者（选填）"
+                      placeholder="演唱者（可选）"
                       style={{ flex: 1, marginBottom: 0 }}
                     />
                   </Space>
@@ -369,29 +353,32 @@ const SunoCover: React.FC = () => {
               {/* 风格备注 */}
               <ProFormTextArea
                 name="style_note"
-                label="风格备注（选填）"
+                label="风格备注（可选）"
                 placeholder="例如：主歌要像《人质》一样极度克制，副歌接近《听海》的情绪爆发。"
-                rows={3}
+                fieldProps={{ showCount: true, rows: 3 }}
               />
 
               {/* 附加说明 */}
               <ProFormTextArea
                 name="extra_note"
-                label="特殊说明（场景/受众等，可选）"
-                placeholder="例如：演唱会现场，录音室版本……"
-                rows={2}
+                label="特殊说明（如场景、受众等，可选）"
+                placeholder="例如：演唱会现场版、录音室版本等"
+                fieldProps={{ showCount: true, rows: 3 }}
               />
 
               {/* 歌词全文 */}
               <ProFormTextArea
                 name="lyrics_raw"
-                label="段落和歌词"
-                placeholder="请输入歌词，自行用任意标签划分段落，如：【主歌】、【副歌】、[Verse]、[Chorus] 等"
+                label="段落与歌词"
+                placeholder="请填写歌词，并使用任意标签划分段落，例如：【主歌】、【副歌】、[Verse]、[Chorus] 等"
                 rules={[
-                  { required: true, message: '请输入歌词' },
-                  { max: 2000, message: '歌词长度不能超过2000字' },
+                  { required: true, message: '请输入段落与歌词' },
+                  { max: 2000, message: '段落歌词长度不能超过 2000 字' },
                 ]}
-                rows={8}
+                fieldProps={{
+                  showCount: true,
+                  autoSize: { minRows: 8, maxRows: 12 },
+                }}
               />
             </ProForm>
           </ProCard>
@@ -400,7 +387,7 @@ const SunoCover: React.FC = () => {
         {/* 中间Styles输出 */}
         <Col span={8}>
           <ProCard
-            title="Styles（可直接复制投喂Suno）"
+            title="Styles 提示词（可直接复制用于 Suno）"
             extra={
               <Button
                 type="text"
@@ -417,7 +404,8 @@ const SunoCover: React.FC = () => {
             <ProFormTextArea
               value={stylesResult}
               readOnly
-              placeholder="生成的Styles将显示在这里..."
+              placeholder="生成的 Styles 提示词将展示在此处…"
+              fieldProps={{ showCount: true, rows: 40 }}
             />
           </ProCard>
         </Col>
@@ -425,7 +413,7 @@ const SunoCover: React.FC = () => {
         {/* 右侧Lyrics输出 */}
         <Col span={8}>
           <ProCard
-            title="Lyrics（可直接复制投喂Suno）"
+            title="Lyrics 提示词（可直接复制用于 Suno）"
             extra={
               <Button
                 type="text"
@@ -442,7 +430,8 @@ const SunoCover: React.FC = () => {
             <ProFormTextArea
               value={lyricsResult}
               readOnly
-              placeholder="生成的Lyrics将显示在这里..."
+              placeholder="生成的 Lyrics 提示词将展示在此处…"
+              fieldProps={{ showCount: true, rows: 40 }}
             />
           </ProCard>
         </Col>

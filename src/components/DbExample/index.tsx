@@ -83,7 +83,7 @@ const DbExample: React.FC = () => {
 
   // 编辑风格配置
   const handleEdit = (config: StyleConfig) => {
-    setEditingId(config.id);
+    setEditingId(config.id ?? null);
     form.setFieldsValue({
       name: config.name,
       genre: config.config.genre,
