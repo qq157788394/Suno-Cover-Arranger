@@ -18,6 +18,12 @@ export default [
     component: './suno-cover',
   },
   {
+    name: '项目介绍',
+    icon: 'InfoCircleOutlined',
+    path: '/about',
+    component: './about',
+  },
+  {
     component: '404',
     path: '/*',
   },

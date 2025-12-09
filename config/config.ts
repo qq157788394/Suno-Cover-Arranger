@@ -14,7 +14,8 @@ const { REACT_APP_ENV = 'dev' } = process.env;
  * @description 部署时的路径，如果部署在非根目录下，需要配置这个变量
  * @doc https://umijs.org/docs/api/config#publicpath
  */
-const PUBLIC_PATH: string = '/Suno-Cover-Arranger/';
+const PUBLIC_PATH: string =
+  REACT_APP_ENV === 'dev' ? '/' : '/Suno-Cover-Arranger/';
 
 export default defineConfig({
   /**
