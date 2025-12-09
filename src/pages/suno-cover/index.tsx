@@ -385,325 +385,294 @@ If any rule conflicts with another, ALWAYS prioritize preserving the original ly
 
   return (
     <PageContainer>
-      <div
-        style={{
-          height: 'calc(100vh - 56px - 72px - 32px)',
-          overflow: 'hidden',
-        }}
-      >
-        <Row
-          gutter={[24, 0]}
-          style={{ height: '100%', display: 'flex', alignItems: 'stretch' }}
-        >
-          {/* 左侧输入表单 */}
-          <Col span={8} style={{ height: '100%' }}>
-            <Card
-              title="输入参数"
-              style={{
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-              }}
-              headStyle={{
-                padding: '16px',
-                fontSize: '16px',
-                fontWeight: 'bold',
-              }}
-              bordered={false}
-              bodyStyle={{ flex: 1, overflow: 'auto', padding: '16px' }}
-              actions={[
-                <div
-                  key="generate"
-                  style={{ width: '100%', padding: '0 16px' }}
+      <Row gutter={[24, 0]}>
+        {/* 左侧输入表单 */}
+        <Col span={8}>
+          <Card
+            title="输入参数"
+            style={{
+              marginBottom: 24,
+            }}
+            headStyle={{
+              padding: '16px',
+              fontSize: '16px',
+              fontWeight: 'bold',
+            }}
+            bordered={false}
+            bodyStyle={{ padding: '16px' }}
+            actions={[
+              <div key="generate" style={{ width: '100%', padding: '0 16px' }}>
+                <Button
+                  type="primary"
+                  onClick={() => form.submit()}
+                  loading={loading}
+                  size="large"
+                  block
                 >
-                  <Button
-                    type="primary"
-                    onClick={() => form.submit()}
-                    loading={loading}
-                    size="large"
-                    block
-                  >
-                    生成 Styles & Lyrics
-                  </Button>
-                </div>,
-              ]}
+                  生成 Styles & Lyrics
+                </Button>
+              </div>,
+            ]}
+          >
+            <Form
+              form={form}
+              layout="vertical"
+              onFinish={handleSubmit}
+              initialValues={{
+                song_language: 'Mandarin',
+                reference_songs: [{ title: '', artist: '' }],
+                rememberApiKey: false,
+              }}
             >
-              <Form
-                form={form}
-                layout="vertical"
-                onFinish={handleSubmit}
-                initialValues={{
-                  song_language: 'Mandarin',
-                  reference_songs: [{ title: '', artist: '' }],
-                  rememberApiKey: false,
+              {/* DeepSeek API Key */}
+              <Form.Item
+                name="apiKey"
+                label="DeepSeek API Key"
+                rules={[{ required: true, message: '请输入DeepSeek API Key' }]}
+              >
+                <Input.Password
+                  placeholder="请输入DeepSeek API Key"
+                  visibilityToggle={{
+                    visible: isApiKeyVisible,
+                    onVisibleChange: setIsApiKeyVisible,
+                  }}
+                />
+              </Form.Item>
+
+              <Form.Item name="rememberApiKey" valuePropName="checked">
+                <Checkbox>记住在本机</Checkbox>
+              </Form.Item>
+
+              <Divider />
+
+              {/* 歌曲语言 */}
+              <Form.Item
+                name="song_language"
+                label="歌曲语言"
+                rules={[{ required: true, message: '请选择歌曲语言' }]}
+              >
+                <Select placeholder="请选择歌曲语言">
+                  <Select.Option value="Mandarin">华语（普通话）</Select.Option>
+                  <Select.Option value="Cantonese">粤语</Select.Option>
+                  <Select.Option value="Minnan">闽南语</Select.Option>
+                  <Select.Option value="English">英语</Select.Option>
+                  <Select.Option value="Korean">韩语</Select.Option>
+                  <Select.Option value="Japanese">日语</Select.Option>
+                  <Select.Option value="Other">其他</Select.Option>
+                </Select>
+              </Form.Item>
+
+              {/* 翻唱目标歌手 */}
+              <Form.Item
+                name="target_artist"
+                label="翻唱目标歌手"
+                rules={[{ required: true, message: '请输入翻唱目标歌手' }]}
+              >
+                <Input placeholder="例如：张惠妹、Eason Chan、F.I.R." />
+              </Form.Item>
+
+              {/* 参考歌曲 */}
+              <Form.List
+                name="reference_songs"
+                rules={[
+                  {
+                    validator: (_, songs) => {
+                      if (songs && songs.length > 3) {
+                        return Promise.reject(new Error('参考歌曲最多3首'));
+                      }
+                      return Promise.resolve();
+                    },
+                  },
+                ]}
+              >
+                {(fields, { add, remove }, { errors }) => (
+                  <>
+                    <Form.Item label="参考歌曲（0-3首，可选）">
+                      <Space
+                        direction="vertical"
+                        style={{ width: '100%' }}
+                        size="middle"
+                      >
+                        {fields.map(({ key, name, ...restField }) => (
+                          <Space
+                            key={key}
+                            style={{ width: '100%' }}
+                            align="center"
+                            size="middle"
+                          >
+                            <Form.Item
+                              {...restField}
+                              name={[name, 'title']}
+                              rules={[
+                                { required: true, message: '歌曲名不能为空' },
+                              ]}
+                              style={{ flex: 1, marginBottom: 0 }}
+                            >
+                              <Input
+                                placeholder="歌曲名"
+                                style={{ width: '100%' }}
+                              />
+                            </Form.Item>
+                            <Form.Item
+                              {...restField}
+                              name={[name, 'artist']}
+                              style={{ flex: 1, marginBottom: 0 }}
+                            >
+                              <Input
+                                placeholder="歌手名（可选，默认与目标歌手相同）"
+                                style={{ width: '100%' }}
+                              />
+                            </Form.Item>
+                            <Form.Item style={{ marginBottom: 0 }}>
+                              <Button
+                                type="text"
+                                danger
+                                icon={<MinusOutlined />}
+                                onClick={() => remove(name)}
+                                disabled={fields.length === 1}
+                                size="small"
+                              >
+                                删除
+                              </Button>
+                            </Form.Item>
+                          </Space>
+                        ))}
+                        <Form.Item>
+                          <Button
+                            type="dashed"
+                            onClick={() => add()}
+                            disabled={fields.length >= 3}
+                            block
+                            icon={<PlusOutlined />}
+                          >
+                            添加参考歌曲
+                          </Button>
+                        </Form.Item>
+                      </Space>
+                    </Form.Item>
+                    <Form.ErrorList errors={errors} />
+                  </>
+                )}
+              </Form.List>
+
+              {/* 风格备注 */}
+              <Form.Item name="style_note" label="风格备注（可选）">
+                <TextArea
+                  placeholder="例如：主歌要像《人质》一样极度克制，副歌接近《听海》的情绪爆发。"
+                  rows={3}
+                />
+              </Form.Item>
+
+              {/* 附加说明 */}
+              <Form.Item
+                name="extra_note"
+                label="附加说明（场景/受众等，可选）"
+              >
+                <TextArea
+                  placeholder="例如：B站翻唱视频，40+ 男性怀旧向。"
+                  rows={2}
+                />
+              </Form.Item>
+
+              {/* 歌词全文 */}
+              <Form.Item
+                name="lyrics_raw"
+                label="歌词（带段落标签）"
+                rules={[
+                  { required: true, message: '请输入歌词' },
+                  { max: 6000, message: '歌词长度不能超过6000字' },
+                ]}
+                style={{ marginBottom: 0 }}
+              >
+                <TextArea
+                  placeholder="请输入歌词，自行用任意标签划分段落，如：【主歌】、【副歌】、[Verse]、[Chorus] 等"
+                  rows={8}
+                />
+              </Form.Item>
+            </Form>
+          </Card>
+        </Col>
+
+        {/* 中间Styles输出 */}
+        <Col span={8}>
+          <Card
+            title={
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
                 }}
               >
-                {/* DeepSeek API Key */}
-                <Form.Item
-                  name="apiKey"
-                  label="DeepSeek API Key"
-                  rules={[
-                    { required: true, message: '请输入DeepSeek API Key' },
-                  ]}
+                <span style={{ fontSize: '16px', fontWeight: 'bold' }}>
+                  Styles（英文）
+                </span>
+                <Button
+                  type="text"
+                  icon={<CopyOutlined />}
+                  onClick={() => copyToClipboard(stylesResult, 'Styles')}
+                  disabled={!stylesResult}
+                  size="small"
                 >
-                  <Input.Password
-                    placeholder="请输入DeepSeek API Key"
-                    visibilityToggle={{
-                      visible: isApiKeyVisible,
-                      onVisibleChange: setIsApiKeyVisible,
-                    }}
-                  />
-                </Form.Item>
+                  复制
+                </Button>
+              </div>
+            }
+            style={{ marginBottom: 24 }}
+            headStyle={{ padding: '16px' }}
+            bodyStyle={{ padding: '16px' }}
+            bordered={false}
+          >
+            <TextArea
+              value={stylesResult}
+              readOnly
+              placeholder="生成的Styles将显示在这里..."
+              style={{ height: '100%', resize: 'none' }}
+              autoSize={{ minRows: 10, maxRows: Infinity }}
+            />
+          </Card>
+        </Col>
 
-                <Form.Item name="rememberApiKey" valuePropName="checked">
-                  <Checkbox>记住在本机</Checkbox>
-                </Form.Item>
-
-                <Divider />
-
-                {/* 歌曲语言 */}
-                <Form.Item
-                  name="song_language"
-                  label="歌曲语言"
-                  rules={[{ required: true, message: '请选择歌曲语言' }]}
+        {/* 右侧Lyrics输出 */}
+        <Col span={8}>
+          <Card
+            title={
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}
+              >
+                <span style={{ fontSize: '16px', fontWeight: 'bold' }}>
+                  Lyrics（属性列表 + 原文歌词）
+                </span>
+                <Button
+                  type="text"
+                  icon={<CopyOutlined />}
+                  onClick={() => copyToClipboard(lyricsResult, 'Lyrics')}
+                  disabled={!lyricsResult}
+                  size="small"
                 >
-                  <Select placeholder="请选择歌曲语言">
-                    <Select.Option value="Mandarin">
-                      华语（普通话）
-                    </Select.Option>
-                    <Select.Option value="Cantonese">粤语</Select.Option>
-                    <Select.Option value="Minnan">闽南语</Select.Option>
-                    <Select.Option value="English">英语</Select.Option>
-                    <Select.Option value="Korean">韩语</Select.Option>
-                    <Select.Option value="Japanese">日语</Select.Option>
-                    <Select.Option value="Other">其他</Select.Option>
-                  </Select>
-                </Form.Item>
-
-                {/* 翻唱目标歌手 */}
-                <Form.Item
-                  name="target_artist"
-                  label="翻唱目标歌手"
-                  rules={[{ required: true, message: '请输入翻唱目标歌手' }]}
-                >
-                  <Input placeholder="例如：张惠妹、Eason Chan、F.I.R." />
-                </Form.Item>
-
-                {/* 参考歌曲 */}
-                <Form.List
-                  name="reference_songs"
-                  rules={[
-                    {
-                      validator: (_, songs) => {
-                        if (songs && songs.length > 3) {
-                          return Promise.reject(new Error('参考歌曲最多3首'));
-                        }
-                        return Promise.resolve();
-                      },
-                    },
-                  ]}
-                >
-                  {(fields, { add, remove }, { errors }) => (
-                    <>
-                      <Form.Item label="参考歌曲（0-3首，可选）">
-                        <Space
-                          direction="vertical"
-                          style={{ width: '100%' }}
-                          size="middle"
-                        >
-                          {fields.map(({ key, name, ...restField }) => (
-                            <Space
-                              key={key}
-                              style={{ width: '100%' }}
-                              align="center"
-                              size="middle"
-                            >
-                              <Form.Item
-                                {...restField}
-                                name={[name, 'title']}
-                                rules={[
-                                  { required: true, message: '歌曲名不能为空' },
-                                ]}
-                                style={{ flex: 1, marginBottom: 0 }}
-                              >
-                                <Input
-                                  placeholder="歌曲名"
-                                  style={{ width: '100%' }}
-                                />
-                              </Form.Item>
-                              <Form.Item
-                                {...restField}
-                                name={[name, 'artist']}
-                                style={{ flex: 1, marginBottom: 0 }}
-                              >
-                                <Input
-                                  placeholder="歌手名（可选，默认与目标歌手相同）"
-                                  style={{ width: '100%' }}
-                                />
-                              </Form.Item>
-                              <Form.Item style={{ marginBottom: 0 }}>
-                                <Button
-                                  type="text"
-                                  danger
-                                  icon={<MinusOutlined />}
-                                  onClick={() => remove(name)}
-                                  disabled={fields.length === 1}
-                                  size="small"
-                                >
-                                  删除
-                                </Button>
-                              </Form.Item>
-                            </Space>
-                          ))}
-                          <Form.Item>
-                            <Button
-                              type="dashed"
-                              onClick={() => add()}
-                              disabled={fields.length >= 3}
-                              block
-                              icon={<PlusOutlined />}
-                            >
-                              添加参考歌曲
-                            </Button>
-                          </Form.Item>
-                        </Space>
-                      </Form.Item>
-                      <Form.ErrorList errors={errors} />
-                    </>
-                  )}
-                </Form.List>
-
-                {/* 风格备注 */}
-                <Form.Item name="style_note" label="风格备注（可选）">
-                  <TextArea
-                    placeholder="例如：主歌要像《人质》一样极度克制，副歌接近《听海》的情绪爆发。"
-                    rows={3}
-                  />
-                </Form.Item>
-
-                {/* 附加说明 */}
-                <Form.Item
-                  name="extra_note"
-                  label="附加说明（场景/受众等，可选）"
-                >
-                  <TextArea
-                    placeholder="例如：B站翻唱视频，40+ 男性怀旧向。"
-                    rows={2}
-                  />
-                </Form.Item>
-
-                {/* 歌词全文 */}
-                <Form.Item
-                  name="lyrics_raw"
-                  label="歌词（带段落标签）"
-                  rules={[
-                    { required: true, message: '请输入歌词' },
-                    { max: 6000, message: '歌词长度不能超过6000字' },
-                  ]}
-                  style={{ marginBottom: 0 }}
-                >
-                  <TextArea
-                    placeholder="请输入歌词，自行用任意标签划分段落，如：【主歌】、【副歌】、[Verse]、[Chorus] 等"
-                    rows={8}
-                  />
-                </Form.Item>
-              </Form>
-            </Card>
-          </Col>
-
-          {/* 中间Styles输出 */}
-          <Col span={8} style={{ height: '100%' }}>
-            <Card
-              title={
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    width: '100%',
-                    padding: '0',
-                  }}
-                >
-                  <span style={{ fontSize: '16px', fontWeight: 'bold' }}>
-                    Styles（英文）
-                  </span>
-                  <Button
-                    type="text"
-                    icon={<CopyOutlined />}
-                    onClick={() => copyToClipboard(stylesResult, 'Styles')}
-                    disabled={!stylesResult}
-                    size="small"
-                  >
-                    复制
-                  </Button>
-                </div>
-              }
-              style={{
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-              }}
-              headStyle={{ padding: '16px' }}
-              bodyStyle={{ flex: 1, overflow: 'auto', padding: '16px' }}
-              bordered={false}
-            >
-              <TextArea
-                value={stylesResult}
-                readOnly
-                placeholder="生成的Styles将显示在这里..."
-                style={{ height: '100%', resize: 'none' }}
-                autoSize={{ minRows: 10, maxRows: Infinity }}
-              />
-            </Card>
-          </Col>
-
-          {/* 右侧Lyrics输出 */}
-          <Col span={8} style={{ height: '100%' }}>
-            <Card
-              title={
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    width: '100%',
-                    padding: '0',
-                  }}
-                >
-                  <span style={{ fontSize: '16px', fontWeight: 'bold' }}>
-                    Lyrics（属性列表 + 原文歌词）
-                  </span>
-                  <Button
-                    type="text"
-                    icon={<CopyOutlined />}
-                    onClick={() => copyToClipboard(lyricsResult, 'Lyrics')}
-                    disabled={!lyricsResult}
-                    size="small"
-                  >
-                    复制
-                  </Button>
-                </div>
-              }
-              style={{
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-              }}
-              headStyle={{ padding: '16px' }}
-              bodyStyle={{ flex: 1, overflow: 'auto', padding: '16px' }}
-              bordered={false}
-            >
-              <TextArea
-                value={lyricsResult}
-                readOnly
-                placeholder="生成的Lyrics将显示在这里..."
-                style={{ height: '100%', resize: 'none' }}
-                autoSize={{ minRows: 10, maxRows: Infinity }}
-              />
-            </Card>
-          </Col>
-        </Row>
-      </div>
+                  复制
+                </Button>
+              </div>
+            }
+            style={{ marginBottom: 24 }}
+            headStyle={{ padding: '16px' }}
+            bodyStyle={{ padding: '16px' }}
+            bordered={false}
+          >
+            <TextArea
+              value={lyricsResult}
+              readOnly
+              placeholder="生成的Lyrics将显示在这里..."
+              style={{ height: '100%', resize: 'none' }}
+              autoSize={{ minRows: 10, maxRows: Infinity }}
+            />
+          </Card>
+        </Col>
+      </Row>
     </PageContainer>
   );
 };

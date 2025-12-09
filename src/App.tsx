@@ -8,7 +8,7 @@ import defaultSettings from '../config/defaultSettings';
 import { errorConfig } from './requestErrorConfig';
 import '@ant-design/v5-patch-for-react-19';
 
-const isDev = process.env.NODE_ENV === 'development' || process.env.CI;
+// 移除了isDev变量，因为SettingDrawer现在在所有环境中都显示
 
 /**
  * @see https://umijs.org/docs/api/runtime-config#getinitialstate
@@ -70,19 +70,19 @@ export const layout: RunTimeLayoutConfig = ({
       return (
         <>
           {children}
-          {isDev && (
-            <SettingDrawer
-              disableUrlParams
-              enableDarkTheme
-              settings={initialState?.settings}
-              onSettingChange={(settings) => {
-                setInitialState((preInitialState) => ({
-                  ...preInitialState,
-                  settings,
-                }));
-              }}
-            />
-          )}
+          <SettingDrawer
+            disableUrlParams
+            enableDarkTheme
+            settings={initialState?.settings}
+            onSettingChange={(settings) => {
+              setInitialState((preInitialState) => ({
+                ...preInitialState,
+                settings,
+              }));
+            }}
+            hideHintAlert={true}
+            hideCopyButton={true}
+          />
         </>
       );
     },
