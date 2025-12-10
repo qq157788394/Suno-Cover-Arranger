@@ -3,3 +3,4 @@
 export * from './deepseek';
 export * from './db';
 export * from './mockData';
+export * from './ai';

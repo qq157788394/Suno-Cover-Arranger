@@ -10,11 +10,13 @@ interface ProTableWrapperProps<T extends Record<string, any>> {
   /** 表格列配置 */
   columns: ProColumns<T>[];
   /** 数据请求函数 */
-  request: (
+  request?: (
     params: any,
     sort: Record<string, 'ascend' | 'descend'>,
     filter: Record<string, (string | number)[] | null>,
   ) => Promise<Partial<RequestData<T>>>;
+  /** 数据源 */
+  dataSource?: T[];
   /** 加载状态 */
   loading?: boolean;
   /** 表格标题 */
@@ -46,11 +48,14 @@ interface ProTableWrapperProps<T extends Record<string, any>> {
     x?: number | string;
     y?: number | string;
   };
+  /** 表格变化处理函数 */
+  onChange?: (params: any) => void;
 }
 
 const ProTableWrapper = <T extends Record<string, any>>({
   columns,
   request,
+  dataSource,
   loading = false,
   title,
   showSearch = true,
@@ -74,6 +79,7 @@ const ProTableWrapper = <T extends Record<string, any>>({
     fullScreen: true,
   },
   scroll,
+  onChange,
 }: ProTableWrapperProps<T>) => {
   return (
     <>
@@ -84,12 +90,14 @@ const ProTableWrapper = <T extends Record<string, any>>({
         rowKey={rowKey}
         columns={columns}
         request={request}
+        dataSource={dataSource}
         loading={loading}
         pagination={pagination}
         headerTitle={title}
         options={options}
         scroll={scroll}
         search={showSearch ? searchConfig : false}
+        onChange={onChange}
       />
     </>
   );

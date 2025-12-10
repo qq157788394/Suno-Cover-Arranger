@@ -1,7 +1,7 @@
 // https://umijs.org/config/
 
 import { join } from 'node:path';
-import { Config, defineConfig } from '@umijs/max';
+import { defineConfig } from '@umijs/max';
 import defaultSettings from './defaultSettings';
 import proxy from './proxy';
 
@@ -14,8 +14,8 @@ const { REACT_APP_ENV = 'dev' } = process.env;
  * @description 部署时的路径，如果部署在非根目录下，需要配置这个变量
  * @doc https://umijs.org/docs/api/config#publicpath
  */
-// 使用固定的公共路径/，因为我们使用的是hash路由，不需要为GitHub Pages配置特殊的公共路径
-const PUBLIC_PATH: string = '/';
+// 配置GitHub Pages的公共路径，仓库名称为Suno-Cover-Arranger
+const PUBLIC_PATH: string = '/Suno-Cover-Arranger/';
 
 export default defineConfig({
   /**

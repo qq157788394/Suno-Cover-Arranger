@@ -137,19 +137,20 @@ export const usePromptRecords = (currentUserId: number) => {
   );
 
   // 删除单条记录
-  const deleteRecord = useCallback(async (recordId: number) => {
-    try {
-      await db.deletePromptRecord(recordId);
-      // 更新本地状态
-      setRecords((prevRecords) =>
-        prevRecords.filter((record) => record.id !== recordId),
-      );
-      return { success: true };
-    } catch (error) {
-      console.error('删除记录失败：', error);
-      return { success: false, error };
-    }
-  }, []);
+  const deleteRecord = useCallback(
+    async (recordId: number) => {
+      try {
+        await db.deletePromptRecord(recordId);
+        // 刷新数据
+        await fetchRecords();
+        return { success: true };
+      } catch (error) {
+        console.error('删除记录失败：', error);
+        return { success: false, error };
+      }
+    },
+    [fetchRecords],
+  );
 
   // 清空所有记录
   const clearAllRecords = useCallback(async () => {

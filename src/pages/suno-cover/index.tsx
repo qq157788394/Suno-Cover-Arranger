@@ -42,19 +42,25 @@ import { ResultCard } from '@/components';
 
 // Custom Hook
 import { useApiKey } from '@/hooks/useApiKey';
-
-// Custom Services and Types
-import type { PromptRecord } from '@/services/db';
+import { container } from '@/services/ai/container';
+import { DeepSeekService } from '@/services/ai/models/deepseekService';
+import { GeminiService } from '@/services/ai/models/geminiService';
 import { db } from '@/services/db';
-import { callDeepSeekAPI, type GenerateRequest } from '@/services/deepseek';
 import { mockGenerate } from '@/services/mockData';
+// Custom Services and Types
+import type {
+  GenerateRequest,
+  GenerateResponse,
+  PromptRecord,
+} from '@/shared/types';
 // Shared Utils
 import { copyToClipboard } from '@/shared/utils';
 
 const SunoCover: React.FC = () => {
-  // 使用自定义hook管理API Key
+  // 使用自定义hook管理API Key和模型
   const {
     apiKey,
+    model,
     isLoading: apiKeyLoading,
     saveApiKey,
     deleteApiKey,
@@ -69,7 +75,6 @@ const SunoCover: React.FC = () => {
     loading: false, // 加载状态，用于显示加载动画
     stylesResult: '', // 存储生成的 Styles 提示词
     lyricsResult: '', // 存储生成的 Lyrics 提示词
-    hasApiKey: false, // 用于检查用户是否已经设置了DeepSeek API Key
   });
 
   // 更新状态的辅助函数
@@ -81,7 +86,7 @@ const SunoCover: React.FC = () => {
   const checkApiKey = useCallback(() => {
     if (!apiKey) {
       Modal.confirm({
-        title: '尚未设置 DeepSeek API Key',
+        title: '尚未设置 AI API Key',
         content: '设置完成后即可使用该功能，是否现在去设置？',
         okText: '去设置',
         cancelText: '取消',
@@ -92,7 +97,7 @@ const SunoCover: React.FC = () => {
       return false;
     }
     return true;
-  }, [apiKey]);
+  }, [apiKey, history]);
 
   // 保存记录到数据库
   const saveRecordToDB = useCallback(
@@ -118,9 +123,10 @@ const SunoCover: React.FC = () => {
             lyrics: values.lyrics_raw,
             scene: values.extra_note || '',
           },
-          deepSeekResult: {
+          aiResult: {
             styles: result.styles,
             lyrics: result.lyrics,
+            model: model, // 记录使用的 AI 模型
           },
         });
         console.log('记录已成功保存');
@@ -129,17 +135,14 @@ const SunoCover: React.FC = () => {
         console.error('记录保存失败：', dbError);
       }
     },
-    [],
+    [model],
   );
 
   /**
    * 从localStorage加载记录数据和检查API Key
    * 当用户从记录页面跳转到生成页面时，自动填充之前保存的配置和结果
-   */ // 从localStorage加载记录数据和检查API Key
+   */ // 从localStorage加载记录数据
   useEffect(() => {
-    // 检查用户是否已经设置了DeepSeek API Key
-    updateState({ hasApiKey: !!apiKey });
-
     // 加载记录数据
     const selectedRecord = localStorage.getItem('selectedPromptRecord');
     if (selectedRecord) {
@@ -164,10 +167,12 @@ const SunoCover: React.FC = () => {
           lyrics_raw: record.userInput.lyrics,
         });
 
-        // 填充结果数据
+        // 填充结果数据 - 支持多模型的 aiResult 字段
         updateState({
-          stylesResult: record.deepSeekResult.styles,
-          lyricsResult: record.deepSeekResult.lyrics,
+          stylesResult:
+            record.aiResult?.styles || record.deepSeekResult?.styles || '', // 向后兼容
+          lyricsResult:
+            record.aiResult?.lyrics || record.deepSeekResult?.lyrics || '', // 向后兼容
         });
 
         // 清空localStorage中的记录数据
@@ -176,11 +181,23 @@ const SunoCover: React.FC = () => {
         console.error('数据解析失败：', error);
       }
     }
-  }, [form, updateState, apiKey]);
+  }, [form, updateState]);
+
+  // 选择AI服务
+  const getAIService = () => {
+    switch (model) {
+      case 'deepseek':
+        return container.resolve(DeepSeekService);
+      case 'gemini':
+        return container.resolve(GeminiService);
+      default:
+        throw new Error(`Unsupported AI model: ${model}`);
+    }
+  };
 
   /**
    * 表单提交处理函数
-   * 验证用户输入，调用 DeepSeek API 生成提示词，并保存结果到数据库
+   * 验证用户输入，调用选定的 AI 模型 API 生成提示词，并保存结果到数据库
    */
   const handleSubmit = useCallback(
     async (values: GenerateRequest) => {
@@ -188,7 +205,9 @@ const SunoCover: React.FC = () => {
 
       updateState({ loading: true });
       try {
-        const result = await callDeepSeekAPI({ ...values, apiKey });
+        // 使用 DI 容器获取对应的服务实例
+        const aiService = getAIService();
+        const result = await aiService.generate({ ...values, apiKey, model });
 
         updateState({
           stylesResult: result.styles,
@@ -196,19 +215,48 @@ const SunoCover: React.FC = () => {
         });
 
         message.success('提示词已成功生成！');
-        await saveRecordToDB(values, result);
+
+        // 转换参考歌曲为字符串数组
+        const referenceSongs = values.reference_songs
+          .filter((song: { title?: string }) => song.title)
+          .map(
+            (song: { title: string; artist?: string }) =>
+              `${song.title}${song.artist ? ` - ${song.artist}` : ''}`,
+          );
+
+        // 保存记录到数据库
+        const record = await db.createPromptRecord({
+          userId: 1, // 模拟当前用户ID
+          userInput: {
+            songLanguage: values.song_language,
+            targetSinger: values.target_artist,
+            referenceSongs,
+            styleDescription: values.style_note || '',
+            lyrics: values.lyrics_raw,
+            scene: values.extra_note || '',
+          },
+          aiResult: {
+            styles: result.styles,
+            lyrics: result.lyrics,
+            model: model,
+          },
+          model: model,
+        });
+
+        console.log('记录已成功保存');
+        message.success('记录已成功保存');
       } catch (error) {
-        console.error('DeepSeek API 调用失败：', error);
+        console.error(`${model} API 调用失败：`, error);
         const errorMessage =
           error instanceof Error
             ? error.message
-            : '调用 DeepSeek API 失败，请检查 API Key 或稍后再试。';
+            : `调用 ${model} API 失败，请检查 API Key 或稍后再试。`;
         message.error(errorMessage);
       } finally {
         updateState({ loading: false });
       }
     },
-    [checkApiKey, updateState, saveRecordToDB, apiKey],
+    [checkApiKey, updateState, apiKey, model],
   );
 
   /**
@@ -255,9 +303,10 @@ const SunoCover: React.FC = () => {
           lyrics,
           scene: formValues.extra_note || '',
         },
-        deepSeekResult: {
+        aiResult: {
           styles: result.styles,
           lyrics: result.lyrics,
+          model: 'mock', // 模拟生成使用的模型标记
         },
       });
 
@@ -278,10 +327,10 @@ const SunoCover: React.FC = () => {
 
   return (
     <PageContainer>
-      {/* 只有在用户没有设置DeepSeek API Key时才显示Alert提示 */}
-      {!state.hasApiKey && (
+      {/* 只有在用户没有设置AI API Key时才显示Alert提示 */}
+      {!apiKey && (
         <Alert
-          title="尚未设置 DeepSeek API Key，设置完成后即可使用该功能，是否现在去设置？"
+          title="尚未设置 AI API Key，设置完成后即可使用该功能，是否现在去设置？"
           banner
           style={{ marginBottom: 24 }}
           action={

@@ -6,7 +6,7 @@ import {
 import { PageContainer, type ProColumns } from '@ant-design/pro-components';
 import { useNavigate } from '@umijs/max';
 import { Alert, Button, Modal, message, Space, Tooltip } from 'antd';
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import { ProTableWrapper } from '@/components';
 import { usePromptRecords } from '@/hooks/usePromptRecords';
 import type { PromptRecord } from '@/shared/types';
@@ -19,6 +19,11 @@ const RecordPage: React.FC = () => {
     usePromptRecords(currentUserId);
   // 使用Umi的useNavigate进行路由跳转
   const navigate = useNavigate();
+
+  // 组件挂载时获取初始数据
+  useEffect(() => {
+    fetchRecords();
+  }, [fetchRecords]);
 
   // 查看详情
   const handleViewDetail = useCallback(
@@ -58,8 +63,8 @@ const RecordPage: React.FC = () => {
     [deleteRecord],
   );
 
-  // ProTable请求配置
-  const request = useCallback(
+  // 处理表格参数变化并获取数据
+  const handleTableChange = useCallback(
     async (params: any) => {
       const keyword = params.keyword || '';
       const dateRange = params.createdAt;
@@ -67,18 +72,13 @@ const RecordPage: React.FC = () => {
       const targetSinger = params.targetSinger;
       const styleDescription = params.styleDescription;
 
-      const fetchedRecords = await fetchRecords({
+      await fetchRecords({
         keyword,
         dateRange,
         songLanguages,
         targetSinger,
         styleDescription,
       });
-      return {
-        data: fetchedRecords,
-        success: true,
-        total: fetchedRecords.length,
-      };
     },
     [fetchRecords],
   );
@@ -212,7 +212,8 @@ const RecordPage: React.FC = () => {
       <ProTableWrapper
         rowKey="id"
         columns={columns}
-        request={request}
+        // 直接使用records状态作为数据来源
+        dataSource={records}
         loading={loading}
         title="提示词生成记录"
         options={{
@@ -221,6 +222,8 @@ const RecordPage: React.FC = () => {
           fullScreen: true,
         }}
         scroll={{ x: 1200 }}
+        // 使用onChange处理表格参数变化
+        onChange={handleTableChange}
       />
     </PageContainer>
   );

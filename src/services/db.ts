@@ -19,7 +19,7 @@ class AppDatabase extends Dexie {
   users: Dexie.Table<User, number>;         // 用户表
   projects: Dexie.Table<Project, number>;   // 项目表
   styleConfigs: Dexie.Table<StyleConfig, number>; // 风格配置表
-  promptRecords: Dexie.Table<PromptRecord, number>; // 提示词记录表
+  promptRecords: Dexie.Table<PromptRecord & { aiResult?: { styles: string; lyrics: string; model: string } }, number>; // 提示词记录表
   apiKeys: Dexie.Table<ApiKey, number>; // API Key 表
 
   /**
@@ -34,8 +34,8 @@ class AppDatabase extends Dexie {
       users: '++id, name, email, createdAt',
       projects: '++id, title, userId, createdAt, updatedAt',
       styleConfigs: '++id, name, userId, isDefault, createdAt, updatedAt',
-      promptRecords: '++id, userId, createdAt',
-      apiKeys: '++id, userId, apiKey, isCurrent, createdAt'
+      promptRecords: '++id, userId, createdAt, [aiResult.styles], [aiResult.lyrics], [aiResult.model]',
+      apiKeys: '++id, userId, apiKey, model, isCurrent, createdAt'
     });
 
     // 初始化表

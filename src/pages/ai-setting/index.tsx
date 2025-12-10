@@ -5,35 +5,59 @@ import {
   ProForm,
   ProFormText,
 } from '@ant-design/pro-components';
-import { Alert, Form, message, Space, Typography } from 'antd';
+import { Alert, Form, message, Radio, Space, Typography } from 'antd';
+import { FormInstance } from 'antd/es/form';
 import React, { useEffect } from 'react';
+
 import { useApiKey } from '@/hooks/useApiKey';
+import { db } from '@/services/db';
+import type { ApiKey } from '@/shared/types';
 
 const { Text, Paragraph, Title } = Typography;
 
 const AISettingPage: React.FC = () => {
-  // 使用自定义hook管理API Key
-  const { apiKey, isLoading, saveApiKey, deleteApiKey, validateApiKey } =
-    useApiKey();
+  // 使用自定义hook管理API Key，包括新添加的switchModel方法
+  const {
+    apiKey,
+    model,
+    isLoading,
+    saveApiKey,
+    deleteApiKey,
+    validateApiKey,
+    switchModel,
+  } = useApiKey();
   // 创建 FormInstance 的引用
   const [form] = Form.useForm();
 
   // 当API Key加载完成后，设置到表单中
   useEffect(() => {
     if (!isLoading) {
-      form.setFieldsValue({ apiKey: apiKey });
+      form.setFieldsValue({
+        model: model || 'deepseek',
+        apiKey: apiKey,
+      });
     }
-  }, [apiKey, isLoading, form]);
+  }, [apiKey, model, isLoading, form]);
+
+  // 处理模型变化，使用新添加的switchModel方法
+  const handleModelChange = async (e: any) => {
+    const newModel = e.target.value;
+    console.log('Changing model to:', newModel);
+    await switchModel(newModel);
+  };
 
   // 表单提交处理
-  const handleFormSubmit = async (values: { apiKey: string }) => {
+  const handleFormSubmit = async (values: {
+    model: string;
+    apiKey: string;
+  }) => {
     // 验证API Key格式
     if (!validateApiKey(values.apiKey)) {
-      message.error('API Key格式不正确，请输入以sk-开头的API Key');
+      message.error('API Key格式不正确，请输入有效的API Key');
       return;
     }
 
-    const result = await saveApiKey(values.apiKey);
+    const result = await saveApiKey(values.apiKey, values.model);
     if (result) {
       message.success('API Key 已成功保存');
     } else {
@@ -46,7 +70,10 @@ const AISettingPage: React.FC = () => {
     const result = await deleteApiKey();
     if (result) {
       // 清空表单内容
-      form.setFieldsValue({ apiKey: '' });
+      form.setFieldsValue({
+        model: 'deepseek',
+        apiKey: '',
+      });
       message.success('API Key 已删除');
     } else {
       message.error('删除API Key失败，请稍后重试');
@@ -60,6 +87,7 @@ const AISettingPage: React.FC = () => {
           <ProForm
             layout="vertical"
             initialValues={{
+              model: model || 'deepseek',
               apiKey: apiKey,
             }}
             form={form}
@@ -73,17 +101,28 @@ const AISettingPage: React.FC = () => {
             }}
             loading={isLoading}
           >
+            <ProForm.Item
+              name="model"
+              label="首选 AI 模型"
+              rules={[{ required: true, message: '请选择首选 AI 模型' }]}
+            >
+              <Radio.Group onChange={handleModelChange}>
+                <Radio value="deepseek">DeepSeek</Radio>
+                <Radio value="gemini">Google Gemini</Radio>
+              </Radio.Group>
+            </ProForm.Item>
+
             <ProFormText.Password
               name="apiKey"
-              label="DeepSeek API Key"
-              placeholder="请输入以sk-开头的DeepSeek API Key"
+              label="API Key"
+              placeholder="请输入所选 AI 模型的 API Key"
               fieldProps={{
                 size: 'large',
               }}
               rules={[
                 {
                   required: true,
-                  message: '请输入DeepSeek API Key',
+                  message: '请输入 API Key',
                 },
                 {
                   validator: (_rule, value) => {
@@ -91,7 +130,7 @@ const AISettingPage: React.FC = () => {
                       return Promise.resolve();
                     }
                     return Promise.reject(
-                      new Error('API Key格式不正确，请输入以sk-开头的API Key'),
+                      new Error('API Key格式不正确，请输入有效的 API Key'),
                     );
                   },
                 },

@@ -85,6 +85,19 @@ export interface DeepSeekResult {
 }
 
 /**
+ * AI 结果类型
+ * 用于表示不同 AI 模型返回的结果信息
+ */
+export interface AIResult {
+  /** 生成的 Styles 提示词 */
+  styles: string;
+  /** 生成的 Lyrics 提示词 */
+  lyrics: string;
+  /** 使用的 AI 模型名称 */
+  model: string;
+}
+
+/**
  * 提示词记录类型
  * 用于表示用户生成提示词的记录信息
  */
@@ -95,23 +108,29 @@ export interface PromptRecord {
   userId: number;
   /** 用户输入信息 */
   userInput: UserInput;
-  /** DeepSeek API返回的结果信息 */
-  deepSeekResult: DeepSeekResult;
+  /** DeepSeek API返回的结果信息（向后兼容） */
+  deepSeekResult?: DeepSeekResult;
+  /** AI 模型返回的结果信息（多模型支持） */
+  aiResult?: AIResult;
+  /** 使用的 AI 模型名称（多模型支持） */
+  model?: string;
   /** 创建时间（自动生成） */
   createdAt?: Date;
 }
 
 /**
  * API Key 类型
- * 用于表示用户的 DeepSeek API Key 信息
+ * 用于表示用户的 AI 模型 API Key 信息
  */
 export interface ApiKey {
   /** API Key ID（自动生成） */
   id?: number;
   /** 用户ID（关联到用户表） */
   userId: number;
-  /** DeepSeek API Key */
+  /** AI 模型 API Key */
   apiKey: string;
+  /** AI 模型名称（如 deepseek, gemini） */
+  model: string;
   /** 是否为当前使用的 API Key */
   isCurrent: boolean;
   /** 创建时间（自动生成） */
@@ -136,6 +155,8 @@ export interface ReferenceSong {
 export interface GenerateRequest {
   /** API 密钥 */
   apiKey: string;
+  /** 使用的 AI 模型名称 */
+  model: string;
   /** 歌曲语言 */
   song_language: string;
   /** 目标艺术家 */

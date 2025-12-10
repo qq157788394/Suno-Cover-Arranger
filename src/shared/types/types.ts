@@ -13,7 +13,8 @@ export interface ReferenceSong {
 
 // 生成请求接口定义
 export interface GenerateRequest {
-  apiKey: string; // DeepSeek API 密钥
+  apiKey: string; // AI 模型 API 密钥
+  model: string; // AI 模型名称（如 deepseek, gemini 等）
   song_language: string; // 歌曲语言（如 Mandarin, English 等）
   target_artist: string; // 目标翻唱艺术家
   reference_songs: ReferenceSong[]; // 参考歌曲列表
@@ -58,6 +59,16 @@ export interface StyleConfig {
   updatedAt: Date;
 }
 
+// API Key 数据模型
+export interface ApiKey {
+  id?: number;
+  userId: number;
+  apiKey: string;
+  model: string; // AI 模型名称（如 deepseek, gemini 等）
+  isCurrent: boolean;
+  createdAt: Date;
+}
+
 // 提示词记录数据模型
 export interface PromptRecord {
   id?: number;
@@ -71,10 +82,11 @@ export interface PromptRecord {
     lyrics: string;
     scene?: string;
   };
-  // DeepSeek返回的结果
-  deepSeekResult: {
+  // AI 返回的结果
+  aiResult: {
     styles: string;
     lyrics: string;
+    model: string; // 使用的 AI 模型名称
   };
   // 生成时间
   createdAt: Date;
