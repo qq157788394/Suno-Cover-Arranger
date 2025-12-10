@@ -7,38 +7,10 @@
  * 3. 解析 AI 输出，返回标准化结果
  */
 
-/**
- * 参考歌曲接口定义
- * 用于描述用户提供的参考歌曲信息
- */
-export interface ReferenceSong {
-  title: string;          // 歌曲标题
-  artist?: string;        // 歌曲艺术家（可选）
-}
+import type { ReferenceSong, GenerateRequest, GenerateResponse } from './types';
 
-/**
- * 生成请求接口定义
- * 包含调用 DeepSeek API 所需的所有参数
- */
-export interface GenerateRequest {
-  apiKey: string;                // DeepSeek API 密钥
-  song_language: string;         // 歌曲语言（如 Mandarin, English 等）
-  target_artist: string;         // 目标翻唱艺术家
-  reference_songs: ReferenceSong[]; // 参考歌曲列表
-  style_note?: string;           // 风格备注（可选）
-  extra_note?: string;           // 额外备注（可选，包含场景、受众、平台等信息）
-  lyrics_raw: string;            // 原始歌词（包含用户自定义的段落标记）
-  rememberApiKey?: boolean;      // 是否记住 API 密钥（前端使用）
-}
-
-/**
- * 生成响应接口定义
- * 包含 DeepSeek API 返回的生成结果
- */
-export interface GenerateResponse {
-  styles: string;        // 生成的歌曲风格描述
-  lyrics: string;        // 生成的带属性的歌词段落
-}
+// 重新导出类型以便其他模块使用
+export type { ReferenceSong, GenerateRequest, GenerateResponse };
 
 /**
  * 生成用户提示模板
@@ -63,7 +35,7 @@ export const generateUserPrompt = (values: GenerateRequest): string => {
   // 如果没有参考歌曲，显示 "None"
   // 每个参考歌曲格式："歌曲标题 by 艺术家名"（如果没有艺术家名则使用目标艺术家）
   const referenceSongsBlock = values.reference_songs.length > 0
-    ? values.reference_songs.map(song => `${song.title} by ${song.artist || values.target_artist}`).join('\n')
+    ? values.reference_songs.map((song: ReferenceSong) => `${song.title} by ${song.artist || values.target_artist}`).join('\n')
     : 'None';
 
   return 'You are generating Suno "Styles" and "Lyrics" prompts for a COVER version of a song. Read all the information below carefully and then produce the final output strictly following the system rules and the format requirements.\n\n' +

@@ -6,7 +6,6 @@ import React from 'react';
 
 import defaultSettings from '../config/defaultSettings';
 import { errorConfig } from './requestErrorConfig';
-import '@ant-design/v5-patch-for-react-19';
 
 // 移除了isDev变量，因为SettingDrawer现在在所有环境中都显示
 

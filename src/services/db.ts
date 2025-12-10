@@ -1,62 +1,30 @@
+/**
+ * 数据库服务模块
+ * 负责处理应用程序的本地数据库操作，使用 Dexie.js 作为数据库管理工具
+ * 主要功能：
+ * 1. 用户数据的增删改查
+ * 2. 项目数据的管理
+ * 3. 风格配置的存储和管理
+ * 4. 提示词记录的保存和查询
+ */
+
 import Dexie from 'dexie';
+import type { User, Project, StyleConfig, PromptRecord } from './types';
 
-// 定义数据模型
-interface User {
-  id?: number;
-  name: string;
-  email: string;
-  createdAt: Date;
-}
-
-interface Project {
-  id?: number;
-  title: string;
-  description: string;
-  userId: number;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-interface StyleConfig {
-  id?: number;
-  name: string;
-  config: Record<string, any>;
-  userId: number;
-  isDefault: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-interface PromptRecord {
-  id?: number;
-  userId: number;
-  // 用户提交的内容
-  userInput: {
-    songLanguage: string;
-    targetSinger: string;
-    referenceSongs: string[];
-    styleDescription: string;
-    lyrics: string;
-    scene?: string;
-  };
-  // DeepSeek返回的结果
-  deepSeekResult: {
-    styles: string;
-    lyrics: string;
-  };
-  // 生成时间
-  createdAt: Date;
-  // 可选的标签或备注
-  tags?: string[];
-}
-
-// 创建数据库类
+/**
+ * 应用数据库类
+ * 继承自 Dexie，用于管理应用程序的本地数据库
+ */
 class AppDatabase extends Dexie {
-  users: Dexie.Table<User, number>;
-  projects: Dexie.Table<Project, number>;
-  styleConfigs: Dexie.Table<StyleConfig, number>;
-  promptRecords: Dexie.Table<PromptRecord, number>;
+  users: Dexie.Table<User, number>;         // 用户表
+  projects: Dexie.Table<Project, number>;   // 项目表
+  styleConfigs: Dexie.Table<StyleConfig, number>; // 风格配置表
+  promptRecords: Dexie.Table<PromptRecord, number>; // 提示词记录表
 
+  /**
+   * 数据库类构造函数
+   * 初始化数据库连接和表结构
+   */
   constructor() {
     super('SunoCoverArrangerDB');
 
@@ -76,6 +44,11 @@ class AppDatabase extends Dexie {
   }
 
   // 用户相关操作
+  /**
+   * 创建新用户
+   * @param user - 用户信息（不包含id和createdAt）
+   * @returns 包含id和createdAt的完整用户信息
+   */
   async createUser(user: Omit<User, 'id' | 'createdAt'>): Promise<User> {
     const newUser = {
       ...user,
@@ -85,18 +58,37 @@ class AppDatabase extends Dexie {
     return { ...newUser, id };
   }
 
+  /**
+   * 根据ID获取用户信息
+   * @param id - 用户ID
+   * @returns 用户信息或undefined（如果用户不存在）
+   */
   async getUser(id: number): Promise<User | undefined> {
     return this.users.get(id);
   }
 
+  /**
+   * 更新用户信息
+   * @param id - 用户ID
+   * @param updates - 要更新的用户信息部分
+   * @returns 更新的记录数
+   */
   async updateUser(id: number, updates: Partial<User>): Promise<number> {
     return this.users.update(id, updates);
   }
 
+  /**
+   * 根据ID删除用户
+   * @param id - 用户ID
+   */
   async deleteUser(id: number): Promise<void> {
     await this.users.delete(id);
   }
 
+  /**
+   * 获取所有用户信息
+   * @returns 用户信息数组
+   */
   async getAllUsers(): Promise<User[]> {
     return this.users.toArray();
   }

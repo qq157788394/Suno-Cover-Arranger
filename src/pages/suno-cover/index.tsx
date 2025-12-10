@@ -1,9 +1,19 @@
+/**
+ * Suno Cover 翻唱提示词生成页面
+ * 负责处理用户输入的翻唱配置信息，并生成高质量的 Suno 翻唱歌曲提示词
+ * 主要功能：
+ * 1. 提供翻唱配置表单，包括歌曲语言、目标艺术家、参考歌曲等
+ * 2. 调用 DeepSeek API 生成高质量的 Styles 和 Lyrics 提示词
+ * 3. 提供模拟生成功能，用于开发和测试
+ * 4. 将生成结果保存到本地数据库
+ * 5. 提供复制功能，方便用户将生成的提示词复制到 Suno
+ */
+
 import { CopyOutlined } from '@ant-design/icons';
 import {
   PageContainer,
   ProCard,
   ProForm,
-  ProFormCheckbox,
   ProFormList,
   ProFormSelect,
   ProFormText,
@@ -14,6 +24,7 @@ import {
   Col,
   Flex,
   Form,
+  Input,
   Modal,
   message,
   Row,
@@ -28,15 +39,18 @@ import { callDeepSeekAPI, type GenerateRequest } from '@/services/deepseek';
 import { mockGenerate } from '@/services/mockData';
 
 const SunoCover: React.FC = () => {
-  // 表单实例
+  // 表单实例，用于管理翻唱配置表单的数据
   const [form] = Form.useForm<GenerateRequest>();
 
   // 状态管理
-  const [loading, setLoading] = useState(false);
-  const [stylesResult, setStylesResult] = useState('');
-  const [lyricsResult, setLyricsResult] = useState('');
+  const [loading, setLoading] = useState(false); // 加载状态，用于显示加载动画
+  const [stylesResult, setStylesResult] = useState(''); // 存储生成的 Styles 提示词
+  const [lyricsResult, setLyricsResult] = useState(''); // 存储生成的 Lyrics 提示词
 
-  // 从localStorage加载记录数据
+  /**
+   * 从localStorage加载记录数据
+   * 当用户从记录页面跳转到生成页面时，自动填充之前保存的配置和结果
+   */
   useEffect(() => {
     // 加载记录数据
     const selectedRecord = localStorage.getItem('selectedPromptRecord');
@@ -48,13 +62,15 @@ const SunoCover: React.FC = () => {
         form.setFieldsValue({
           song_language: record.userInput.songLanguage,
           target_artist: record.userInput.targetSinger,
-          reference_songs: record.userInput.referenceSongs.map((song) => {
-            const [title, artist] = song.split(' - ');
-            return {
-              title: title.trim(),
-              artist: artist?.trim() || '',
-            };
-          }),
+          reference_songs: record.userInput.referenceSongs.map(
+            (song: string) => {
+              const [title, artist] = song.split(' - ');
+              return {
+                title: title.trim(),
+                artist: artist?.trim() || '',
+              };
+            },
+          ),
           style_note: record.userInput.styleDescription,
           extra_note: record.userInput.scene,
           lyrics_raw: record.userInput.lyrics,
@@ -72,7 +88,11 @@ const SunoCover: React.FC = () => {
     }
   }, [form]);
 
-  // 表单提交处理
+  /**
+   * 表单提交处理函数
+   * 验证用户输入，调用 DeepSeek API 生成提示词，并保存结果到数据库
+   * @param values - 表单输入的翻唱配置数据
+   */
   const handleSubmit = async (values: GenerateRequest) => {
     // 从localStorage获取API Key
     const apiKey = localStorage.getItem('deepseekApiKey') || '';
@@ -108,9 +128,10 @@ const SunoCover: React.FC = () => {
 
         // 转换参考歌曲为字符串数组
         const referenceSongs = values.reference_songs
-          .filter((song) => song.title)
+          .filter((song: { title?: string }) => song.title)
           .map(
-            (song) => `${song.title}${song.artist ? ` - ${song.artist}` : ''}`,
+            (song: { title: string; artist?: string }) =>
+              `${song.title}${song.artist ? ` - ${song.artist}` : ''}`,
           );
 
         await db.createPromptRecord({
@@ -146,7 +167,11 @@ const SunoCover: React.FC = () => {
     }
   };
 
-  // 复制到剪贴板
+  /**
+   * 复制文本到剪贴板
+   * @param text - 要复制的文本内容
+   * @param type - 文本类型（如 "Styles" 或 "Lyrics"），用于显示成功消息
+   */
   const copyToClipboard = (text: string, type: string) => {
     navigator.clipboard
       .writeText(text)
@@ -158,7 +183,10 @@ const SunoCover: React.FC = () => {
       });
   };
 
-  // 定义模拟生成函数，使用外部服务的mockGenerate
+  /**
+   * 模拟生成提示词函数
+   * 用于开发和测试，生成模拟的 Styles 和 Lyrics 提示词，并保存结果到数据库
+   */
   const handleMockGenerate = async () => {
     setLoading(true);
     try {
@@ -232,41 +260,7 @@ const SunoCover: React.FC = () => {
       <Row gutter={[24, 0]}>
         {/* 左侧输入表单 */}
         <Col span={8}>
-          <ProCard
-            title="翻唱配置"
-            actions={[
-              <Flex
-                key="buttons"
-                vertical
-                gap="small"
-                style={{ width: '100%', padding: '0 16px' }}
-              >
-                {/* 主要生成按钮 */}
-                <Button
-                  type="primary"
-                  onClick={() => form.submit()}
-                  loading={loading}
-                  size="large"
-                  block
-                >
-                  生成提示词
-                </Button>
-
-                {/* 仅在非生产环境显示模拟生成按钮 */}
-                {!isProduction && (
-                  <Button
-                    onClick={handleMockGenerate}
-                    loading={loading}
-                    size="large"
-                    type="text"
-                    block
-                  >
-                    模拟提示词
-                  </Button>
-                )}
-              </Flex>,
-            ]}
-          >
+          <ProCard title="翻唱配置">
             <ProForm
               form={form}
               layout="vertical"
@@ -275,7 +269,35 @@ const SunoCover: React.FC = () => {
                 song_language: 'Mandarin',
                 reference_songs: [{ title: '', artist: '' }],
               }}
-              submitter={false}
+              submitter={{
+                render: () => (
+                  <Flex vertical gap="small" style={{ marginTop: 16 }}>
+                    {/* 主要生成按钮 */}
+                    <Button
+                      type="primary"
+                      onClick={() => form.submit()}
+                      loading={loading}
+                      size="large"
+                      block
+                    >
+                      生成提示词
+                    </Button>
+
+                    {/* 仅在非生产环境显示模拟生成按钮 */}
+                    {!isProduction && (
+                      <Button
+                        onClick={handleMockGenerate}
+                        loading={loading}
+                        size="large"
+                        type="text"
+                        block
+                      >
+                        模拟提示词
+                      </Button>
+                    )}
+                  </Flex>
+                ),
+              }}
             >
               {/* 歌曲语言 */}
               <ProFormSelect
@@ -332,34 +354,23 @@ const SunoCover: React.FC = () => {
                 max={3}
               >
                 {(meta, _index, _action, _count) => (
-                  <Row
-                    key={meta.key}
-                    align="middle"
-                    gutter={16}
-                    style={{ width: '100%' }}
-                  >
-                    <Col span={12}>
-                      <ProFormText
-                        {...meta}
-                        name={[meta.name, 'title']}
-                        placeholder="歌曲名"
-                        rules={[
-                          { required: true, message: '歌曲名称不能为空' },
-                        ]}
-                        style={{ marginBottom: 0 }}
-                        fieldProps={{ style: { width: '100%' } }}
-                      />
-                    </Col>
-                    <Col span={12}>
-                      <ProFormText
-                        {...meta}
-                        name={[meta.name, 'artist']}
-                        placeholder="演唱者（可选）"
-                        style={{ marginBottom: 0 }}
-                        fieldProps={{ style: { width: '100%' } }}
-                      />
-                    </Col>
-                  </Row>
+                  <Space key={meta.key} style={{ width: '100%' }}>
+                    <ProFormText
+                      {...meta}
+                      name={[meta.name, 'title']}
+                      placeholder="歌曲名"
+                      rules={[{ required: true, message: '歌曲名称不能为空' }]}
+                      style={{ marginBottom: 0, flex: 1 }}
+                      fieldProps={{ style: { width: '100%' } }}
+                    />
+                    <ProFormText
+                      {...meta}
+                      name={[meta.name, 'artist']}
+                      placeholder="演唱者（可选）"
+                      style={{ marginBottom: 0, flex: 1 }}
+                      fieldProps={{ style: { width: '100%' } }}
+                    />
+                  </Space>
                 )}
               </ProFormList>
 
@@ -414,11 +425,12 @@ const SunoCover: React.FC = () => {
             }
             style={{ marginBottom: 24 }}
           >
-            <ProFormTextArea
+            <Input.TextArea
               value={stylesResult}
               readOnly
               placeholder="生成的 Styles 提示词将展示在此处…"
-              fieldProps={{ showCount: true, rows: 40 }}
+              showCount
+              rows={40}
             />
           </ProCard>
         </Col>
@@ -440,11 +452,12 @@ const SunoCover: React.FC = () => {
             }
             style={{ marginBottom: 24 }}
           >
-            <ProFormTextArea
+            <Input.TextArea
               value={lyricsResult}
               readOnly
               placeholder="生成的 Lyrics 提示词将展示在此处…"
-              fieldProps={{ showCount: true, rows: 40 }}
+              showCount
+              rows={40}
             />
           </ProCard>
         </Col>
