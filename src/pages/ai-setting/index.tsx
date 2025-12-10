@@ -107,8 +107,8 @@ const AISettingPage: React.FC = () => {
               rules={[{ required: true, message: '请选择首选 AI 模型' }]}
             >
               <Radio.Group onChange={handleModelChange}>
-                <Radio value="deepseek">DeepSeek</Radio>
-                <Radio value="gemini">Google Gemini</Radio>
+                <Radio value="deepseek">DeepSeek v3.2</Radio>
+                <Radio value="gemini">Google Gemini 3</Radio>
               </Radio.Group>
             </ProForm.Item>
 
