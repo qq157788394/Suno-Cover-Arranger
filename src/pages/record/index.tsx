@@ -298,6 +298,7 @@ const RecordPage: React.FC = () => {
       <Alert
         title="生成记录仅保存在本地设备，不会上传至服务器，更换设备或浏览器后记录将无法查看。"
         banner
+        style={{ marginBottom: 24 }}
       />
       <ProTable
         key={reloadKey}
