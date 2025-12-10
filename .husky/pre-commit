@@ -1,1 +1,2 @@
+node ./scripts/check-pnpm.js
 lint-staged

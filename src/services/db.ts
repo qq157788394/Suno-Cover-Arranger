@@ -9,7 +9,7 @@
  */
 
 import Dexie from 'dexie';
-import type { User, Project, StyleConfig, PromptRecord } from './types';
+import type { User, Project, StyleConfig, PromptRecord, ApiKey } from '@/shared/types';
 
 /**
  * 应用数据库类
@@ -20,6 +20,7 @@ class AppDatabase extends Dexie {
   projects: Dexie.Table<Project, number>;   // 项目表
   styleConfigs: Dexie.Table<StyleConfig, number>; // 风格配置表
   promptRecords: Dexie.Table<PromptRecord, number>; // 提示词记录表
+  apiKeys: Dexie.Table<ApiKey, number>; // API Key 表
 
   /**
    * 数据库类构造函数
@@ -33,7 +34,8 @@ class AppDatabase extends Dexie {
       users: '++id, name, email, createdAt',
       projects: '++id, title, userId, createdAt, updatedAt',
       styleConfigs: '++id, name, userId, isDefault, createdAt, updatedAt',
-      promptRecords: '++id, userId, createdAt'
+      promptRecords: '++id, userId, createdAt',
+      apiKeys: '++id, userId, apiKey, isCurrent, createdAt'
     });
 
     // 初始化表
@@ -41,6 +43,7 @@ class AppDatabase extends Dexie {
     this.projects = this.table('projects');
     this.styleConfigs = this.table('styleConfigs');
     this.promptRecords = this.table('promptRecords');
+    this.apiKeys = this.table('apiKeys');
   }
 
   // 用户相关操作
@@ -231,14 +234,75 @@ class AppDatabase extends Dexie {
     return this.promptRecords
       .where('userId')
       .equals(userId)
-      .and(record => record.createdAt >= cutoffDate)
+      .and(record => (record.createdAt || new Date(0)) >= cutoffDate)
       .sortBy('createdAt')
       .then(records => records.reverse());
   }
+
+  // API Key 相关操作
+  async createApiKey(apiKey: Omit<ApiKey, 'id' | 'createdAt'>): Promise<ApiKey> {
+    console.log('Creating new API Key:', apiKey);
+    const newApiKey = {
+      ...apiKey,
+      createdAt: new Date()
+    };
+    
+    // 如果设置为当前使用的 API Key，取消其他 API Key 的当前状态
+    if (newApiKey.isCurrent) {
+      console.log('Setting new API Key as current, updating existing current keys...');
+      await this.apiKeys
+        .where({ userId: newApiKey.userId, isCurrent: true })
+        .modify({ isCurrent: false });
+    }
+    
+    const id = await this.apiKeys.add(newApiKey);
+    const createdApiKey = { ...newApiKey, id };
+    console.log('Created API Key:', createdApiKey);
+    return createdApiKey;
+  }
+
+  async getApiKey(id: number): Promise<ApiKey | undefined> {
+    return this.apiKeys.get(id);
+  }
+
+  async updateApiKey(id: number, updates: Partial<ApiKey>): Promise<number> {
+    // 如果设置为当前使用的 API Key，取消其他 API Key 的当前状态
+    if (updates.isCurrent) {
+      const apiKey = await this.apiKeys.get(id);
+      if (apiKey) {
+        await this.apiKeys
+          .where({ userId: apiKey.userId, isCurrent: true })
+          .modify({ isCurrent: false });
+      }
+    }
+    
+    return this.apiKeys.update(id, updates);
+  }
+
+  async deleteApiKey(id: number): Promise<void> {
+    await this.apiKeys.delete(id);
+  }
+
+  async getUserApiKeys(userId: number): Promise<ApiKey[]> {
+    return this.apiKeys.where('userId').equals(userId).toArray();
+  }
+
+  async getCurrentApiKey(userId: number): Promise<ApiKey | undefined> {
+    console.log('Getting current API Key for user:', userId);
+    // 先获取所有该用户的API Key，然后找到isCurrent为true的那个
+    const userApiKeys = await this.apiKeys.where('userId').equals(userId).toArray();
+    console.log('All user API Keys:', userApiKeys);
+    const currentApiKey = userApiKeys.find(key => key.isCurrent);
+    console.log('Found current API Key:', currentApiKey);
+    return currentApiKey;
+  }
 }
+
+// 导出类
+export default AppDatabase;
 
 // 导出单例实例
 export const db = new AppDatabase();
 
 // 导出类型
-export type { User, Project, StyleConfig, PromptRecord };
+export type { User, Project, StyleConfig, PromptRecord, ApiKey };

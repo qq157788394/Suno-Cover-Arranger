@@ -1,15 +1,12 @@
 /**
  * Suno Cover 翻唱提示词生成页面
  * 负责处理用户输入的翻唱配置信息，并生成高质量的 Suno 翻唱歌曲提示词
- * 主要功能：
- * 1. 提供翻唱配置表单，包括歌曲语言、目标艺术家、参考歌曲等
- * 2. 调用 DeepSeek API 生成高质量的 Styles 和 Lyrics 提示词
- * 3. 提供模拟生成功能，用于开发和测试
- * 4. 将生成结果保存到本地数据库
- * 5. 提供复制功能，方便用户将生成的提示词复制到 Suno
  */
 
+// Ant Design Icons
 import { CopyOutlined } from '@ant-design/icons';
+
+// Ant Design Pro Components
 import {
   PageContainer,
   ProCard,
@@ -19,7 +16,11 @@ import {
   ProFormText,
   ProFormTextArea,
 } from '@ant-design/pro-components';
+
+// Umi
 import { history } from '@umijs/max';
+
+// Ant Design Base Components
 import {
   Alert,
   Button,
@@ -33,33 +34,111 @@ import {
   Space,
   Spin,
 } from 'antd';
-import React, { useEffect, useState } from 'react';
+
+// React
+import React, { memo, useCallback, useEffect, useState } from 'react';
+// 可复用的结果卡片组件
+import { ResultCard } from '@/components';
+
+// Custom Hook
+import { useApiKey } from '@/hooks/useApiKey';
+
+// Custom Services and Types
 import type { PromptRecord } from '@/services/db';
 import { db } from '@/services/db';
 import { callDeepSeekAPI, type GenerateRequest } from '@/services/deepseek';
 import { mockGenerate } from '@/services/mockData';
+// Shared Utils
+import { copyToClipboard } from '@/shared/utils';
 
 const SunoCover: React.FC = () => {
+  // 使用自定义hook管理API Key
+  const {
+    apiKey,
+    isLoading: apiKeyLoading,
+    saveApiKey,
+    deleteApiKey,
+    validateApiKey,
+  } = useApiKey();
+
   // 表单实例，用于管理翻唱配置表单的数据
   const [form] = Form.useForm<GenerateRequest>();
 
-  // 状态管理
-  const [loading, setLoading] = useState(false); // 加载状态，用于显示加载动画
-  const [stylesResult, setStylesResult] = useState(''); // 存储生成的 Styles 提示词
-  const [lyricsResult, setLyricsResult] = useState(''); // 存储生成的 Lyrics 提示词
-  const [clickCount, setClickCount] = useState(0); // 用于跟踪连续点击次数
-  const [clickTimeout, setClickTimeout] = useState<NodeJS.Timeout | null>(null); // 用于重置点击计数的超时器
-  const [hasApiKey, setHasApiKey] = useState(false); // 用于检查用户是否已经设置了DeepSeek API Key
+  // 状态管理 - 使用对象分组相关状态
+  const [state, setState] = useState({
+    loading: false, // 加载状态，用于显示加载动画
+    stylesResult: '', // 存储生成的 Styles 提示词
+    lyricsResult: '', // 存储生成的 Lyrics 提示词
+    hasApiKey: false, // 用于检查用户是否已经设置了DeepSeek API Key
+  });
+
+  // 更新状态的辅助函数
+  const updateState = useCallback((newState: Partial<typeof state>) => {
+    setState((prev) => ({ ...prev, ...newState }));
+  }, []);
+
+  // 检查API Key
+  const checkApiKey = useCallback(() => {
+    if (!apiKey) {
+      Modal.confirm({
+        title: '尚未设置 DeepSeek API Key',
+        content: '设置完成后即可使用该功能，是否现在去设置？',
+        okText: '去设置',
+        cancelText: '取消',
+        onOk() {
+          history.push('/ai-setting');
+        },
+      });
+      return false;
+    }
+    return true;
+  }, [apiKey]);
+
+  // 保存记录到数据库
+  const saveRecordToDB = useCallback(
+    async (values: GenerateRequest, result: any) => {
+      try {
+        const userId = 1; // 模拟当前用户ID
+
+        // 转换参考歌曲为字符串数组
+        const referenceSongs = values.reference_songs
+          .filter((song: { title?: string }) => song.title)
+          .map(
+            (song: { title: string; artist?: string }) =>
+              `${song.title}${song.artist ? ` - ${song.artist}` : ''}`,
+          );
+
+        await db.createPromptRecord({
+          userId,
+          userInput: {
+            songLanguage: values.song_language,
+            targetSinger: values.target_artist,
+            referenceSongs,
+            styleDescription: values.style_note || '',
+            lyrics: values.lyrics_raw,
+            scene: values.extra_note || '',
+          },
+          deepSeekResult: {
+            styles: result.styles,
+            lyrics: result.lyrics,
+          },
+        });
+        console.log('记录已成功保存');
+        message.success('记录已成功保存');
+      } catch (dbError) {
+        console.error('记录保存失败：', dbError);
+      }
+    },
+    [],
+  );
 
   /**
    * 从localStorage加载记录数据和检查API Key
    * 当用户从记录页面跳转到生成页面时，自动填充之前保存的配置和结果
-   * 同时检查用户是否已经设置了DeepSeek API Key
-   */
+   */ // 从localStorage加载记录数据和检查API Key
   useEffect(() => {
     // 检查用户是否已经设置了DeepSeek API Key
-    const apiKey = localStorage.getItem('deepseekApiKey') || '';
-    setHasApiKey(!!apiKey);
+    updateState({ hasApiKey: !!apiKey });
 
     // 加载记录数据
     const selectedRecord = localStorage.getItem('selectedPromptRecord');
@@ -86,8 +165,10 @@ const SunoCover: React.FC = () => {
         });
 
         // 填充结果数据
-        setStylesResult(record.deepSeekResult.styles);
-        setLyricsResult(record.deepSeekResult.lyrics);
+        updateState({
+          stylesResult: record.deepSeekResult.styles,
+          lyricsResult: record.deepSeekResult.lyrics,
+        });
 
         // 清空localStorage中的记录数据
         localStorage.removeItem('selectedPromptRecord');
@@ -95,195 +176,110 @@ const SunoCover: React.FC = () => {
         console.error('数据解析失败：', error);
       }
     }
-  }, [form]);
+  }, [form, updateState, apiKey]);
 
   /**
    * 表单提交处理函数
    * 验证用户输入，调用 DeepSeek API 生成提示词，并保存结果到数据库
-   * @param values - 表单输入的翻唱配置数据
    */
-  const handleSubmit = async (values: GenerateRequest) => {
-    // 从localStorage获取API Key
-    const apiKey = localStorage.getItem('deepseekApiKey') || '';
-    if (!apiKey) {
-      Modal.confirm({
-        title: '尚未设置 DeepSeek API Key',
-        content: '设置完成后即可使用该功能，是否现在去设置？',
-        okText: '去设置',
-        cancelText: '取消',
-        onOk() {
-          history.push('/ai-setting');
-        },
-        onCancel() {
-          // 取消操作，不做任何处理
-        },
-      });
-      return;
-    }
+  const handleSubmit = useCallback(
+    async (values: GenerateRequest) => {
+      if (!checkApiKey()) return;
 
-    // 调用API
-    setLoading(true);
-    try {
-      // 将API Key添加到values中
-      const result = await callDeepSeekAPI({ ...values, apiKey });
-      setStylesResult(result.styles);
-      setLyricsResult(result.lyrics);
-      message.success('提示词已成功生成生成成功！');
-
-      // 保存记录到数据库
+      updateState({ loading: true });
       try {
-        // 模拟当前用户ID，实际应用中应该从登录状态获取
-        const userId = 1;
+        const result = await callDeepSeekAPI({ ...values, apiKey });
 
-        // 转换参考歌曲为字符串数组
-        const referenceSongs = values.reference_songs
-          .filter((song: { title?: string }) => song.title)
-          .map(
-            (song: { title: string; artist?: string }) =>
-              `${song.title}${song.artist ? ` - ${song.artist}` : ''}`,
-          );
-
-        await db.createPromptRecord({
-          userId,
-          userInput: {
-            songLanguage: values.song_language,
-            targetSinger: values.target_artist,
-            referenceSongs,
-            styleDescription: values.style_note || '',
-            lyrics: values.lyrics_raw,
-            scene: values.extra_note || '',
-          },
-          deepSeekResult: {
-            styles: result.styles,
-            lyrics: result.lyrics,
-          },
+        updateState({
+          stylesResult: result.styles,
+          lyricsResult: result.lyrics,
         });
-        console.log('记录已成功保存');
-      } catch (dbError) {
-        console.error('记录保存失败：', dbError);
-        // 数据库保存失败不影响用户体验，仅记录日志
-      }
-    } catch (error) {
-      // 捕获并显示具体的错误信息
-      console.error('DeepSeek API 调用失败：', error);
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : '调用 DeepSeek API 失败，请检查 API Key 或稍后再试。';
-      message.error(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  /**
-   * 复制文本到剪贴板
-   * @param text - 要复制的文本内容
-   * @param type - 文本类型（如 "Styles" 或 "Lyrics"），用于显示成功消息
-   */
-  const copyToClipboard = (text: string, type: string) => {
-    navigator.clipboard
-      .writeText(text)
-      .then(() => {
-        message.success(`${type}已成功复制到剪贴板`);
-      })
-      .catch(() => {
-        message.error('复制失败，请手动复制');
-      });
-  };
+        message.success('提示词已成功生成！');
+        await saveRecordToDB(values, result);
+      } catch (error) {
+        console.error('DeepSeek API 调用失败：', error);
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : '调用 DeepSeek API 失败，请检查 API Key 或稍后再试。';
+        message.error(errorMessage);
+      } finally {
+        updateState({ loading: false });
+      }
+    },
+    [checkApiKey, updateState, saveRecordToDB, apiKey],
+  );
 
   /**
    * 模拟生成提示词函数
    * 用于开发和测试，生成模拟的 Styles 和 Lyrics 提示词，并保存结果到数据库
    */
-  const handleMockGenerate = async () => {
-    setLoading(true);
+  const handleMockGenerate = useCallback(async () => {
+    updateState({ loading: true });
     try {
       // 调用模拟生成服务
       const result = await mockGenerate();
+
       // 回填页面内容
-      setStylesResult(result.styles);
-      setLyricsResult(result.lyrics);
+      updateState({
+        stylesResult: result.styles,
+        lyricsResult: result.lyrics,
+      });
+
       message.success('模拟生成已完成');
 
       // 保存记录到数据库
-      try {
-        // 模拟当前用户ID，实际应用中应该从登录状态获取
-        const userId = 1;
+      const formValues = form.getFieldsValue();
 
-        // 从表单获取数据，使用getFieldsValue而不是validateFields，避免必填字段验证失败
-        const formValues = form.getFieldsValue();
+      // 转换参考歌曲为字符串数组
+      const referenceSongs = (formValues.reference_songs || [])
+        .filter((song: any) => song.title)
+        .map(
+          (song: any) =>
+            `${song.title}${song.artist ? ` - ${song.artist}` : ''}`,
+        );
 
-        // 转换参考歌曲为字符串数组
-        const referenceSongs = (formValues.reference_songs || [])
-          .filter((song: any) => song.title)
-          .map(
-            (song: any) =>
-              `${song.title}${song.artist ? ` - ${song.artist}` : ''}`,
-          );
+      // 确保必填字段有默认值
+      const songLanguage = formValues.song_language || 'Mandarin';
+      const targetSinger = formValues.target_artist || '未知艺术家';
+      const lyrics = formValues.lyrics_raw || '无歌词';
 
-        // 确保必填字段有默认值
-        const songLanguage = formValues.song_language || 'Mandarin';
-        const targetSinger = formValues.target_artist || '未知艺术家';
-        const lyrics = formValues.lyrics_raw || '无歌词';
+      await db.createPromptRecord({
+        userId: 1, // 模拟当前用户ID
+        userInput: {
+          songLanguage,
+          targetSinger,
+          referenceSongs,
+          styleDescription: formValues.style_note || '',
+          lyrics,
+          scene: formValues.extra_note || '',
+        },
+        deepSeekResult: {
+          styles: result.styles,
+          lyrics: result.lyrics,
+        },
+      });
 
-        await db.createPromptRecord({
-          userId,
-          userInput: {
-            songLanguage,
-            targetSinger,
-            referenceSongs,
-            styleDescription: formValues.style_note || '',
-            lyrics,
-            scene: formValues.extra_note || '',
-          },
-          deepSeekResult: {
-            styles: result.styles,
-            lyrics: result.lyrics,
-          },
-        });
-        console.log('模拟记录已保存到数据库');
-        message.success('记录已成功保存');
-      } catch (dbError) {
-        console.error('保存模拟记录到数据库失败:', dbError);
-        message.error('记录保存失败，请查看控制台日志');
-      }
+      console.log('模拟记录已保存到数据库');
+      message.success('记录已成功保存');
     } catch (error) {
       console.error('模拟生成失败:', error);
       message.error('模拟生成失败，请稍后再试');
     } finally {
-      setLoading(false);
+      updateState({ loading: false });
     }
-  };
+  }, [form, updateState]);
 
   // 处理翻唱配置标题点击事件
-  const handleTitleClick = () => {
-    // 清除之前的超时器
-    if (clickTimeout) {
-      clearTimeout(clickTimeout);
-    }
-
-    // 增加点击计数
-    const newClickCount = clickCount + 1;
-    setClickCount(newClickCount);
-
-    // 设置新的超时器，在3秒后重置点击计数
-    const timeout = setTimeout(() => {
-      setClickCount(0);
-    }, 3000);
-    setClickTimeout(timeout);
-
-    // 如果连续点击10次，则触发模拟生成
-    if (newClickCount === 10) {
-      handleMockGenerate();
-      setClickCount(0); // 重置点击计数
-    }
-  };
+  const handleTitleClick = useCallback(() => {
+    handleMockGenerate();
+  }, [handleMockGenerate]);
 
   return (
     <PageContainer>
       {/* 只有在用户没有设置DeepSeek API Key时才显示Alert提示 */}
-      {!hasApiKey && (
+      {!state.hasApiKey && (
         <Alert
           title="尚未设置 DeepSeek API Key，设置完成后即可使用该功能，是否现在去设置？"
           banner
@@ -295,8 +291,15 @@ const SunoCover: React.FC = () => {
           }
         />
       )}
+
       {/* 全屏加载器 */}
-      <Spin spinning={loading} fullscreen tip="正在生成，请稍候" size="large" />
+      <Spin
+        spinning={state.loading}
+        fullscreen
+        tip="正在生成，请稍候"
+        size="large"
+      />
+
       <Row gutter={[24, 0]}>
         {/* 左侧输入表单 */}
         <Col span={8}>
@@ -322,7 +325,7 @@ const SunoCover: React.FC = () => {
                     <Button
                       type="primary"
                       onClick={() => form.submit()}
-                      loading={loading}
+                      loading={state.loading}
                       size="large"
                       block
                     >
@@ -443,56 +446,20 @@ const SunoCover: React.FC = () => {
 
         {/* 中间Styles输出 */}
         <Col span={8}>
-          <ProCard
+          <ResultCard
             title="Styles 提示词（可直接复制用于 Suno）"
-            extra={
-              <Button
-                type="text"
-                icon={<CopyOutlined />}
-                onClick={() => copyToClipboard(stylesResult, 'Styles')}
-                disabled={!stylesResult}
-                size="small"
-              >
-                复制
-              </Button>
-            }
-            style={{ marginBottom: 24 }}
-          >
-            <Input.TextArea
-              value={stylesResult}
-              readOnly
-              placeholder="生成的 Styles 提示词将展示在此处…"
-              showCount
-              rows={40}
-            />
-          </ProCard>
+            value={state.stylesResult}
+            onCopy={() => copyToClipboard(state.stylesResult, 'Styles')}
+          />
         </Col>
 
         {/* 右侧Lyrics输出 */}
         <Col span={8}>
-          <ProCard
+          <ResultCard
             title="Lyrics 提示词（可直接复制用于 Suno）"
-            extra={
-              <Button
-                type="text"
-                icon={<CopyOutlined />}
-                onClick={() => copyToClipboard(lyricsResult, 'Lyrics')}
-                disabled={!lyricsResult}
-                size="small"
-              >
-                复制
-              </Button>
-            }
-            style={{ marginBottom: 24 }}
-          >
-            <Input.TextArea
-              value={lyricsResult}
-              readOnly
-              placeholder="生成的 Lyrics 提示词将展示在此处…"
-              showCount
-              rows={40}
-            />
-          </ProCard>
+            value={state.lyricsResult}
+            onCopy={() => copyToClipboard(state.lyricsResult, 'Lyrics')}
+          />
         </Col>
       </Row>
     </PageContainer>

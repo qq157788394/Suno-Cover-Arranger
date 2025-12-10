@@ -1,12 +1,30 @@
+/* 全局样式文件 */
+
+/* 根元素样式变量 */
 :root {
-  font-family:
+  /* 自定义字体栈 */
+  --font-family:
     -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu",
     "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+}
+
+/* 全局样式重置与基础设置 */
+:root,
+body,
+html,
+#root {
+  font-family: var(--font-family);
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-body {
-  margin: 0;
-  padding: 0;
+/* 确保所有子元素继承自定义字体 */
+#root *,
+#root *::before,
+#root *::after {
+  font-family: inherit;
 }

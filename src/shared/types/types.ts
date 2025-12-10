@@ -7,26 +7,26 @@
 
 // 参考歌曲接口定义
 export interface ReferenceSong {
-  title: string;          // 歌曲标题
-  artist?: string;        // 歌曲艺术家（可选）
+  title: string; // 歌曲标题
+  artist?: string; // 歌曲艺术家（可选）
 }
 
 // 生成请求接口定义
 export interface GenerateRequest {
-  apiKey: string;                // DeepSeek API 密钥
-  song_language: string;         // 歌曲语言（如 Mandarin, English 等）
-  target_artist: string;         // 目标翻唱艺术家
+  apiKey: string; // DeepSeek API 密钥
+  song_language: string; // 歌曲语言（如 Mandarin, English 等）
+  target_artist: string; // 目标翻唱艺术家
   reference_songs: ReferenceSong[]; // 参考歌曲列表
-  style_note?: string;           // 风格备注（可选）
-  extra_note?: string;           // 额外备注（可选，包含场景、受众、平台等信息）
-  lyrics_raw: string;            // 原始歌词（包含用户自定义的段落标记）
-  rememberApiKey?: boolean;      // 是否记住 API 密钥（前端使用）
+  style_note?: string; // 风格备注（可选）
+  extra_note?: string; // 额外备注（可选，包含场景、受众、平台等信息）
+  lyrics_raw: string; // 原始歌词（包含用户自定义的段落标记）
+  rememberApiKey?: boolean; // 是否记住 API 密钥（前端使用）
 }
 
 // 生成响应接口定义
 export interface GenerateResponse {
-  styles: string;        // 生成的歌曲风格描述
-  lyrics: string;        // 生成的带属性的歌词段落
+  styles: string; // 生成的歌曲风格描述
+  lyrics: string; // 生成的带属性的歌词段落
 }
 
 // 用户数据模型

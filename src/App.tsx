@@ -3,6 +3,8 @@ import { SettingDrawer } from '@ant-design/pro-components';
 import type { RequestConfig, RunTimeLayoutConfig } from '@umijs/max';
 import { Button } from 'antd';
 import React from 'react';
+// 导入合并后的全局样式文件
+import './index.css';
 
 import defaultSettings from '../config/defaultSettings';
 import { errorConfig } from './requestErrorConfig';
@@ -15,9 +17,20 @@ import { errorConfig } from './requestErrorConfig';
 export async function getInitialState(): Promise<{
   settings?: Partial<LayoutSettings>;
 }> {
-  // 直接返回设置，不进行登录检查
+  // 同步读取本地存储的主题配置，确保在应用程序启动时就被正确加载
+  let savedSettings = null;
+  try {
+    savedSettings = localStorage.getItem('themeSettings');
+  } catch (error) {
+    console.error('Failed to read theme settings from localStorage:', error);
+  }
+
+  const themeSettings = savedSettings
+    ? (JSON.parse(savedSettings) as Partial<LayoutSettings>)
+    : (defaultSettings as Partial<LayoutSettings>);
+
   return {
-    settings: defaultSettings as Partial<LayoutSettings>,
+    settings: themeSettings,
   };
 }
 
@@ -52,7 +65,7 @@ export const layout: RunTimeLayoutConfig = ({
     // 移除用户头像
     avatarProps: false,
     // 移除水印
-    waterMarkProps: false,
+    waterMarkProps: undefined,
     // 移除背景图片
     bgLayoutImgList: [],
     // 移除页脚
@@ -74,6 +87,17 @@ export const layout: RunTimeLayoutConfig = ({
             enableDarkTheme
             settings={initialState?.settings}
             onSettingChange={(settings) => {
+              // 保存主题配置到本地存储
+              try {
+                localStorage.setItem('themeSettings', JSON.stringify(settings));
+              } catch (error) {
+                console.error(
+                  'Failed to save theme settings to localStorage:',
+                  error,
+                );
+              }
+
+              // 更新initialState
               setInitialState((preInitialState) => ({
                 ...preInitialState,
                 settings,

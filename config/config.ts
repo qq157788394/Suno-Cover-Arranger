@@ -1,7 +1,7 @@
 // https://umijs.org/config/
 
 import { join } from 'node:path';
-import { defineConfig } from '@umijs/max';
+import { Config, defineConfig } from '@umijs/max';
 import defaultSettings from './defaultSettings';
 import proxy from './proxy';
 
@@ -14,9 +14,8 @@ const { REACT_APP_ENV = 'dev' } = process.env;
  * @description 部署时的路径，如果部署在非根目录下，需要配置这个变量
  * @doc https://umijs.org/docs/api/config#publicpath
  */
-// 无论环境如何，都使用固定的 PUBLIC_PATH 配置，确保部署到 GitHub Pages 时路径正确
-// 这样可以避免环境变量问题导致的路径错误
-const PUBLIC_PATH: string = '/Suno-Cover-Arranger/';
+// 使用固定的公共路径/，因为我们使用的是hash路由，不需要为GitHub Pages配置特殊的公共路径
+const PUBLIC_PATH: string = '/';
 
 export default defineConfig({
   /**
@@ -123,17 +122,8 @@ export default defineConfig({
    * @description 内置了 babel import 插件
    * @doc https://umijs.org/docs/max/antd#antd
    */
-  antd: {
-    appConfig: {},
-    configProvider: {
-      theme: {
-        cssVar: true,
-        token: {
-          fontFamily: 'AlibabaSans, sans-serif',
-        },
-      },
-    },
-  },
+  antd: {},
+
   /**
    * @name 网络请求配置
    * @description 它基于 axios 和 ahooks 的 useRequest 提供了一套统一的网络请求和错误处理方案。
@@ -200,10 +190,8 @@ export default defineConfig({
   mako: {},
   esbuildMinifyIIFE: true,
   requestRecord: {},
-  exportStatic: {
-    htmlSuffix: true,
-    dynamicRoot: false,
-  },
+  exportStatic: {},
+
   define: {
     'process.env.CI': process.env.CI,
   },

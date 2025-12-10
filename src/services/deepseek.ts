@@ -7,10 +7,15 @@
  * 3. 解析 AI 输出，返回标准化结果
  */
 
-import type { ReferenceSong, GenerateRequest, GenerateResponse } from './types';
+import type { ReferenceSong, GenerateRequest, GenerateResponse } from '../shared/types';
+import { validateApiKey, validateGenerateRequest } from '@/shared/utils';
+import { getFullLanguageName, formatReferenceSongs } from '@/shared/utils';
 
 // 重新导出类型以便其他模块使用
 export type { ReferenceSong, GenerateRequest, GenerateResponse };
+
+// 重新导出验证函数以便其他模块使用
+export { validateApiKey, validateGenerateRequest };
 
 /**
  * 生成用户提示模板
@@ -19,30 +24,15 @@ export type { ReferenceSong, GenerateRequest, GenerateResponse };
  * @returns 格式化的用户提示字符串
  */
 export const generateUserPrompt = (values: GenerateRequest): string => {
-  // 语言映射：将内部语言代码转换为对外显示的完整语言名称
-  // 用于在提示中确保语言描述的一致性和准确性
-  const languageMap: Record<string, string> = {
-    Mandarin: 'Mandarin Chinese',
-    Cantonese: 'Cantonese',
-    Minnan: 'Minnan',
-    English: 'English',
-    Korean: 'Korean',
-    Japanese: 'Japanese',
-    Other: 'Other',
-  };
-
-  // 生成参考歌曲块：将参考歌曲列表格式化为易读的文本块
-  // 如果没有参考歌曲，显示 "None"
-  // 每个参考歌曲格式："歌曲标题 by 艺术家名"（如果没有艺术家名则使用目标艺术家）
-  const referenceSongsBlock = values.reference_songs.length > 0
-    ? values.reference_songs.map((song: ReferenceSong) => `${song.title} by ${song.artist || values.target_artist}`).join('\n')
-    : 'None';
+  // 使用共享的格式化函数
+  const fullLanguageName = getFullLanguageName(values.song_language);
+  const referenceSongsBlock = formatReferenceSongs(values.reference_songs, values.target_artist);
 
   return 'You are generating Suno "Styles" and "Lyrics" prompts for a COVER version of a song. Read all the information below carefully and then produce the final output strictly following the system rules and the format requirements.\n\n' +
     '------------------------------\n' +
     '[1] Song language and context\n' +
     '------------------------------\n\n' +
-    '- Song language: ' + (languageMap[values.song_language] || 'Other') + ' .\n' +
+    '- Song language: ' + fullLanguageName + ' .\n' +
     '- The lyrics are provided in this language and MUST be preserved exactly.\n' +
     '- This is a COVER version, not an original composition. You should shape the sound to match the target artist and references below.\n\n' +
     '------------------------------\n' +
@@ -79,7 +69,7 @@ export const generateUserPrompt = (values: GenerateRequest): string => {
     '1) Generate the "Styles" section in English\n' +
     '- A single paragraph of 800–900 characters (hard limit 1000).\n' +
     '- It should describe the overall sound of this COVER version, taking into account:\n' +
-    '  - The song language: ' + (languageMap[values.song_language] || 'Other') + ' .\n' +
+    '  - The song language: ' + fullLanguageName + ' .\n' +
     '  - The target artist: ' + values.target_artist + '.\n' +
     '  - The reference songs (if any).\n' +
     '  - The user style notes and extra note.\n' +
@@ -119,6 +109,8 @@ export const generateUserPrompt = (values: GenerateRequest): string => {
  * @returns 包含生成的 Styles 和 Lyrics 的标准化响应
  */
 export const callDeepSeekAPI = async (values: GenerateRequest): Promise<GenerateResponse> => {
+  // 验证生成请求参数
+  validateGenerateRequest(values);
   // 系统提示：定义 AI 助手的角色、职责和严格的输出规则
   // 包含 9 条核心规则，确保生成的提示词符合 Suno 要求和用户预期
   const systemPrompt = 'You are a senior Suno prompt engineer. Your job is to generate high-quality "Styles" and "Lyrics" prompts for cover songs in Suno (v3/v4/v5), especially for Chinese and East Asian songs (Mandarin, Cantonese, etc.).\n\n' +
@@ -230,27 +222,34 @@ export const callDeepSeekAPI = async (values: GenerateRequest): Promise<Generate
   const userPrompt = generateUserPrompt(values);
 
   // 调用 DeepSeek API：使用系统提示和用户提示生成 AI 响应
-  const response = await fetch('https://api.deepseek.com/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': 'Bearer ' + values.apiKey,  // API 认证头
-      'Content-Type': 'application/json'           // 请求内容类型
-    },
-    body: JSON.stringify({
-      'model': 'deepseek-chat',  // 使用的 AI 模型
-      'messages': [              // 消息数组：系统提示 + 用户提示
-        {
-          'role': 'system',
-          'content': systemPrompt
-        },
-        {
-          'role': 'user',
-          'content': userPrompt
-        }
-      ],
-      'stream': false  // 非流式响应，等待完整结果
-    })
-  });
+  let response: Response;
+  try {
+    response = await fetch('https://api.deepseek.com/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + values.apiKey,  // API 认证头
+        'Content-Type': 'application/json'           // 请求内容类型
+      },
+      body: JSON.stringify({
+        'model': 'deepseek-chat',  // 使用的 AI 模型
+        'messages': [              // 消息数组：系统提示 + 用户提示
+          {
+            'role': 'system',
+            'content': systemPrompt
+          },
+          {
+            'role': 'user',
+            'content': userPrompt
+          }
+        ],
+        'stream': false,  // 非流式响应，等待完整结果
+        'temperature': 0.7, // 控制生成文本的随机性
+        'max_tokens': 4096 // 控制生成文本的最大长度
+      })
+    });
+  } catch (networkError) {
+    throw new Error('网络请求失败，请检查网络连接');
+  }
 
   // 检查 API 响应状态
   if (!response.ok) {
@@ -260,6 +259,14 @@ export const callDeepSeekAPI = async (values: GenerateRequest): Promise<Generate
       const errorData = await response.json();
       if (errorData.error && errorData.error.message) {
         errorMessage = `API请求失败: ${errorData.error.message}`;
+        // 针对常见的错误类型提供更友好的提示
+        if (errorMessage.includes('invalid_api_key') || errorMessage.includes('API key not found')) {
+          errorMessage = 'API Key 无效，请检查您的 API Key';
+        } else if (errorMessage.includes('rate_limit_exceeded')) {
+          errorMessage = 'API 请求频率过高，请稍后再试';
+        } else if (errorMessage.includes('insufficient_quota')) {
+          errorMessage = 'API 调用次数不足，请检查您的配额';
+        }
       }
     } catch (parseError) {
       // 如果无法解析错误响应，使用默认错误信息
@@ -268,8 +275,23 @@ export const callDeepSeekAPI = async (values: GenerateRequest): Promise<Generate
   }
 
   // 解析 API 响应
-  const data = await response.json();
+  let data: any;
+  try {
+    data = await response.json();
+  } catch (parseError) {
+    throw new Error('API 响应解析失败');
+  }
+
+  // 检查 API 响应数据格式
+  if (!data.choices || !Array.isArray(data.choices) || data.choices.length === 0) {
+    throw new Error('API 响应数据格式不正确');
+  }
+
   const aiOutput = data.choices[0].message.content;  // 提取 AI 生成的内容
+  
+  if (!aiOutput || !aiOutput.trim()) {
+    throw new Error('AI 生成内容为空');
+  }
 
   // 使用正则表达式解析 AI 输出，提取 Styles 和 Lyrics 部分
   // 正则匹配规则：寻找 ### Styles 或 ### Lyrics 标记下的 ```text 代码块
@@ -280,7 +302,8 @@ export const callDeepSeekAPI = async (values: GenerateRequest): Promise<Generate
   if (stylesMatch && lyricsMatch) {
     return {
       styles: stylesMatch[1].trim(),  // 提取并清理 Styles 内容
-      lyrics: lyricsMatch[1].trim()   // 提取并清理 Lyrics 内容
+      lyrics: lyricsMatch[1].trim(),  // 提取并清理 Lyrics 内容
+      timestamp: new Date().toISOString()  // 添加当前时间戳
     };
   } else {
     throw new Error('AI输出格式不符合预期，无法提取Styles或Lyrics');

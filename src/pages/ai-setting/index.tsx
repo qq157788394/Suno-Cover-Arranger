@@ -5,16 +5,53 @@ import {
   ProForm,
   ProFormText,
 } from '@ant-design/pro-components';
-import { Alert, Form, FormInstance, message, Space, Typography } from 'antd';
-import React, { useRef } from 'react';
+import { Alert, Form, message, Space, Typography } from 'antd';
+import React, { useEffect } from 'react';
+import { useApiKey } from '@/hooks/useApiKey';
 
 const { Text, Paragraph, Title } = Typography;
 
 const AISettingPage: React.FC = () => {
-  // 从 localStorage 读取 API Key 作为初始值
-  const initialApiKey = localStorage.getItem('deepseekApiKey') || '';
+  // 使用自定义hook管理API Key
+  const { apiKey, isLoading, saveApiKey, deleteApiKey, validateApiKey } =
+    useApiKey();
   // 创建 FormInstance 的引用
   const [form] = Form.useForm();
+
+  // 当API Key加载完成后，设置到表单中
+  useEffect(() => {
+    if (!isLoading) {
+      form.setFieldsValue({ apiKey: apiKey });
+    }
+  }, [apiKey, isLoading, form]);
+
+  // 表单提交处理
+  const handleFormSubmit = async (values: { apiKey: string }) => {
+    // 验证API Key格式
+    if (!validateApiKey(values.apiKey)) {
+      message.error('API Key格式不正确，请输入以sk-开头的API Key');
+      return;
+    }
+
+    const result = await saveApiKey(values.apiKey);
+    if (result) {
+      message.success('API Key 已成功保存');
+    } else {
+      message.error('保存API Key失败，请稍后重试');
+    }
+  };
+
+  // 表单重置处理
+  const handleFormReset = async () => {
+    const result = await deleteApiKey();
+    if (result) {
+      // 清空表单内容
+      form.setFieldsValue({ apiKey: '' });
+      message.success('API Key 已删除');
+    } else {
+      message.error('删除API Key失败，请稍后重试');
+    }
+  };
 
   return (
     <PageContainer>
@@ -23,37 +60,46 @@ const AISettingPage: React.FC = () => {
           <ProForm
             layout="vertical"
             initialValues={{
-              apiKey: initialApiKey,
+              apiKey: apiKey,
             }}
             form={form}
-            onFinish={(values) => {
-              localStorage.setItem('deepseekApiKey', values.apiKey);
-              message.success('API Key 已成功保存');
-            }}
-            onReset={() => {
-              localStorage.removeItem('deepseekApiKey');
-              // 清空表单内容
-              form.setFieldsValue({ apiKey: '' });
-              message.success('API Key 已删除');
-            }}
+            onFinish={handleFormSubmit}
+            onReset={handleFormReset}
             submitter={{
               searchConfig: {
                 submitText: '保存 API Key',
                 resetText: '删除 API Key',
               },
             }}
+            loading={isLoading}
           >
             <ProFormText.Password
               name="apiKey"
               label="DeepSeek API Key"
-              placeholder="请输入 DeepSeek API Key"
+              placeholder="请输入以sk-开头的DeepSeek API Key"
               fieldProps={{
                 size: 'large',
               }}
+              rules={[
+                {
+                  required: true,
+                  message: '请输入DeepSeek API Key',
+                },
+                {
+                  validator: (_rule, value) => {
+                    if (!value || validateApiKey(value)) {
+                      return Promise.resolve();
+                    }
+                    return Promise.reject(
+                      new Error('API Key格式不正确，请输入以sk-开头的API Key'),
+                    );
+                  },
+                },
+              ]}
             />
 
             <Alert
-              message="温馨提示"
+              title="温馨提示"
               description={
                 <Paragraph>
                   <ul>
