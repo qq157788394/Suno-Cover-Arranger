@@ -10,7 +10,7 @@ const About: React.FC = () => {
   useEffect(() => {
     const fetchReadme = async () => {
       try {
-        const response = await fetch('/README.md');
+        const response = await fetch('./README.md');
         const content = await response.text();
         setReadmeContent(content);
       } catch (error) {
