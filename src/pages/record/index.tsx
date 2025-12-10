@@ -8,7 +8,7 @@ import {
   type ProColumns,
   ProTable,
 } from '@ant-design/pro-components';
-import { Button, Modal, message, Space, Tooltip } from 'antd';
+import { Alert, Button, Modal, message, Space, Tooltip } from 'antd';
 import React, { useEffect, useState } from 'react';
 import { history } from 'umi';
 import type { PromptRecord } from '@/services/db';
@@ -295,6 +295,10 @@ const RecordPage: React.FC = () => {
 
   return (
     <PageContainer>
+      <Alert
+        title="生成记录仅保存在本地设备，不会上传至服务器，更换设备或浏览器后记录将无法查看。"
+        banner
+      />
       <ProTable
         key={reloadKey}
         rowKey="id"

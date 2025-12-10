@@ -5,14 +5,16 @@ import {
   ProForm,
   ProFormText,
 } from '@ant-design/pro-components';
-import { Alert, message, Space, Typography } from 'antd';
-import React from 'react';
+import { Alert, Form, FormInstance, message, Space, Typography } from 'antd';
+import React, { useRef } from 'react';
 
 const { Text, Paragraph, Title } = Typography;
 
 const AISettingPage: React.FC = () => {
   // 从 localStorage 读取 API Key 作为初始值
   const initialApiKey = localStorage.getItem('deepseekApiKey') || '';
+  // 创建 FormInstance 的引用
+  const [form] = Form.useForm();
 
   return (
     <PageContainer>
@@ -23,12 +25,15 @@ const AISettingPage: React.FC = () => {
             initialValues={{
               apiKey: initialApiKey,
             }}
+            form={form}
             onFinish={(values) => {
               localStorage.setItem('deepseekApiKey', values.apiKey);
               message.success('API Key 已成功保存');
             }}
             onReset={() => {
               localStorage.removeItem('deepseekApiKey');
+              // 清空表单内容
+              form.setFieldsValue({ apiKey: '' });
               message.success('API Key 已删除');
             }}
             submitter={{

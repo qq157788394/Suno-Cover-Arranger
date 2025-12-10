@@ -19,7 +19,9 @@ import {
   ProFormText,
   ProFormTextArea,
 } from '@ant-design/pro-components';
+import { history } from '@umijs/max';
 import {
+  Alert,
   Button,
   Col,
   Flex,
@@ -32,7 +34,6 @@ import {
   Spin,
 } from 'antd';
 import React, { useEffect, useState } from 'react';
-import { history } from 'umi';
 import type { PromptRecord } from '@/services/db';
 import { db } from '@/services/db';
 import { callDeepSeekAPI, type GenerateRequest } from '@/services/deepseek';
@@ -46,12 +47,20 @@ const SunoCover: React.FC = () => {
   const [loading, setLoading] = useState(false); // 加载状态，用于显示加载动画
   const [stylesResult, setStylesResult] = useState(''); // 存储生成的 Styles 提示词
   const [lyricsResult, setLyricsResult] = useState(''); // 存储生成的 Lyrics 提示词
+  const [clickCount, setClickCount] = useState(0); // 用于跟踪连续点击次数
+  const [clickTimeout, setClickTimeout] = useState<NodeJS.Timeout | null>(null); // 用于重置点击计数的超时器
+  const [hasApiKey, setHasApiKey] = useState(false); // 用于检查用户是否已经设置了DeepSeek API Key
 
   /**
-   * 从localStorage加载记录数据
+   * 从localStorage加载记录数据和检查API Key
    * 当用户从记录页面跳转到生成页面时，自动填充之前保存的配置和结果
+   * 同时检查用户是否已经设置了DeepSeek API Key
    */
   useEffect(() => {
+    // 检查用户是否已经设置了DeepSeek API Key
+    const apiKey = localStorage.getItem('deepseekApiKey') || '';
+    setHasApiKey(!!apiKey);
+
     // 加载记录数据
     const selectedRecord = localStorage.getItem('selectedPromptRecord');
     if (selectedRecord) {
@@ -247,20 +256,57 @@ const SunoCover: React.FC = () => {
     }
   };
 
-  // 准备卡片操作按钮
-  // 仅在非生产环境显示模拟生成按钮
-  // 开发环境强制显示模拟按钮，生产环境构建时自动移除
-  // 为了确保开发环境能看到模拟按钮，我们暂时强制设置为false
-  const isProduction = false;
+  // 处理翻唱配置标题点击事件
+  const handleTitleClick = () => {
+    // 清除之前的超时器
+    if (clickTimeout) {
+      clearTimeout(clickTimeout);
+    }
+
+    // 增加点击计数
+    const newClickCount = clickCount + 1;
+    setClickCount(newClickCount);
+
+    // 设置新的超时器，在3秒后重置点击计数
+    const timeout = setTimeout(() => {
+      setClickCount(0);
+    }, 3000);
+    setClickTimeout(timeout);
+
+    // 如果连续点击10次，则触发模拟生成
+    if (newClickCount === 10) {
+      handleMockGenerate();
+      setClickCount(0); // 重置点击计数
+    }
+  };
 
   return (
     <PageContainer>
+      {/* 只有在用户没有设置DeepSeek API Key时才显示Alert提示 */}
+      {!hasApiKey && (
+        <Alert
+          title="尚未设置 DeepSeek API Key，设置完成后即可使用该功能，是否现在去设置？"
+          banner
+          style={{ marginBottom: 24 }}
+          action={
+            <Button type="link" onClick={() => history.push('/ai-setting')}>
+              去设置
+            </Button>
+          }
+        />
+      )}
       {/* 全屏加载器 */}
       <Spin spinning={loading} fullscreen tip="正在生成，请稍候" size="large" />
       <Row gutter={[24, 0]}>
         {/* 左侧输入表单 */}
         <Col span={8}>
-          <ProCard title="翻唱配置">
+          <ProCard
+            title={
+              <span onClick={handleTitleClick} style={{ cursor: 'pointer' }}>
+                翻唱配置
+              </span>
+            }
+          >
             <ProForm
               form={form}
               layout="vertical"
@@ -282,19 +328,6 @@ const SunoCover: React.FC = () => {
                     >
                       生成提示词
                     </Button>
-
-                    {/* 仅在非生产环境显示模拟生成按钮 */}
-                    {!isProduction && (
-                      <Button
-                        onClick={handleMockGenerate}
-                        loading={loading}
-                        size="large"
-                        type="text"
-                        block
-                      >
-                        模拟提示词
-                      </Button>
-                    )}
                   </Flex>
                 ),
               }}
@@ -401,7 +434,7 @@ const SunoCover: React.FC = () => {
                 ]}
                 fieldProps={{
                   showCount: true,
-                  autoSize: { minRows: 8, maxRows: 12 },
+                  autoSize: { minRows: 10, maxRows: 12 },
                 }}
               />
             </ProForm>

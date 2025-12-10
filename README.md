@@ -58,61 +58,16 @@ Suno 官方推荐在 Lyrics 里使用属性注释（如 `[Vocal: ...]`、`[Dynam
 
 ## 适用人群
 
-* 希望提升Suno翻唱质量的重度用户
+* 希望提升 Suno 翻唱质量的重度用户
 * 懂音乐但英文表达一般的创作者
 * 想固化风格策略的音乐人和团队
 * 制作系列翻唱内容的创作者
-
-## 快速开始
-
-### 环境准备
-
-安装依赖：
-
-```bash
-pnpm install
-```
-
-### 启动项目
-
-```bash
-pnpm dev
-```
-
-项目将在 http://localhost:8000 启动
-
-### 构建项目
-
-```bash
-pnpm build
-```
-
-### 部署到 GitHub Pages
-
-```bash
-pnpm deploy
-```
-
-这会自动构建项目并部署到 gh-pages 分支，访问地址：
-https://qq157788394.github.io/Suno-Cover-Arranger/
-
-### 代码检查
-
-```bash
-pnpm lint
-```
-
-自动修复lint错误：
-
-```bash
-pnpm lint:fix
-```
 
 ## 功能使用指南
 
 ### 1. 生成提示词
 
-1. 打开项目首页：http://localhost:8000
+1. 打开项目首页：https://qq157788394.github.io/Suno-Cover-Arranger/
 2. 选择歌曲语言
 3. 输入目标翻唱歌手
 4. 可选：添加参考歌曲
@@ -141,16 +96,7 @@ pnpm lint:fix
 2. 在弹出的确认对话框中点击"删除"
 3. 删除成功后，记录会立即从列表中消失
 
-## 部署说明
-
-### GitHub Pages 部署注意事项
-
-- 项目已经配置了正确的 `publicPath`，固定为 `/Suno-Cover-Arranger/`
-- 使用了 hash 路由，避免 GitHub Pages 的路由问题
-- 部署命令：`pnpm deploy`
-- 访问地址：https://qq157788394.github.io/Suno-Cover-Arranger/
-
-### 本地开发
+## 本地开发
 
 - 启动开发服务器：`pnpm dev`
 - 访问地址：http://localhost:8000
@@ -222,14 +168,6 @@ MIT License
 - 检查浏览器开发者工具的控制台，查看是否有错误
 - 刷新页面后重试
 
-## 最佳实践
-
-1. **风格备注越详细越好**：详细的风格备注能生成更精准的提示词
-2. **参考歌曲选择相似风格**：选择风格相似的参考歌曲，能获得更一致的结果
-3. **定期清理生成记录**：避免数据库过大，影响性能
-4. **使用模拟生成功能**：在调试时使用模拟生成功能，避免频繁调用API
-5. **保存重要记录**：对重要的生成记录，建议手动保存到其他地方
-
 ## 技术栈
 
 - React 19
@@ -255,209 +193,3 @@ src/
 │   └── mockData.ts     # 模拟数据服务
 └── types/              # 类型定义
 ``` 
-
-## 快速开始
-
-### 环境准备
-
-安装依赖：
-
-```bash
-pnpm install
-```
-
-### 启动项目
-
-```bash
-pnpm dev
-```
-
-项目将在 http://localhost:8000 启动
-
-### 构建项目
-
-```bash
-pnpm build
-```
-
-### 部署到 GitHub Pages
-
-```bash
-pnpm deploy
-```
-
-这会自动构建项目并部署到 gh-pages 分支，访问地址：
-https://qq157788394.github.io/Suno-Cover-Arranger/
-
-### 代码检查
-
-```bash
-pnpm lint
-```
-
-自动修复lint错误：
-
-```bash
-pnpm lint:fix
-```
-
-## 功能使用指南
-
-### 1. 生成提示词
-
-1. 打开项目首页：http://localhost:8000
-2. 选择歌曲语言
-3. 输入目标翻唱歌手
-4. 可选：添加参考歌曲
-5. 输入风格备注和特殊说明
-6. 粘贴歌词
-7. 点击"生成提示词"按钮
-8. 等待生成完成，复制生成的 Styles 和 Lyrics
-
-### 2. 查看生成记录
-
-1. 点击左侧菜单的"生成记录"
-2. 查看所有生成记录
-3. 点击"详情"按钮查看完整记录
-4. 点击"删除"按钮删除记录（会弹出二次确认）
-
-### 3. 筛选记录
-
-- **歌曲语言筛选**：支持多选，可选择多种语言
-- **目标歌手筛选**：支持模糊搜索
-- **风格描述筛选**：支持模糊搜索
-- **日期范围筛选**：支持选择日期范围
-
-### 4. 删除记录
-
-1. 点击记录右侧的"删除"按钮
-2. 在弹出的确认对话框中点击"删除"
-3. 删除成功后，记录会立即从列表中消失
-
-## 部署说明
-
-### GitHub Pages 部署注意事项
-
-- 项目已经配置了正确的 `publicPath`，固定为 `/Suno-Cover-Arranger/`
-- 使用了 hash 路由，避免 GitHub Pages 的路由问题
-- 部署命令：`pnpm deploy`
-- 访问地址：https://qq157788394.github.io/Suno-Cover-Arranger/
-
-### 本地开发
-
-- 启动开发服务器：`pnpm dev`
-- 访问地址：http://localhost:8000
-- 支持热更新，修改代码后会自动刷新
-
-## 浏览器支持
-
-- Chrome (推荐)
-- Firefox
-- Safari
-- Edge
-
-## 分支管理规范
-
-### 1. 分支命名与作用
-
-- **develop 分支**：
-  - 开发分支，用于开发新功能、修复bug
-  - 所有新功能开发都应在 develop 分支上进行
-  - 测试通过后，合并到 main 分支
-  - 不直接部署到生产环境
-
-- **main 分支**：
-  - 主分支，用于存储稳定版本
-  - 只接收来自 develop 分支的合并
-  - 用于部署到生产环境
-  - 保持代码的稳定性和可靠性
-
-- **gh-pages 分支**：
-  - 用于部署 GitHub Pages
-  - 由 CI/CD 或手动部署命令自动生成
-  - 不直接修改该分支的代码
-
-### 2. 开发流程
-
-1. 在 develop 分支上开发新功能
-2. 测试通过后，合并到 main 分支
-3. 使用 `pnpm deploy` 命令部署到 gh-pages 分支
-4. 确保 main 分支与 develop 分支保持同步
-
-### 3. 部署规范
-
-- **部署命令**：`pnpm deploy`
-- **部署前检查**：
-  - 确保代码通过 lint 检查：`pnpm lint`
-  - 确保构建成功：`pnpm build`
-  - 确保功能测试通过
-- **部署后验证**：
-  - 访问 GitHub Pages 地址验证页面显示正常
-  - 测试核心功能是否正常
-
-## 许可证
-
-MIT License
-
-## 贡献
-
-欢迎提交Issue和Pull Request！
-
-## 联系方式
-
-项目地址：https://github.com/qq157788394/Suno-Cover-Arranger.git
-
-## 常见问题解决
-
-### 1. GitHub Pages 页面不显示
-
-- 确保使用了 `pnpm deploy` 命令部署
-- 检查 gh-pages 分支是否存在
-- 检查 GitHub Pages 设置是否正确
-- 等待几分钟，GitHub Pages 可能需要时间更新
-
-### 2. 生成的记录不显示
-
-- 确保浏览器支持 IndexedDB
-- 检查浏览器开发者工具的控制台，查看是否有错误
-- 清除浏览器缓存，刷新页面
-
-### 3. 筛选功能不生效
-
-- 确保输入了正确的筛选条件
-- 检查浏览器开发者工具的控制台，查看是否有错误
-- 刷新页面后重试
-
-## 最佳实践
-
-1. **风格备注越详细越好**：详细的风格备注能生成更精准的提示词
-2. **参考歌曲选择相似风格**：选择风格相似的参考歌曲，能获得更一致的结果
-3. **定期清理生成记录**：避免数据库过大，影响性能
-4. **使用模拟生成功能**：在调试时使用模拟生成功能，避免频繁调用API
-5. **保存重要记录**：对重要的生成记录，建议手动保存到其他地方
-
-## 技术栈
-
-- React 19
-- Ant Design Pro 5
-- @umijs/max 4
-- TypeScript
-- Dexie.js (IndexedDB)
-- DeepSeek API
-- pnpm (包管理器)
-
-## 项目结构
-
-```
-src/
-├── components/          # 通用组件
-├── pages/              # 页面组件
-│   ├── about/         # 项目介绍页面
-│   ├── record/        # 生成记录页面
-│   └── suno-cover/    # 翻唱生成页面
-├── services/           # 服务层
-│   ├── db.ts          # 数据库服务
-│   ├── deepseek.ts     # DeepSeek API 服务
-│   └── mockData.ts     # 模拟数据服务
-└── types/              # 类型定义
-```
