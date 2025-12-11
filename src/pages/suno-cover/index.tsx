@@ -57,6 +57,8 @@ import type {
 import { copyToClipboard } from '@/shared/utils';
 
 const SunoCover: React.FC = () => {
+  // 使用antd的message hook
+  const [messageApi, contextHolder] = message.useMessage();
   // 使用自定义hook管理API Key和模型
   const {
     apiKey,
@@ -116,7 +118,7 @@ const SunoCover: React.FC = () => {
         await db.createPromptRecord({
           userId,
           userInput: {
-            songName: values.song_name, // 添加歌曲名称字段
+            songName: values.song_name,
             songLanguage: values.song_language,
             targetSinger: values.target_artist,
             referenceSongs,
@@ -129,14 +131,15 @@ const SunoCover: React.FC = () => {
             lyrics: result.lyrics,
             model: model, // 记录使用的 AI 模型
           },
+          model: model, // 保存使用的模型名称
         });
         console.log('记录已成功保存');
-        message.success('记录已成功保存');
+        messageApi.success('记录已成功保存');
       } catch (dbError) {
         console.error('记录保存失败：', dbError);
       }
     },
-    [model],
+    [model, messageApi],
   );
 
   /**
@@ -152,7 +155,7 @@ const SunoCover: React.FC = () => {
 
         // 填充表单数据
         form.setFieldsValue({
-          song_name: record.userInput.songName, // 添加歌曲名称字段
+          song_name: record.userInput.songName, // 使用歌曲名称字段
           song_language: record.userInput.songLanguage,
           target_artist: record.userInput.targetSinger,
           reference_songs: record.userInput.referenceSongs.map(
@@ -216,7 +219,7 @@ const SunoCover: React.FC = () => {
           lyricsResult: result.lyrics,
         });
 
-        message.success('提示词已成功生成！');
+        messageApi.success('提示词已成功生成！');
 
         // 转换参考歌曲为字符串数组
         const referenceSongs = values.reference_songs
@@ -230,6 +233,7 @@ const SunoCover: React.FC = () => {
         const record = await db.createPromptRecord({
           userId: 1, // 模拟当前用户ID
           userInput: {
+            songName: values.song_name,
             songLanguage: values.song_language,
             targetSinger: values.target_artist,
             referenceSongs,
@@ -246,19 +250,19 @@ const SunoCover: React.FC = () => {
         });
 
         console.log('记录已成功保存');
-        message.success('记录已成功保存');
+        messageApi.success('记录已成功保存');
       } catch (error) {
         console.error(`${model} API 调用失败：`, error);
         const errorMessage =
           error instanceof Error
             ? error.message
             : `调用 ${model} API 失败，请检查 API Key 或稍后再试。`;
-        message.error(errorMessage);
+        messageApi.error(errorMessage);
       } finally {
         updateState({ loading: false });
       }
     },
-    [checkApiKey, updateState, apiKey, model],
+    [checkApiKey, updateState, apiKey, model, messageApi],
   );
 
   /**
@@ -277,7 +281,7 @@ const SunoCover: React.FC = () => {
         lyricsResult: result.lyrics,
       });
 
-      message.success('模拟生成已完成');
+      messageApi.success('模拟生成已完成');
 
       // 保存记录到数据库
       const formValues = form.getFieldsValue();
@@ -298,7 +302,7 @@ const SunoCover: React.FC = () => {
       await db.createPromptRecord({
         userId: 1, // 模拟当前用户ID
         userInput: {
-          songName: formValues.song_name, // 添加歌曲名称字段
+          songName: formValues.song_name,
           songLanguage,
           targetSinger,
           referenceSongs,
@@ -311,17 +315,18 @@ const SunoCover: React.FC = () => {
           lyrics: result.lyrics,
           model: 'mock', // 模拟生成使用的模型标记
         },
+        model: 'mock', // 保存使用的模型名称
       });
 
       console.log('模拟记录已保存到数据库');
-      message.success('记录已成功保存');
+      messageApi.success('记录已成功保存');
     } catch (error) {
       console.error('模拟生成失败:', error);
-      message.error('模拟生成失败，请稍后再试');
+      messageApi.error('模拟生成失败，请稍后再试');
     } finally {
       updateState({ loading: false });
     }
-  }, [form, updateState]);
+  }, [form, updateState, messageApi]);
 
   // 处理翻唱配置标题点击事件
   const handleTitleClick = useCallback(() => {
@@ -329,201 +334,207 @@ const SunoCover: React.FC = () => {
   }, [handleMockGenerate]);
 
   return (
-    <PageContainer>
-      {/* 只有在用户没有设置AI API Key时才显示Alert提示 */}
-      {!apiKey && (
-        <Alert
-          title="尚未设置 AI API Key，设置完成后即可使用该功能，是否现在去设置？"
-          banner
-          style={{ marginBottom: 24 }}
-          action={
-            <Button type="link" onClick={() => history.push('/ai-setting')}>
-              去设置
-            </Button>
-          }
-        />
-      )}
-
-      {/* 全屏加载器 */}
-      <Spin
-        spinning={state.loading}
-        fullscreen
-        tip="正在生成，请稍候"
-        size="large"
-      />
-
-      <Row gutter={[24, 0]}>
-        {/* 左侧输入表单 */}
-        <Col span={8}>
-          <ProCard
-            title={
-              <span onClick={handleTitleClick} style={{ cursor: 'pointer' }}>
-                翻唱配置
-              </span>
+    <>
+      {contextHolder}
+      <PageContainer>
+        {/* 只有在用户没有设置AI API Key时才显示Alert提示 */}
+        {!apiKey && (
+          <Alert
+            title="尚未设置 AI API Key，设置完成后即可使用该功能，是否现在去设置？"
+            banner
+            style={{ marginBottom: 24 }}
+            action={
+              <Button type="link" onClick={() => history.push('/ai-setting')}>
+                去设置
+              </Button>
             }
-          >
-            <ProForm
-              form={form}
-              layout="vertical"
-              onFinish={handleSubmit}
-              initialValues={{
-                song_language: 'Mandarin',
-                reference_songs: [{ title: '', artist: '' }],
-              }}
-              submitter={{
-                render: () => (
-                  <Flex vertical gap="small" style={{ marginTop: 16 }}>
-                    {/* 主要生成按钮 */}
-                    <Button
-                      type="primary"
-                      onClick={() => form.submit()}
-                      loading={state.loading}
-                      size="large"
-                      block
-                    >
-                      生成提示词
-                    </Button>
-                  </Flex>
-                ),
-              }}
+          />
+        )}
+
+        {/* 全屏加载器 */}
+        <Spin
+          spinning={state.loading}
+          fullscreen
+          tip="正在生成，请稍候"
+          size="large"
+        />
+
+        <Row gutter={[24, 0]}>
+          {/* 左侧输入表单 */}
+          <Col span={8}>
+            <ProCard
+              title={
+                <span onClick={handleTitleClick} style={{ cursor: 'pointer' }}>
+                  翻唱配置
+                </span>
+              }
             >
-              {/* 歌曲名称 */}
-              <ProFormText
-                name="song_name"
-                label="歌曲名称"
-                placeholder="请输入歌曲名称，仅作为记录方便查询"
-                rules={[{ required: true, message: '请填写歌曲名称' }]}
-                fieldProps={{ showCount: true }}
-              />
-
-              {/* 歌曲语言 */}
-              <ProFormSelect
-                name="song_language"
-                label="歌曲语言"
-                placeholder="请选择歌曲语言"
-                rules={[{ required: true, message: '请选择歌曲语言' }]}
-                options={[
-                  { value: 'Mandarin', label: '华语（普通话）' },
-                  { value: 'Cantonese', label: '粤语' },
-                  { value: 'Minnan', label: '闽南语' },
-                  { value: 'English', label: '英语' },
-                  { value: 'Korean', label: '韩语' },
-                  { value: 'Japanese', label: '日语' },
-                  { value: 'Other', label: '其他' },
-                ]}
-              />
-
-              {/* 参考艺术家 */}
-              <ProFormText
-                name="target_artist"
-                label="想模仿哪位艺术家？"
-                placeholder="例如：张惠妹、陈奕迅、周杰伦等"
-                rules={[{ required: true, message: '请填写模仿的艺术家姓名' }]}
-                fieldProps={{ showCount: true }}
-              />
-
-              {/* 参考歌曲 */}
-              <ProFormList
-                name="reference_songs"
-                label="参考歌曲（可选，最多 3 首）"
-                rules={[
-                  {
-                    validator: (_, songs) => {
-                      if (songs && songs.length > 3) {
-                        return Promise.reject(
-                          new Error('最多可添加 3 首参考歌曲'),
-                        );
-                      }
-                      return Promise.resolve();
-                    },
-                  },
-                ]}
-                initialValue={[{ title: '', artist: '' }]}
-                creatorButtonProps={{
-                  creatorButtonText: '添加参考歌曲',
-                  type: 'dashed',
-                  block: true,
+              <ProForm
+                form={form}
+                layout="vertical"
+                onFinish={handleSubmit}
+                initialValues={{
+                  song_language: 'Mandarin',
                 }}
-                deleteIconProps={{
-                  tooltipText: '删除该参考歌曲',
+                submitter={{
+                  render: () => (
+                    <Flex vertical gap="small" style={{ marginTop: 16 }}>
+                      {/* 主要生成按钮 */}
+                      <Button
+                        type="primary"
+                        onClick={() => form.submit()}
+                        loading={state.loading}
+                        size="large"
+                        block
+                      >
+                        生成提示词
+                      </Button>
+                    </Flex>
+                  ),
                 }}
-                copyIconProps={false}
-                max={3}
               >
-                {(meta, _index, _action, _count) => (
-                  <Space key={meta.key} style={{ width: '100%' }}>
-                    <ProFormText
-                      {...meta}
-                      name={[meta.name, 'title']}
-                      placeholder="歌曲名"
-                      rules={[{ required: true, message: '歌曲名称不能为空' }]}
-                      style={{ marginBottom: 0, flex: 1 }}
-                      fieldProps={{ style: { width: '100%' } }}
-                    />
-                    <ProFormText
-                      {...meta}
-                      name={[meta.name, 'artist']}
-                      placeholder="演唱者（可选）"
-                      style={{ marginBottom: 0, flex: 1 }}
-                      fieldProps={{ style: { width: '100%' } }}
-                    />
-                  </Space>
-                )}
-              </ProFormList>
+                {/* 歌曲名称 */}
+                <ProFormText
+                  name="song_name"
+                  label="歌曲名称"
+                  placeholder="请输入歌曲名称，仅作为记录方便查询"
+                  rules={[{ required: true, message: '请填写歌曲名称' }]}
+                  fieldProps={{ showCount: true }}
+                />
 
-              {/* 风格备注 */}
-              <ProFormTextArea
-                name="style_note"
-                label="风格备注（可选）"
-                placeholder="例如：主歌要像《人质》一样极度克制，副歌接近《听海》的情绪爆发。"
-                fieldProps={{ showCount: true, rows: 3 }}
-              />
+                {/* 歌曲语言 */}
+                <ProFormSelect
+                  name="song_language"
+                  label="歌曲语言"
+                  placeholder="请选择歌曲语言"
+                  rules={[{ required: true, message: '请选择歌曲语言' }]}
+                  options={[
+                    { value: 'Mandarin', label: '华语（普通话）' },
+                    { value: 'Cantonese', label: '粤语' },
+                    { value: 'Minnan', label: '闽南语' },
+                    { value: 'English', label: '英语' },
+                    { value: 'Korean', label: '韩语' },
+                    { value: 'Japanese', label: '日语' },
+                    { value: 'Other', label: '其他' },
+                  ]}
+                />
 
-              {/* 附加说明 */}
-              <ProFormTextArea
-                name="extra_note"
-                label="特殊说明（如场景、受众等，可选）"
-                placeholder="例如：演唱会现场版、录音室版本等"
-                fieldProps={{ showCount: true, rows: 3 }}
-              />
+                {/* 参考艺术家 */}
+                <ProFormText
+                  name="target_artist"
+                  label="想模仿哪位艺术家？"
+                  placeholder="例如：张惠妹、陈奕迅、周杰伦等"
+                  rules={[
+                    { required: true, message: '请填写模仿的艺术家姓名' },
+                  ]}
+                  fieldProps={{ showCount: true }}
+                />
 
-              {/* 歌词全文 */}
-              <ProFormTextArea
-                name="lyrics_raw"
-                label="段落与歌词"
-                placeholder="请填写歌词，并使用任意标签划分段落，例如：【主歌】、【副歌】、[Verse]、[Chorus] 等"
-                rules={[
-                  { required: true, message: '请输入段落与歌词' },
-                  { max: 2000, message: '段落歌词长度不能超过 2000 字' },
-                ]}
-                fieldProps={{
-                  showCount: true,
-                  autoSize: { minRows: 10, maxRows: 12 },
-                }}
-              />
-            </ProForm>
-          </ProCard>
-        </Col>
+                {/* 参考歌曲 */}
+                <ProFormList
+                  name="reference_songs"
+                  label="参考歌曲（可选，最多 3 首）"
+                  rules={[
+                    {
+                      validator: (_, songs) => {
+                        if (songs && songs.length > 3) {
+                          return Promise.reject(
+                            new Error('最多可添加 3 首参考歌曲'),
+                          );
+                        }
+                        return Promise.resolve();
+                      },
+                    },
+                  ]}
+                  initialValue={[]}
+                  creatorButtonProps={{
+                    creatorButtonText: '添加参考歌曲',
+                    type: 'dashed',
+                    block: true,
+                  }}
+                  deleteIconProps={{
+                    tooltipText: '删除该参考歌曲',
+                  }}
+                  copyIconProps={false}
+                  max={3}
+                >
+                  {(meta, _index, _action, _count) => (
+                    <Space key={meta.key} style={{ width: '100%' }}>
+                      <ProFormText
+                        {...meta}
+                        name={[meta.name, 'title']}
+                        placeholder="歌曲名"
+                        rules={[
+                          { required: true, message: '歌曲名称不能为空' },
+                        ]}
+                        style={{ marginBottom: 0, flex: 1 }}
+                        fieldProps={{ style: { width: '100%' } }}
+                      />
+                      <ProFormText
+                        {...meta}
+                        name={[meta.name, 'artist']}
+                        placeholder="演唱者（可选）"
+                        style={{ marginBottom: 0, flex: 1 }}
+                        fieldProps={{ style: { width: '100%' } }}
+                      />
+                    </Space>
+                  )}
+                </ProFormList>
 
-        {/* 中间Styles输出 */}
-        <Col span={8}>
-          <ResultCard
-            title="Styles 提示词（可直接复制用于 Suno）"
-            value={state.stylesResult}
-            onCopy={() => copyToClipboard(state.stylesResult, 'Styles')}
-          />
-        </Col>
+                {/* 风格备注 */}
+                <ProFormTextArea
+                  name="style_note"
+                  label="风格备注（可选）"
+                  placeholder="例如：主歌要像《人质》一样极度克制，副歌接近《听海》的情绪爆发。"
+                  fieldProps={{ showCount: true, rows: 3 }}
+                />
 
-        {/* 右侧Lyrics输出 */}
-        <Col span={8}>
-          <ResultCard
-            title="Lyrics 提示词（可直接复制用于 Suno）"
-            value={state.lyricsResult}
-            onCopy={() => copyToClipboard(state.lyricsResult, 'Lyrics')}
-          />
-        </Col>
-      </Row>
-    </PageContainer>
+                {/* 附加说明 */}
+                <ProFormTextArea
+                  name="extra_note"
+                  label="特殊说明（如场景、受众等，可选）"
+                  placeholder="例如：演唱会现场版、录音室版本等"
+                  fieldProps={{ showCount: true, rows: 3 }}
+                />
+
+                {/* 歌词全文 */}
+                <ProFormTextArea
+                  name="lyrics_raw"
+                  label="段落与歌词"
+                  placeholder="请填写歌词，并使用任意标签划分段落，例如：【主歌】、【副歌】、[Verse]、[Chorus] 等"
+                  rules={[
+                    { required: true, message: '请输入段落与歌词' },
+                    { max: 2000, message: '段落歌词长度不能超过 2000 字' },
+                  ]}
+                  fieldProps={{
+                    showCount: true,
+                    autoSize: { minRows: 10, maxRows: 12 },
+                  }}
+                />
+              </ProForm>
+            </ProCard>
+          </Col>
+
+          {/* 中间Styles输出 */}
+          <Col span={8}>
+            <ResultCard
+              title="Styles 提示词（可直接复制用于 Suno）"
+              value={state.stylesResult}
+              onCopy={() => copyToClipboard(state.stylesResult, 'Styles')}
+            />
+          </Col>
+
+          {/* 右侧Lyrics输出 */}
+          <Col span={8}>
+            <ResultCard
+              title="Lyrics 提示词（可直接复制用于 Suno）"
+              value={state.lyricsResult}
+              onCopy={() => copyToClipboard(state.lyricsResult, 'Lyrics')}
+            />
+          </Col>
+        </Row>
+      </PageContainer>
+    </>
   );
 };
 

@@ -49,7 +49,7 @@ interface ProTableWrapperProps<T extends Record<string, any>> {
     y?: number | string;
   };
   /** 表格变化处理函数 */
-  onChange?: (params: any) => void;
+  onChange?: (pagination: any, filters: any, sorter: any, extra: any) => void;
 }
 
 const ProTableWrapper = <T extends Record<string, any>>({
@@ -97,7 +97,9 @@ const ProTableWrapper = <T extends Record<string, any>>({
         options={options}
         scroll={scroll}
         search={showSearch ? searchConfig : false}
-        onChange={onChange}
+        onChange={(_pagination, _filters, _sorter, _extra) =>
+          onChange?.(_pagination, _filters, _sorter, _extra)
+        }
       />
     </>
   );

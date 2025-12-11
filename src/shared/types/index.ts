@@ -59,6 +59,8 @@ export interface StyleConfig {
  * 用于表示用户生成提示词时的输入信息
  */
 export interface UserInput {
+  /** 歌曲名称 */
+  songName?: string;
   /** 歌曲语言 */
   songLanguage: string;
   /** 目标歌手 */
@@ -157,6 +159,8 @@ export interface GenerateRequest {
   apiKey: string;
   /** 使用的 AI 模型名称 */
   model: string;
+  /** 歌曲名称 */
+  song_name: string;
   /** 歌曲语言 */
   song_language: string;
   /** 目标艺术家 */
