@@ -8,22 +8,17 @@ export interface PromptRecordFilters {
   songLanguages?: string | string[];
   targetSinger?: string;
   styleDescription?: string;
+  songName?: string;
 }
 
 export const usePromptRecords = (currentUserId: number) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [records, setRecords] = useState<PromptRecord[]>([]);
 
-  // 获取原始记录
-  const getRawRecords = useCallback(
-    async (keyword?: string) => {
-      if (keyword) {
-        return await db.searchPromptRecords(currentUserId, keyword);
-      }
-      return await db.getUserPromptRecords(currentUserId);
-    },
-    [currentUserId],
-  );
+  // 获取所有记录
+  const getAllRecords = useCallback(async () => {
+    return await db.getUserPromptRecords(currentUserId);
+  }, [currentUserId]);
 
   // 日期范围筛选
   const filterByDateRange = useCallback(
@@ -95,14 +90,56 @@ export const usePromptRecords = (currentUserId: number) => {
     [],
   );
 
+  // 歌曲名称筛选
+  const filterBySongName = useCallback(
+    (records: PromptRecord[], songName?: string) => {
+      if (!songName || !songName.trim()) {
+        return records;
+      }
+      const lowerCaseSongName = songName.toLowerCase();
+      return records.filter((record) =>
+        record.userInput?.songName?.toLowerCase().includes(lowerCaseSongName),
+      );
+    },
+    [],
+  );
+
+  // 关键词筛选
+  const filterByKeyword = useCallback(
+    (records: PromptRecord[], keyword?: string) => {
+      if (!keyword || !keyword.trim()) {
+        return records;
+      }
+      const lowerCaseKeyword = keyword.toLowerCase();
+      return records.filter((record) => {
+        // 在歌曲名称、目标歌手、风格描述中搜索关键词
+        return (
+          record.userInput?.songName
+            ?.toLowerCase()
+            .includes(lowerCaseKeyword) ||
+          record.userInput?.targetSinger
+            ?.toLowerCase()
+            .includes(lowerCaseKeyword) ||
+          record.userInput?.styleDescription
+            ?.toLowerCase()
+            .includes(lowerCaseKeyword) ||
+          record.aiOutput?.styles?.toLowerCase().includes(lowerCaseKeyword) ||
+          record.aiOutput?.lyrics?.toLowerCase().includes(lowerCaseKeyword)
+        );
+      });
+    },
+    [],
+  );
+
   // 获取记录列表（整合筛选逻辑）
   const fetchRecords = useCallback(
     async (filters: PromptRecordFilters = {}) => {
       setLoading(true);
       try {
-        let fetchedRecords = await getRawRecords(filters.keyword);
+        let fetchedRecords = await getAllRecords();
 
         // 应用所有筛选条件
+        fetchedRecords = filterByKeyword(fetchedRecords, filters.keyword);
         fetchedRecords = filterByDateRange(fetchedRecords, filters.dateRange);
         fetchedRecords = filterBySongLanguages(
           fetchedRecords,
@@ -116,6 +153,7 @@ export const usePromptRecords = (currentUserId: number) => {
           fetchedRecords,
           filters.styleDescription,
         );
+        fetchedRecords = filterBySongName(fetchedRecords, filters.songName);
 
         setRecords(fetchedRecords);
         return fetchedRecords;
@@ -128,11 +166,13 @@ export const usePromptRecords = (currentUserId: number) => {
       }
     },
     [
-      getRawRecords,
+      getAllRecords,
+      filterByKeyword,
       filterByDateRange,
       filterBySongLanguages,
       filterByTargetSinger,
       filterByStyleDescription,
+      filterBySongName,
     ],
   );
 

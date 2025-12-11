@@ -5,7 +5,7 @@ import {
   ProForm,
   ProFormText,
 } from '@ant-design/pro-components';
-import { Alert, Form, message, Radio, Space, Typography } from 'antd';
+import { Alert, Form, message, Radio, Row, Space, Typography } from 'antd';
 import { FormInstance } from 'antd/es/form';
 import React, { useEffect } from 'react';
 
@@ -13,7 +13,7 @@ import { useApiKey } from '@/hooks/useApiKey';
 import { db } from '@/services/db';
 import type { ApiKey } from '@/shared/types';
 
-const { Text, Paragraph, Title } = Typography;
+const { Text, Paragraph, Title, Link } = Typography;
 
 const AISettingPage: React.FC = () => {
   // 使用自定义hook管理API Key，包括新添加的switchModel方法
@@ -107,8 +107,12 @@ const AISettingPage: React.FC = () => {
               rules={[{ required: true, message: '请选择首选 AI 模型' }]}
             >
               <Radio.Group onChange={handleModelChange}>
-                <Radio value="deepseek">DeepSeek v3.2</Radio>
-                <Radio value="gemini">Google Gemini 3</Radio>
+                <Radio value="deepseek">
+                  DeepSeek v3.2（需充值，10元起步）
+                </Radio>
+                <Radio value="gemini">
+                  Google Gemini 3（推荐，可免费白嫖）
+                </Radio>
               </Radio.Group>
             </ProForm.Item>
 
@@ -144,7 +148,7 @@ const AISettingPage: React.FC = () => {
                   <ul>
                     <li>您的 API Key 仅保存在本地设备</li>
                     <li>不会上传至任何第三方服务器</li>
-                    <li>仅通过 HTTPS 直连 DeepSeek 官方 API</li>
+                    <li>仅通过 HTTPS 直连 AI 模型官方 API</li>
                     <li>您可随时删除保存的 API Key</li>
                   </ul>
                 </Paragraph>
@@ -155,35 +159,81 @@ const AISettingPage: React.FC = () => {
           </ProForm>
         </ProCard>
 
-        <ProCard>
-          <Title level={4}>
-            DeepSeek API Key 一分钟申请 + 充值指南（新手版）
-          </Title>
-          <Paragraph>
-            <ol>
-              <li>
-                打开官网：
-                <a
-                  href="https://platform.deepseek.com/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  https://www.deepseek.cn/register
-                </a>
-              </li>
-              <li>点击右上角 【登录 / 注册】（手机号、邮箱、微信都可以）</li>
-              <li>根据提示完成注册（手机号、邮箱、微信都可以）</li>
-              <li>登录后，在左侧找到 【API 密钥 / API Keys】</li>
-              <li>点击 【创建 API Key】，输入名称并确认</li>
-              <li>复制生成的 API Key（记得先保存好，之后看不到完整内容）</li>
-              <li>
-                在 DeepSeek 平台完成充值：10 元起充，支持微信、支付宝，10
-                元一般能用挺久。
-              </li>
-              <li>回到本应用 → 打开 设置 / AI 设置 → 粘贴 API Key → 保存。</li>
-              <li>完成！现在就可以正常使用各项 AI 生成功能了。</li>
-            </ol>
-          </Paragraph>
+        <ProCard split="vertical">
+          <ProCard colSpan={12}>
+            <Title level={4}>
+              DeepSeek API Key 一分钟申请 + 充值指南（新手版）
+            </Title>
+            <Paragraph>
+              <ol>
+                <li>
+                  打开官网：
+                  <Link href="https://platform.deepseek.com/" target="_blank">
+                    https://platform.deepseek.com/
+                  </Link>
+                </li>
+                <li>
+                  点击右上角 <Text code>登录 / 注册</Text>
+                  （手机号、邮箱、微信都可以）
+                </li>
+                <li>根据提示完成注册（手机号、邮箱、微信都可以）</li>
+                <li>
+                  登录后，在左侧找到 <Text code>API 密钥 / API Keys</Text>
+                </li>
+                <li>
+                  点击 <Text code>创建 API Key</Text>，输入名称并确认
+                </li>
+                <li>复制生成的 API Key（记得先保存好，之后看不到完整内容）</li>
+                <li>在 DeepSeek 平台完成充值：10 元起充，支持微信、支付宝</li>
+                <li>回到本应用 → 打开 设置 / AI 设置 → 粘贴 API Key → 保存</li>
+                <li>完成！现在就可以正常使用各项 AI 生成功能了</li>
+              </ol>
+              <Title level={4}>💡 常见问题</Title>
+              <ul>
+                <li>需要付费吗？ 需要。充值 10 元就能用好久</li>
+              </ul>
+            </Paragraph>
+          </ProCard>
+          <ProCard colSpan={12}>
+            <Title level={4}>Gemini API Key 一分钟申请指南（新手版）</Title>
+            <Paragraph>
+              <ol>
+                <li>
+                  打开官网：
+                  <Link href="https://aistudio.google.com/" target="_blank">
+                    https://aistudio.google.com/
+                  </Link>
+                  （注：需要科学上网环境）
+                </li>
+                <li>
+                  登录账号 点击页面上的 <Text code>Sign in</Text>，使用 Google
+                  账号（Gmail）登录。
+                </li>
+                <li>
+                  获取密钥 登录后，点击左上角的 <Text code>Get API key</Text>{' '}
+                  按钮
+                </li>
+                <li>
+                  创建密钥 点击 <Text code>Create API key</Text>{' '}
+                  按钮，如果弹窗询问，选择{' '}
+                  <Text code>Create API key in new project</Text>
+                  （在新项目中创建）
+                </li>
+                <li>
+                  复制并保存 系统会生成一串 AIza 开头的字符，点击 Copy 复制
+                </li>
+                <li>回到本应用 → 打开 设置 / AI 设置 → 粘贴 API Key → 保存</li>
+                <li>完成！现在就可以正常使用各项 AI 生成功能了</li>
+              </ol>
+              <Title level={4}>💡 常见问题</Title>
+              <ul>
+                <li>
+                  需要付费吗？ 不需要。Gemini API
+                  提供免费额度，对于日常使用完全足够，无需绑定信用卡
+                </li>
+              </ul>
+            </Paragraph>
+          </ProCard>
         </ProCard>
       </Space>
     </PageContainer>

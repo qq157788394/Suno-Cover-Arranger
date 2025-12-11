@@ -3,11 +3,14 @@ import {
   DeleteOutlined,
   EyeOutlined,
 } from '@ant-design/icons';
-import { PageContainer, type ProColumns } from '@ant-design/pro-components';
+import {
+  PageContainer,
+  type ProColumns,
+  ProTable,
+} from '@ant-design/pro-components';
 import { useNavigate } from '@umijs/max';
 import { Alert, Button, Modal, message, Space, Tooltip } from 'antd';
 import React, { useCallback, useEffect, useMemo } from 'react';
-import { ProTableWrapper } from '@/components';
 import { usePromptRecords } from '@/hooks/usePromptRecords';
 import type { PromptRecord } from '@/shared/types';
 
@@ -63,22 +66,36 @@ const RecordPage: React.FC = () => {
     [deleteRecord],
   );
 
+  // 处理搜索表单提交前的参数处理
+  const beforeSearchSubmit = useCallback((params: any) => {
+    // 直接返回处理后的参数，这些参数会传递给request函数
+    return params;
+  }, []);
+
   // 处理表格参数变化并获取数据
   const handleTableChange = useCallback(
-    async (params: any) => {
-      const keyword = params.keyword || '';
-      const dateRange = params.createdAt;
-      const songLanguages = params.songLanguage;
-      const targetSinger = params.targetSinger;
-      const styleDescription = params.styleDescription;
+    async (pagination: any, filters: any, sorter: any, extra: any) => {
+      // 从extra中获取搜索表单的参数
+      const { action, searchFormValues } = extra;
 
-      await fetchRecords({
-        keyword,
-        dateRange,
-        songLanguages,
-        targetSinger,
-        styleDescription,
-      });
+      // 只有在搜索操作时才执行筛选
+      if (action === 'search') {
+        const keyword = searchFormValues?.keyword || '';
+        const dateRange = searchFormValues?.createdAt;
+        const songLanguages = searchFormValues?.songLanguage;
+        const targetSinger = searchFormValues?.targetSinger;
+        const styleDescription = searchFormValues?.styleDescription;
+        const songName = searchFormValues?.songName;
+
+        await fetchRecords({
+          keyword,
+          dateRange,
+          songLanguages,
+          targetSinger,
+          styleDescription,
+          songName,
+        });
+      }
     },
     [fetchRecords],
   );
@@ -109,6 +126,16 @@ const RecordPage: React.FC = () => {
               </Space>
             </Tooltip>
           );
+        },
+      },
+      {
+        title: '歌曲名称',
+        dataIndex: ['userInput', 'songName'],
+        key: 'songName',
+        width: 150,
+        search: true,
+        ellipsis: {
+          showTitle: false,
         },
       },
       {
@@ -209,13 +236,13 @@ const RecordPage: React.FC = () => {
         banner
         style={{ marginBottom: 24 }}
       />
-      <ProTableWrapper
+      <ProTable
         rowKey="id"
         columns={columns}
         // 直接使用records状态作为数据来源
         dataSource={records}
         loading={loading}
-        title="提示词生成记录"
+        headerTitle="提示词生成记录"
         options={{
           reload: () => fetchRecords(),
           density: true,
@@ -224,6 +251,45 @@ const RecordPage: React.FC = () => {
         scroll={{ x: 1200 }}
         // 使用onChange处理表格参数变化
         onChange={handleTableChange}
+        pagination={{
+          pageSize: 10,
+          showSizeChanger: true,
+          showQuickJumper: true,
+          showTotal: (total: number) => `共 ${total} 条记录`,
+        }}
+        search={{
+          labelWidth: 'auto',
+          defaultCollapsed: false,
+          span: 6,
+        }}
+        // 添加request属性以确保表格能正确处理数据
+        request={async (params, sort, filter) => {
+          // 当表格首次加载或分页变化时也会调用此方法
+          // params包含了搜索表单的值
+          const keyword = params?.keyword || '';
+          const dateRange = params?.createdAt;
+          const songLanguages = params?.songLanguage;
+          const targetSinger = params?.targetSinger;
+          const styleDescription = params?.styleDescription;
+          const songName = params?.songName;
+
+          await fetchRecords({
+            keyword,
+            dateRange,
+            songLanguages,
+            targetSinger,
+            styleDescription,
+            songName,
+          });
+
+          return {
+            data: records,
+            success: true,
+            total: records.length,
+          };
+        }}
+        // 在搜索表单提交前处理参数
+        beforeSearchSubmit={beforeSearchSubmit}
       />
     </PageContainer>
   );

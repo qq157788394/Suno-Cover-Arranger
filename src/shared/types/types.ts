@@ -75,6 +75,7 @@ export interface PromptRecord {
   userId: number;
   // 用户提交的内容
   userInput: {
+    songName: string; // 新增歌曲名称字段
     songLanguage: string;
     targetSinger: string;
     referenceSongs: string[];

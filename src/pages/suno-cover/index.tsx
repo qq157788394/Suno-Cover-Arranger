@@ -116,6 +116,7 @@ const SunoCover: React.FC = () => {
         await db.createPromptRecord({
           userId,
           userInput: {
+            songName: values.song_name, // 添加歌曲名称字段
             songLanguage: values.song_language,
             targetSinger: values.target_artist,
             referenceSongs,
@@ -151,6 +152,7 @@ const SunoCover: React.FC = () => {
 
         // 填充表单数据
         form.setFieldsValue({
+          song_name: record.userInput.songName, // 添加歌曲名称字段
           song_language: record.userInput.songLanguage,
           target_artist: record.userInput.targetSinger,
           reference_songs: record.userInput.referenceSongs.map(
@@ -296,6 +298,7 @@ const SunoCover: React.FC = () => {
       await db.createPromptRecord({
         userId: 1, // 模拟当前用户ID
         userInput: {
+          songName: formValues.song_name, // 添加歌曲名称字段
           songLanguage,
           targetSinger,
           referenceSongs,
@@ -384,6 +387,15 @@ const SunoCover: React.FC = () => {
                 ),
               }}
             >
+              {/* 歌曲名称 */}
+              <ProFormText
+                name="song_name"
+                label="歌曲名称"
+                placeholder="请输入歌曲名称，仅作为记录方便查询"
+                rules={[{ required: true, message: '请填写歌曲名称' }]}
+                fieldProps={{ showCount: true }}
+              />
+
               {/* 歌曲语言 */}
               <ProFormSelect
                 name="song_language"
