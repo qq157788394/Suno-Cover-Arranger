@@ -248,7 +248,7 @@ const RecordPage: React.FC = () => {
           density: true,
           fullScreen: true,
         }}
-        scroll={{ x: 1200 }}
+        scroll={{ x: 'max-content' }}
         // 使用onChange处理表格参数变化
         onChange={handleTableChange}
         pagination={{

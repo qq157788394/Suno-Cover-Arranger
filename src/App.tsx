@@ -1,7 +1,10 @@
 import type { Settings as LayoutSettings } from '@ant-design/pro-components';
 import { SettingDrawer } from '@ant-design/pro-components';
 import type { RequestConfig, RunTimeLayoutConfig } from '@umijs/max';
-import { Button } from 'antd';
+import { Typography } from 'antd';
+
+const { Link } = Typography;
+
 import React from 'react';
 // 导入合并后的全局样式文件
 import './index.css';
@@ -40,28 +43,33 @@ export const layout: RunTimeLayoutConfig = ({
   setInitialState,
 }) => {
   return {
-    actionsRender: () => [
-      <Button
-        key="suno"
-        type="link"
-        href="https://suno.com/invite/@ahuangzhuo"
-        target="_blank"
-        rel="noopener noreferrer"
-        style={{ marginRight: 16, padding: 0 }}
-      >
+    links: [
+      <Link key="suno" target="_blank" href="https://suno.com/">
         Suno
-      </Button>,
-      <Button
-        key="deepseek"
-        type="link"
-        href="https://platform.deepseek.com/"
+      </Link>,
+      <Link key="deepseek" target="_blank" href="https://chat.deepseek.com/">
+        DeepSeek
+      </Link>,
+      <Link
+        key="google-ai"
         target="_blank"
-        rel="noopener noreferrer"
-        style={{ padding: 0 }}
+        href="https://aistudio.google.com/app/apikey"
       >
-        DeepSeek开放平台
-      </Button>,
+        Google AI Studio
+      </Link>,
     ],
+    actionsRender: () => {
+      return [
+        <Link
+          key="bilibili"
+          target="_blank"
+          strong
+          href="https://space.bilibili.com/421841720"
+        >
+          作者B站
+        </Link>,
+      ];
+    },
     // 移除用户头像
     avatarProps: false,
     // 移除水印
@@ -72,7 +80,7 @@ export const layout: RunTimeLayoutConfig = ({
     footerRender: false,
     // 移除登录检查
     onPageChange: () => {},
-    links: [],
+
     menuHeaderRender: undefined,
     // 自定义 403 页面
     // unAccessible: <div>unAccessible</div>,
@@ -105,6 +113,18 @@ export const layout: RunTimeLayoutConfig = ({
             }}
             hideHintAlert={true}
             hideCopyButton={true}
+            colorList={[
+              { key: 'p站黄', color: '#ff9000', title: 'P站黄' },
+              { key: 'techBlue', color: '#1677FF' },
+              { key: 'daybreak', color: '#1890ff' },
+              { key: 'dust', color: '#F5222D' },
+              { key: 'volcano', color: '#FA541C' },
+              { key: 'sunset', color: '#FAAD14' },
+              { key: 'cyan', color: '#13C2C2' },
+              { key: 'green', color: '#52C41A' },
+              { key: 'geekblue', color: '#2F54EB' },
+              { key: 'purple', color: '#722ED1' },
+            ]}
           />
         </>
       );
