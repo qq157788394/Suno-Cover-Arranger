@@ -1,6 +1,6 @@
 {
   "name": "suno-cover-arranger",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "private": true,
   "description": "Suno翻唱编曲大师 - 用中文思考，用英文说服Suno。帮翻唱创作者，把'感觉'和'编曲想法'变成可直接粘贴进Suno的Styles & Lyrics提示词。",
   "repository": "git@github.com:qq157788394/Suno-Cover-Arranger.git",
@@ -45,6 +45,7 @@
     "@ant-design/icons": "^6.1.0",
     "@ant-design/plots": "^2.6.0",
     "@ant-design/pro-components": "^2.8.10",
+    "@ant-design/x-markdown": "^2.1.1",
     "@antv/l7": "^2.22.7",
     "@antv/l7-react": "^2.4.3",
     "@google/genai": "^1.34.0",
@@ -64,6 +65,7 @@
     "react-dom": "^19.2.3",
     "react-markdown": "^10.1.0",
     "reflect-metadata": "^0.2.2",
+    "remark-gfm": "^4.0.1",
     "swagger-ui-dist": "^5.31.0",
     "tsyringe": "^4.10.0"
   },

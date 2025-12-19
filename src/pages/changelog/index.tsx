@@ -3,13 +3,13 @@ import { XMarkdown } from '@ant-design/x-markdown';
 import { Card, Spin, Typography } from 'antd';
 import React, { useEffect, useState } from 'react';
 
-// 构建时注入的README内容（通过构建脚本处理）
+// 构建时注入的CHANGELOG内容（通过构建脚本处理）
 declare global {
-  const __README_CONTENT__: string;
+  const __CHANGELOG_CONTENT__: string;
 }
 
-const About: React.FC = () => {
-  const [readmeContent, setReadmeContent] = useState<string>('');
+const ChangelogPage: React.FC = () => {
+  const [changelogContent, setChangelogContent] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
@@ -17,48 +17,48 @@ const About: React.FC = () => {
     // 生产环境：使用构建时注入的内容
     if (process.env.NODE_ENV === 'production') {
       // 生产环境：使用构建时注入的内容
-      if (typeof __README_CONTENT__ !== 'undefined') {
-        setReadmeContent(__README_CONTENT__);
+      if (typeof __CHANGELOG_CONTENT__ !== 'undefined') {
+        setChangelogContent(__CHANGELOG_CONTENT__);
         setLoading(false);
       } else {
         // 如果构建时注入失败，尝试从dist目录读取
-        fetch('./README.md')
+        fetch('./changelog.md')
           .then((response) => response.text())
           .then((content) => {
-            setReadmeContent(content);
+            setChangelogContent(content);
             setLoading(false);
           })
           .catch(() => {
-            setReadmeContent('# 项目介绍\n\n无法加载README.md内容');
+            setChangelogContent('# 更新记录\n\n暂无更新记录，请稍后查看。');
             setLoading(false);
           });
       }
     } else {
       // 开发环境：使用mock API
-      const fetchReadme = async () => {
+      const fetchChangelog = async () => {
         try {
-          const response = await fetch('/api/readme');
+          const response = await fetch('/api/changelog');
           if (response.ok) {
             const content = await response.text();
-            setReadmeContent(content);
+            setChangelogContent(content);
           } else {
-            console.error('Failed to fetch README.md');
-            setReadmeContent('# 项目介绍\n\n无法加载README.md内容');
+            console.error('Failed to fetch changelog.md');
+            setChangelogContent('# 更新记录\n\n暂无更新记录，请稍后查看。');
           }
         } catch (error) {
-          console.error('Error fetching README.md:', error);
-          setReadmeContent('# 项目介绍\n\n无法加载README.md内容');
+          console.error('Error fetching changelog.md:', error);
+          setChangelogContent('# 更新记录\n\n暂无更新记录，请稍后查看。');
         } finally {
           setLoading(false);
         }
       };
 
-      fetchReadme();
+      fetchChangelog();
     }
   }, []);
 
   return (
-    <PageContainer title="项目介绍">
+    <PageContainer title="更新记录">
       <Card>
         {loading ? (
           <div style={{ textAlign: 'center', padding: '40px' }}>
@@ -66,7 +66,7 @@ const About: React.FC = () => {
           </div>
         ) : (
           <Typography>
-            <XMarkdown>{readmeContent}</XMarkdown>
+            <XMarkdown>{changelogContent}</XMarkdown>
           </Typography>
         )}
       </Card>
@@ -74,4 +74,4 @@ const About: React.FC = () => {
   );
 };
 
-export default About;
+export default ChangelogPage;
