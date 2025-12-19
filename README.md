@@ -7,15 +7,31 @@
 
 Suno翻唱编曲大师是一款专为Suno翻唱创作者设计的AI工具，帮助用户用中文描述音乐风格和编曲想法，自动生成符合Suno官方术语体系的高质量英文提示词。
 
+## 联系开发者
+
+如果您有任何问题、建议或反馈，请通过以下方式联系开发者：
+
+<img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/88ec29ed2e554f6db6b8ce014885a171.JPG~tplv-a9rns2rl98-image-qvalue.image?rcl=202512200219394C365BD95A2C4849AD5D&rk3s=8e244e95&rrcfp=b669a9d6&x-expires=1766254780&x-signature=uNzJ8mDSItsxWSDXp6G4%2B78I3VA%3D" width="320" alt="开发者微信">
+
+## 支持一下
+
+如果您觉得这个工具对您有帮助，欢迎支持下方式支持一下开发者：
+
+- 分享给您的朋友们
+- 关注开发者B站 / 抖音 / 小红书，全网同名“黄优优yoyo”
+- 请我抽包利群
+
+<img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/832e1cb3e5d84de8a5d284a3934fa224.JPG~tplv-a9rns2rl98-image-qvalue.image?rcl=2025122002544699E4174113C58B4BC809&rk3s=8e244e95&rrcfp=b669a9d6&x-expires=1766256887&x-signature=Im%2F99deGb7T%2BnoZPtOx1w3EH2UM%3D" width="320" alt="抽包利群">
+
 ## 解决的痛点
 
 ### 痛点一：Suno 的 Styles 字段写不好
 
 做过几次 Suno 翻唱的人，基本都会遇到：
 
-* 知道自己想要“张惠妹那种主歌隐忍、副歌爆炸”，但不会用英文系统地写出来
-* 写出来的 Styles 要么太短、信息太少，要么东一块西一块，没有结构
-* 不知道哪些词是 Suno 比较“听得懂”的编曲/动态词汇
+- 知道自己想要“张惠妹那种主歌隐忍、副歌爆炸”，但不会用英文系统地写出来
+- 写出来的 Styles 要么太短、信息太少，要么东一块西一块，没有结构
+- 不知道哪些词是 Suno 比较“听得懂”的编曲/动态词汇
 
 结果就是模型发挥空间过大，同一首歌每次出来的结果都不太稳定。
 
@@ -23,9 +39,9 @@ Suno翻唱编曲大师是一款专为Suno翻唱创作者设计的AI工具，帮�
 
 Suno 官方推荐在 Lyrics 里使用属性注释（如 `[Vocal: ...]`、`[Dynamics: ...]`），但普通创作者通常会卡在几件事上：
 
-* 不知道应该有哪些 Key（Vocal / Dynamics / Texture / Mood / Arrangement / FX…）
-* 不会用英文把“这一段主歌更克制、副歌和声更厚”这类感觉，拆成结构化的 `[Key: Value]`
-* 试着写了几行注释，但要么和 Styles 描述矛盾，要么风格不统一
+- 不知道应该有哪些 Key（Vocal / Dynamics / Texture / Mood / Arrangement / FX…）
+- 不会用英文把“这一段主歌更克制、副歌和声更厚”这类感觉，拆成结构化的 `[Key: Value]`
+- 试着写了几行注释，但要么和 Styles 描述矛盾，要么风格不统一
 
 最终，大部分人会退回到最简单的用法：Lyrics 字段只放原文歌词，完全浪费了 Suno 支持的属性体系。
 
@@ -39,11 +55,11 @@ Suno 官方推荐在 Lyrics 里使用属性注释（如 `[Vocal: ...]`、`[Dynam
 ### 痛点四：段落结构标签混乱
 
 真实使用时，大家会写各种不同的段落标签：
-* 【主歌】/【主歌1】/【主歌A】
-* [verse] / [Verse] / [主歌]
-* 【副歌】/ [chorus] / [Chorus]
-* 【桥段】/ [Bridge]
-* 【前奏】/【间奏】/【尾奏】
+- 【主歌】/【主歌1】/【主歌A】
+- [verse] / [Verse] / [主歌]
+- 【副歌】/ [chorus] / [Chorus]
+- 【桥段】/ [Bridge]
+- 【前奏】/【间奏】/【尾奏】
 
 而 Suno 官方推荐的是标准英文标签：[Verse 1]、[Chorus]、[Bridge]、[Intro]、[Interlude]、[Outro]…
 
@@ -58,10 +74,10 @@ Suno 官方推荐在 Lyrics 里使用属性注释（如 `[Vocal: ...]`、`[Dynam
 
 ## 适用人群
 
-* 希望提升 Suno 翻唱质量的重度用户
-* 懂音乐但英文表达一般的创作者
-* 想固化风格策略的音乐人和团队
-* 制作系列翻唱内容的创作者
+- 希望提升 Suno 翻唱质量的重度用户
+- 懂音乐但英文表达一般的创作者
+- 想固化风格策略的音乐人和团队
+- 制作系列翻唱内容的创作者
 
 ## 功能使用指南
 
