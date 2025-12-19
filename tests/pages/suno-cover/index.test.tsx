@@ -1,4 +1,4 @@
-import { describe, expect, it, jest } from '@jest/globals';
+// Jest全局变量会自动注入，无需显式导入
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import SunoCover from '@/pages/suno-cover';
 import { generateUserPrompt } from '@/services/deepseek';

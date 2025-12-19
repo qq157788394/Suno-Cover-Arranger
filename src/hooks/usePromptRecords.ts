@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { db } from '@/services/db';
-import type { PromptRecord } from '@/shared/types';
+import type { PromptRecord } from '@/shared/types/types';
 
 export interface PromptRecordFilters {
   keyword?: string;
@@ -35,7 +35,7 @@ export const usePromptRecords = (currentUserId: number) => {
       const endDate = new Date(dateRange[1]);
       endDate.setHours(23, 59, 59, 999);
       return records.filter((record) => {
-        const recordDate = new Date(record.createdAt || new Date(0));
+        const recordDate = new Date(record.created_at || new Date(0));
         return recordDate >= startDate && recordDate <= endDate;
       });
     },
@@ -52,7 +52,7 @@ export const usePromptRecords = (currentUserId: number) => {
         ? songLanguages
         : [songLanguages];
       return records.filter((record) =>
-        languages.includes(record.userInput.songLanguage),
+        languages.includes(record.user_input.song_language),
       );
     },
     [],
@@ -66,7 +66,7 @@ export const usePromptRecords = (currentUserId: number) => {
       }
       const lowerCaseTargetSinger = targetSinger.toLowerCase();
       return records.filter((record) =>
-        record.userInput?.targetSinger
+        record.user_input?.target_singer
           ?.toLowerCase()
           .includes(lowerCaseTargetSinger),
       );
@@ -82,7 +82,7 @@ export const usePromptRecords = (currentUserId: number) => {
       }
       const lowerCaseStyleDescription = styleDescription.toLowerCase();
       return records.filter((record) =>
-        record.userInput?.styleDescription
+        record.user_input?.style_description
           ?.toLowerCase()
           .includes(lowerCaseStyleDescription),
       );
@@ -98,7 +98,7 @@ export const usePromptRecords = (currentUserId: number) => {
       }
       const lowerCaseSongName = songName.toLowerCase();
       return records.filter((record) =>
-        record.userInput?.songName?.toLowerCase().includes(lowerCaseSongName),
+        record.user_input?.song_name?.toLowerCase().includes(lowerCaseSongName),
       );
     },
     [],
@@ -114,17 +114,17 @@ export const usePromptRecords = (currentUserId: number) => {
       return records.filter((record) => {
         // 在歌曲名称、目标歌手、风格描述中搜索关键词
         return (
-          record.userInput?.songName
+          record.user_input?.song_name
             ?.toLowerCase()
             .includes(lowerCaseKeyword) ||
-          record.userInput?.targetSinger
+          record.user_input?.target_singer
             ?.toLowerCase()
             .includes(lowerCaseKeyword) ||
-          record.userInput?.styleDescription
+          record.user_input?.style_description
             ?.toLowerCase()
             .includes(lowerCaseKeyword) ||
-          record.aiOutput?.styles?.toLowerCase().includes(lowerCaseKeyword) ||
-          record.aiOutput?.lyrics?.toLowerCase().includes(lowerCaseKeyword)
+          record.ai_result?.styles?.toLowerCase().includes(lowerCaseKeyword) ||
+          record.ai_result?.lyrics?.toLowerCase().includes(lowerCaseKeyword)
         );
       });
     },

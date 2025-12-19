@@ -2,7 +2,7 @@
  * 验证工具函数
  * 提供各种数据验证功能，包括API密钥验证、请求参数验证等
  */
-import type { GenerateRequest } from '../types';
+import type { GenerateRequest } from '../types/types';
 
 /**
  * 验证API密钥格式
@@ -39,7 +39,7 @@ export const validateGenerateRequest = (values: GenerateRequest): void => {
     throw new Error('歌曲语言不能为空');
   }
 
-  if (!validateApiKey(values.apiKey)) {
+  if (!validateApiKey(values.api_key)) {
     throw new Error('API Key 格式不正确或为空');
   }
 };

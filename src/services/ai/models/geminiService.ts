@@ -1,7 +1,7 @@
 import { injectable } from 'tsyringe';
 import { BaseAIService } from '../baseAIService';
 import { GoogleGenAI } from '@google/genai';
-import type { GenerateRequest, GenerateResponse } from '../../shared/types';
+import type { GenerateRequest, GenerateResponse } from '../../../shared/types/types';
 import { SYSTEM_PROMPT } from '../../../config/prompts';
 
 @injectable()
@@ -10,7 +10,7 @@ export class GeminiService extends BaseAIService {
    * 调用Gemini API生成内容
    */
   async generate(request: GenerateRequest): Promise<GenerateResponse> {
-    const { apiKey } = request;
+    const { api_key: apiKey } = request;
 
     // 参数验证
     if (!apiKey) {

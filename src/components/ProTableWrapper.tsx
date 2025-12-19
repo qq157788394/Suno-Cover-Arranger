@@ -12,7 +12,7 @@ interface ProTableWrapperProps<T extends Record<string, any>> {
   /** 数据请求函数 */
   request?: (
     params: any,
-    sort: Record<string, 'ascend' | 'descend'>,
+    sort: Record<string, 'ascend' | 'descend' | null>,
     filter: Record<string, (string | number)[] | null>,
   ) => Promise<Partial<RequestData<T>>>;
   /** 数据源 */

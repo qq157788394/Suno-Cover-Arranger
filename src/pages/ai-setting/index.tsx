@@ -11,7 +11,7 @@ import React, { useEffect } from 'react';
 
 import { useApiKey } from '@/hooks/useApiKey';
 import { db } from '@/services/db';
-import type { ApiKey } from '@/shared/types';
+import type { ApiKey } from '@/shared/types/types';
 
 const { Text, Paragraph, Title, Link } = Typography;
 
@@ -106,14 +106,21 @@ const AISettingPage: React.FC = () => {
               label="首选 AI 模型"
               rules={[{ required: true, message: '请选择首选 AI 模型' }]}
             >
-              <Radio.Group onChange={handleModelChange}>
-                <Radio value="deepseek">
-                  DeepSeek v3.2（需充值，10元起步）
-                </Radio>
-                <Radio value="gemini">
-                  Google Gemini 3（推荐，可免费白嫖）
-                </Radio>
-              </Radio.Group>
+              <Radio.Group
+                value={model}
+                options={[
+                  {
+                    value: 'deepseek',
+                    label: 'DeepSeek v3.2（需充值，10元起步，支持国货💪）',
+                  },
+                  {
+                    value: 'gemini',
+                    label: 'Google Gemini 3（推荐，可免费白嫖）',
+                  },
+                  { value: 'mimo', label: '小米MiMo V2 Flash（限时免费白嫖）' },
+                ]}
+                onChange={handleModelChange}
+              />
             </ProForm.Item>
 
             <ProFormText.Password
@@ -230,6 +237,43 @@ const AISettingPage: React.FC = () => {
                 <li>
                   需要付费吗？ 不需要。Gemini API
                   提供免费额度，对于日常使用完全足够，无需绑定信用卡
+                </li>
+              </ul>
+            </Paragraph>
+          </ProCard>
+        </ProCard>
+
+        <ProCard split="vertical">
+          <ProCard colSpan={12}>
+            <Title level={4}>小米MiMo API Key 申请指南（新手版）</Title>
+            <Paragraph>
+              <ol>
+                <li>
+                  打开官网：
+                  <Link href="https://platform.xiaomimimo.com/" target="_blank">
+                    https://platform.xiaomimimo.com/
+                  </Link>
+                </li>
+                <li>
+                  在页面中找到 <Text code>申请 API Key</Text> 按钮，点击
+                </li>
+                <li>
+                  按页面提示，登录 / 注册小米账号 <Text code>登录 / 注册</Text>
+                </li>
+                <li>
+                  创建密钥 点击 <Text code>新建 API Key</Text>{' '}
+                  按钮，输入名称并确认
+                </li>
+                <li>复制并保存 系统会生成一串 sk-开头的字符，点击复制按钮</li>
+                <li>回到本应用 → 打开 设置 / AI 设置 → 粘贴 API Key → 保存</li>
+                <li>完成！现在就可以正常使用各项 AI 生成功能了</li>
+              </ol>
+              <Title level={4}>💡 常见问题</Title>
+              <ul>
+                <li>需要付费吗？ 新模型，面向全球公测，限时免费！</li>
+                <li>访问限制？ 国内可直接访问，无需科学上网</li>
+                <li>
+                  模型水平如何？ 新模型，up主只开发了功能，并没有深入进行测试
                 </li>
               </ul>
             </Paragraph>

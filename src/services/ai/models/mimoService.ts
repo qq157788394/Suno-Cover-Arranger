@@ -1,20 +1,19 @@
 import { injectable } from 'tsyringe';
 import { BaseAIService } from '../baseAIService';
 import type { GenerateRequest, GenerateResponse } from '../../../shared/types/types';
-import type { DeepSeekResult } from '../../../shared/types';
 import { SYSTEM_PROMPT } from '../../../config/prompts';
 
 @injectable()
-export class DeepSeekService extends BaseAIService {
+export class MimoService extends BaseAIService {
   /**
-   * 调用DeepSeek API生成内容
+   * 调用小米MiMo-V2-Flash API生成内容
    */
   async generate(request: GenerateRequest): Promise<GenerateResponse> {
     const { api_key: apiKey } = request;
 
     // 参数验证
     if (!apiKey) {
-      throw new Error('DeepSeek API key is required');
+      throw new Error('MiMo API key is required');
     }
 
     // 生成用户提示词
@@ -24,14 +23,15 @@ export class DeepSeekService extends BaseAIService {
     const systemPrompt = SYSTEM_PROMPT;
 
     try {
-      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      // 使用代理地址避免CORS问题
+      const response = await fetch('/mimo-api/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-          model: 'deepseek-chat',
+          model: 'mimo-v2-flash',
           messages: [
             {
               role: 'system',
@@ -44,13 +44,22 @@ export class DeepSeekService extends BaseAIService {
           ],
           temperature: 0.7,
           max_tokens: 4096,
+          stream: false,
+          extra_body: {
+            "thinking": {"type": "disabled"}
+          }
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.text();
-        console.error('DeepSeek API error:', response.status, errorData);
-        throw new Error(`DeepSeek API request failed with status ${response.status}`);
+        console.error('MiMo API error:', {
+          status: response.status,
+          statusText: response.statusText,
+          url: response.url,
+          errorData
+        });
+        throw new Error(`MiMo API request failed with status ${response.status}: ${response.statusText}`);
       }
 
       const data = await response.json();
@@ -59,7 +68,7 @@ export class DeepSeekService extends BaseAIService {
       // 解析响应并返回结果
       return this.parseResponse(aiResponse);
     } catch (error) {
-      console.error('Error calling DeepSeek API:', error);
+      console.error('Error calling MiMo API:', error);
       throw error;
     }
   }

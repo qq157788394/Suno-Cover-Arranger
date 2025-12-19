@@ -7,7 +7,7 @@
  * 3. 解析 AI 输出，返回标准化结果
  */
 
-import type { ReferenceSong, GenerateRequest, GenerateResponse } from '../shared/types';
+import type { ReferenceSong, GenerateRequest, GenerateResponse } from '../shared/types/types';
 import { validateApiKey, validateGenerateRequest } from '@/shared/utils';
 import { getFullLanguageName, formatReferenceSongs } from '@/shared/utils';
 
@@ -227,7 +227,7 @@ export const callDeepSeekAPI = async (values: GenerateRequest): Promise<Generate
     response = await fetch('https://api.deepseek.com/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': 'Bearer ' + values.apiKey,  // API 认证头
+        'Authorization': 'Bearer ' + values.api_key,  // API 认证头
         'Content-Type': 'application/json'           // 请求内容类型
       },
       body: JSON.stringify({

@@ -12,7 +12,29 @@ import { useNavigate } from '@umijs/max';
 import { Alert, Button, Modal, message, Space, Tooltip } from 'antd';
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { usePromptRecords } from '@/hooks/usePromptRecords';
-import type { PromptRecord } from '@/shared/types';
+import type { PromptRecord } from '@/shared/types/types';
+
+// 结构化日志系统
+const log = {
+  info: (message: string, data?: any) => {
+    console.log(`[INFO] ${new Date().toISOString()}: ${message}`, data || '');
+  },
+  warn: (message: string, data?: any) => {
+    console.warn(`[WARN] ${new Date().toISOString()}: ${message}`, data || '');
+  },
+  error: (message: string, error?: any) => {
+    console.error(
+      `[ERROR] ${new Date().toISOString()}: ${message}`,
+      error || '',
+    );
+  },
+  debug: (message: string, data?: any) => {
+    console.debug(
+      `[DEBUG] ${new Date().toISOString()}: ${message}`,
+      data || '',
+    );
+  },
+};
 
 const RecordPage: React.FC = () => {
   // 模拟当前用户ID，实际应用中应该从登录状态获取
@@ -32,11 +54,23 @@ const RecordPage: React.FC = () => {
   const handleViewDetail = useCallback(
     (record: PromptRecord) => {
       try {
-        localStorage.setItem('selectedPromptRecord', JSON.stringify(record));
-        // 使用Umi的navigate进行路由跳转
-        navigate('/');
+        log.info('点击查看详情，准备传递的记录ID', {
+          recordId: record.id,
+          record,
+        });
+
+        // 确保record对象存在且有ID
+        if (!record || !record.id) {
+          log.error('record或record.id为空', { record });
+          message.error('查看详情失败，记录数据不完整');
+          return;
+        }
+
+        // 使用URL参数传递记录ID
+        log.info('开始跳转到首页，携带记录ID参数', { recordId: record.id });
+        navigate(`/?recordId=${record.id}`);
       } catch (error) {
-        console.error('存储记录数据失败:', error);
+        log.error('导航到详情页失败', error);
         message.error('查看详情失败，请稍后重试');
       }
     },
@@ -81,11 +115,11 @@ const RecordPage: React.FC = () => {
       // 只有在搜索操作时才执行筛选
       if (action === 'search') {
         const keyword = searchFormValues?.keyword || '';
-        const dateRange = searchFormValues?.createdAt;
-        const songLanguages = searchFormValues?.songLanguage;
-        const targetSinger = searchFormValues?.targetSinger;
-        const styleDescription = searchFormValues?.styleDescription;
-        const songName = searchFormValues?.songName;
+        const dateRange = searchFormValues?.created_at;
+        const songLanguages = searchFormValues?.song_language;
+        const targetSinger = searchFormValues?.target_singer;
+        const styleDescription = searchFormValues?.style_description;
+        const songName = searchFormValues?.song_name;
 
         await fetchRecords({
           keyword,
@@ -112,12 +146,12 @@ const RecordPage: React.FC = () => {
       },
       {
         title: '时间',
-        dataIndex: 'createdAt',
-        key: 'createdAt',
+        dataIndex: 'created_at',
+        key: 'created_at',
         width: 180,
         valueType: 'dateRange',
         render: (_, record) => {
-          const createdAt = record.createdAt || new Date(0);
+          const createdAt = record.created_at || new Date(0);
           return (
             <Tooltip title={new Date(createdAt).toLocaleString()}>
               <Space>
@@ -130,8 +164,8 @@ const RecordPage: React.FC = () => {
       },
       {
         title: '歌曲名称',
-        dataIndex: ['userInput', 'songName'],
-        key: 'songName',
+        dataIndex: ['user_input', 'song_name'],
+        key: 'song_name',
         width: 150,
         search: true,
         ellipsis: {
@@ -140,8 +174,8 @@ const RecordPage: React.FC = () => {
       },
       {
         title: '歌曲语言',
-        dataIndex: ['userInput', 'songLanguage'],
-        key: 'songLanguage',
+        dataIndex: ['user_input', 'song_language'],
+        key: 'song_language',
         width: 120,
         valueType: 'select',
         valueEnum: {
@@ -176,8 +210,8 @@ const RecordPage: React.FC = () => {
       },
       {
         title: '模仿歌手',
-        dataIndex: ['userInput', 'targetSinger'],
-        key: 'targetSinger',
+        dataIndex: ['user_input', 'target_singer'],
+        key: 'target_singer',
         width: 150,
         search: true,
         ellipsis: {
@@ -186,8 +220,8 @@ const RecordPage: React.FC = () => {
       },
       {
         title: '风格备注',
-        dataIndex: ['userInput', 'styleDescription'],
-        key: 'styleDescription',
+        dataIndex: ['user_input', 'style_description'],
+        key: 'style_description',
         width: 200,
         search: true,
         ellipsis: {
@@ -267,11 +301,11 @@ const RecordPage: React.FC = () => {
           // 当表格首次加载或分页变化时也会调用此方法
           // params包含了搜索表单的值
           const keyword = params?.keyword || '';
-          const dateRange = params?.createdAt;
-          const songLanguages = params?.songLanguage;
-          const targetSinger = params?.targetSinger;
-          const styleDescription = params?.styleDescription;
-          const songName = params?.songName;
+          const dateRange = params?.created_at;
+          const songLanguages = params?.song_language;
+          const targetSinger = params?.target_singer;
+          const styleDescription = params?.style_description;
+          const songName = params?.song_name;
 
           await fetchRecords({
             keyword,

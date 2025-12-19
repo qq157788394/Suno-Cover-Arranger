@@ -1,5 +1,4 @@
-import type { GenerateRequest, GenerateResponse } from '../shared/types';
-import type { ReferenceSong } from '../shared/types';
+import type { GenerateRequest, GenerateResponse, ReferenceSong } from '../../shared/types/types';
 import { USER_PROMPT_TEMPLATE } from '../../config/prompts';
 
 export abstract class BaseAIService {

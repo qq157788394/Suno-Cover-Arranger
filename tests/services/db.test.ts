@@ -1,16 +1,24 @@
-import { beforeEach, describe, expect, it, jest } from '@jest/globals';
+// Jest全局变量会自动注入，无需显式导入
 import Dexie from 'dexie';
 import AppDatabase from '@/services/db';
 
 // 模拟Dexie数据库
 jest.mock('dexie', () => {
-  const mockTable = {
-    add: jest.fn().mockResolvedValue(1),
-    get: jest.fn().mockResolvedValue(null),
-    where: jest.fn().mockReturnThis(),
+  const mockWhereClause = {
     equals: jest.fn().mockReturnThis(),
     modify: jest.fn().mockResolvedValue(1),
     toArray: jest.fn().mockResolvedValue([]),
+    first: jest.fn().mockResolvedValue(null),
+  };
+
+  const mockTable = {
+    add: jest.fn().mockResolvedValue(1),
+    get: jest.fn().mockResolvedValue(null),
+    where: jest.fn().mockReturnValue(mockWhereClause),
+    toArray: jest.fn().mockResolvedValue([]),
+    update: jest.fn().mockResolvedValue(1),
+    delete: jest.fn().mockResolvedValue(undefined),
+    first: jest.fn().mockResolvedValue(null),
   };
 
   const mockDexie = jest.fn().mockImplementation(() => ({
@@ -18,8 +26,10 @@ jest.mock('dexie', () => {
     projects: mockTable,
     styleConfigs: mockTable,
     promptRecords: mockTable,
+    apiKeys: mockTable,
     version: jest.fn().mockReturnThis(),
     stores: jest.fn().mockReturnThis(),
+    table: jest.fn().mockReturnValue(mockTable),
   }));
 
   return mockDexie;
@@ -96,32 +106,33 @@ describe('AppDatabase', () => {
         id: 1,
         title: 'Test Project 1',
         description: 'This is test project 1',
-        userId: 1,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        user_id: 1,
+        created_at: new Date(),
+        updated_at: new Date(),
       },
       {
         id: 2,
         title: 'Test Project 2',
         description: 'This is test project 2',
-        userId: 1,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        user_id: 1,
+        created_at: new Date(),
+        updated_at: new Date(),
       },
     ];
 
     // 模拟where和toArray方法
-    (db.projects.where as jest.Mock).mockReturnThis();
-    (db.projects.equals as jest.Mock).mockReturnThis();
-    (db.projects.toArray as jest.Mock).mockResolvedValue(mockProjects);
+    const mockWhereClause = (db.projects.where as jest.Mock).mockReturnValue({
+      equals: jest.fn().mockReturnThis(),
+      toArray: jest.fn().mockResolvedValue(mockProjects),
+    });
 
-    const projects = await db.getProjectsByUserId(1);
+    const projects = await db.getUserProjects(1);
 
     expect(db.projects.where).toHaveBeenCalledTimes(1);
     expect(db.projects.where).toHaveBeenCalledWith('userId');
-    expect(db.projects.equals).toHaveBeenCalledTimes(1);
-    expect(db.projects.equals).toHaveBeenCalledWith(1);
-    expect(db.projects.toArray).toHaveBeenCalledTimes(1);
+    expect(mockWhereClause().equals).toHaveBeenCalledTimes(1);
+    expect(mockWhereClause().equals).toHaveBeenCalledWith(1);
+    expect(mockWhereClause().toArray).toHaveBeenCalledTimes(1);
     expect(projects).toEqual(mockProjects);
   });
 
@@ -133,10 +144,13 @@ describe('AppDatabase', () => {
       isDefault: true,
     };
 
-    // 模拟modify方法
-    (db.styleConfigs.where as jest.Mock).mockReturnThis();
-    (db.styleConfigs.equals as jest.Mock).mockReturnThis();
-    (db.styleConfigs.modify as jest.Mock).mockResolvedValue(1);
+    // 模拟where和modify方法
+    const mockWhereClause = (
+      db.styleConfigs.where as jest.Mock
+    ).mockReturnValue({
+      equals: jest.fn().mockReturnThis(),
+      modify: jest.fn().mockResolvedValue(1),
+    });
 
     const configId = await db.createStyleConfig(styleConfigData);
 
@@ -152,22 +166,24 @@ describe('AppDatabase', () => {
       userId: 1,
       isDefault: true,
     });
-    expect(db.styleConfigs.modify).toHaveBeenCalledTimes(1);
+    expect(mockWhereClause().modify).toHaveBeenCalledTimes(1);
   });
 
   it('should create a new prompt record', async () => {
     const promptRecordData = {
-      userId: 1,
-      userInput: {
-        songLanguage: 'Mandarin',
-        targetSinger: 'Test Singer',
-        referenceSongs: ['Song 1', 'Song 2'],
-        styleDescription: 'Test style',
+      user_id: 1,
+      user_input: {
+        song_name: 'Test Song',
+        song_language: 'Mandarin',
+        target_singer: 'Test Singer',
+        reference_songs: JSON.stringify(['Song 1', 'Song 2']),
+        style_description: 'Test style',
         lyrics: 'Test lyrics',
       },
-      deepSeekResult: {
+      ai_result: {
         styles: 'Test styles',
         lyrics: 'Test lyrics',
+        model: 'deepseek',
       },
     };
 

@@ -9,7 +9,9 @@
  */
 
 import Dexie from 'dexie';
-import type { User, Project, StyleConfig, PromptRecord, ApiKey } from '@/shared/types';
+import type { User, Project, StyleConfig } from '@/shared/types';
+import type { ApiKey } from '@/shared/types/types';
+import type { PromptRecord } from '@/shared/types/types';
 
 /**
  * 应用数据库类
@@ -19,7 +21,7 @@ class AppDatabase extends Dexie {
   users: Dexie.Table<User, number>;         // 用户表
   projects: Dexie.Table<Project, number>;   // 项目表
   styleConfigs: Dexie.Table<StyleConfig, number>; // 风格配置表
-  promptRecords: Dexie.Table<PromptRecord & { aiResult?: { styles: string; lyrics: string; model: string } }, number>; // 提示词记录表
+  promptRecords: Dexie.Table<PromptRecord & { ai_result?: { styles: string; lyrics: string; model: string } }, number>; // 提示词记录表
   apiKeys: Dexie.Table<ApiKey, number>; // API Key 表
 
   /**
@@ -31,12 +33,47 @@ class AppDatabase extends Dexie {
 
     // 定义数据库版本和表结构
     this.version(1).stores({
-      users: '++id, name, email, createdAt',
-      projects: '++id, title, userId, createdAt, updatedAt',
-      styleConfigs: '++id, name, userId, isDefault, createdAt, updatedAt',
-      promptRecords: '++id, userId, createdAt, [aiResult.styles], [aiResult.lyrics], [aiResult.model]',
-      apiKeys: '++id, userId, apiKey, model, isCurrent, createdAt'
+      users: '++id, name, email, created_at',
+      projects: '++id, title, user_id, created_at, updated_at',
+      styleConfigs: '++id, name, user_id, is_default, created_at, updated_at',
+      promptRecords: '++id, user_id, created_at',
+      apiKeys: '++id, user_id, api_key, model, is_current, created_at'
     });
+    
+    // 版本2：更新提示词记录表结构，移除可能导致问题的嵌套字段索引
+    this.version(2).stores({
+      promptRecords: '++id, userId, createdAt'
+    });
+
+    // 版本3：重新创建所有表，解决表结构不一致问题
+    this.version(3)
+      .stores({
+        users: '++id, name, email, created_at',
+        projects: '++id, title, user_id, created_at, updated_at',
+        styleConfigs: '++id, name, user_id, is_default, created_at, updated_at',
+        promptRecords: '++id, user_id, created_at',
+        apiKeys: '++id, user_id, api_key, model, is_current, created_at'
+      })
+      .upgrade(async (tx) => {
+        // 重新创建所有表，解决可能的表结构不一致问题
+        // 这里我们不做任何数据转换，只是让Dexie重新创建表结构
+        console.log('数据库升级到版本3，重新创建表结构');
+      });
+
+    // 版本4：统一所有字段名为snake_case命名规范
+    this.version(4)
+      .stores({
+        users: '++id, name, email, created_at',
+        projects: '++id, title, user_id, created_at, updated_at',
+        styleConfigs: '++id, name, user_id, is_default, created_at, updated_at',
+        promptRecords: '++id, user_id, created_at',
+        apiKeys: '++id, user_id, api_key, model, is_current, created_at'
+      })
+      .upgrade(async (tx) => {
+        // 由于历史数据中可能没有正确的参考歌曲数据，我们不需要做数据迁移
+        // 只是重新创建表结构以匹配新的字段命名规范
+        console.log('数据库升级到版本4，统一字段命名规范为snake_case');
+      });
 
     // 初始化表
     this.users = this.table('users');
@@ -179,10 +216,10 @@ class AppDatabase extends Dexie {
   }
 
   // 提示词生成记录相关操作
-  async createPromptRecord(record: Omit<PromptRecord, 'id' | 'createdAt'>): Promise<PromptRecord> {
+  async createPromptRecord(record: Omit<PromptRecord, 'id' | 'created_at'>): Promise<PromptRecord> {
     const newRecord = {
       ...record,
-      createdAt: new Date()
+      created_at: new Date()
     };
     const id = await this.promptRecords.add(newRecord);
     return { ...newRecord, id };
@@ -200,11 +237,11 @@ class AppDatabase extends Dexie {
     await this.promptRecords.delete(id);
   }
 
-  async getUserPromptRecords(userId: number, limit?: number): Promise<PromptRecord[]> {
+  async getUserPromptRecords(user_id: number, limit?: number): Promise<PromptRecord[]> {
     const query = this.promptRecords
-      .where('userId')
-      .equals(userId)
-      .sortBy('createdAt')
+      .where('user_id')
+      .equals(user_id)
+      .sortBy('created_at')
       .then(records => records.reverse()); // 先排序，再反转，实现倒序
 
     if (limit) {
@@ -213,8 +250,8 @@ class AppDatabase extends Dexie {
     return query;
   }
 
-  async searchPromptRecords(userId: number, keyword: string, limit?: number): Promise<PromptRecord[]> {
-    const allRecords = await this.getUserPromptRecords(userId);
+  async searchPromptRecords(user_id: number, keyword: string, limit?: number): Promise<PromptRecord[]> {
+    const allRecords = await this.getUserPromptRecords(user_id);
     
     const filteredRecords = allRecords.filter(record => {
       const searchText = JSON.stringify(record).toLowerCase();
@@ -227,32 +264,32 @@ class AppDatabase extends Dexie {
     return filteredRecords;
   }
 
-  async getRecentPromptRecords(userId: number, days: number = 7): Promise<PromptRecord[]> {
+  async getRecentPromptRecords(user_id: number, days: number = 7): Promise<PromptRecord[]> {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - days);
 
     return this.promptRecords
-      .where('userId')
-      .equals(userId)
-      .and(record => (record.createdAt || new Date(0)) >= cutoffDate)
-      .sortBy('createdAt')
+      .where('user_id')
+      .equals(user_id)
+      .and(record => (record.created_at || new Date(0)) >= cutoffDate)
+      .sortBy('created_at')
       .then(records => records.reverse());
   }
 
   // API Key 相关操作
-  async createApiKey(apiKey: Omit<ApiKey, 'id' | 'createdAt'>): Promise<ApiKey> {
+  async createApiKey(apiKey: Omit<ApiKey, 'id' | 'created_at'>): Promise<ApiKey> {
     console.log('Creating new API Key:', apiKey);
     const newApiKey = {
       ...apiKey,
-      createdAt: new Date()
+      created_at: new Date()
     };
     
     // 如果设置为当前使用的 API Key，取消其他 API Key 的当前状态
-    if (newApiKey.isCurrent) {
+    if (newApiKey.is_current) {
       console.log('Setting new API Key as current, updating existing current keys...');
       await this.apiKeys
-        .where({ userId: newApiKey.userId, isCurrent: true })
-        .modify({ isCurrent: false });
+        .where({ user_id: newApiKey.user_id, is_current: true })
+        .modify({ is_current: false });
     }
     
     const id = await this.apiKeys.add(newApiKey);
@@ -267,12 +304,12 @@ class AppDatabase extends Dexie {
 
   async updateApiKey(id: number, updates: Partial<ApiKey>): Promise<number> {
     // 如果设置为当前使用的 API Key，取消其他 API Key 的当前状态
-    if (updates.isCurrent) {
+    if (updates.is_current) {
       const apiKey = await this.apiKeys.get(id);
       if (apiKey) {
         await this.apiKeys
-          .where({ userId: apiKey.userId, isCurrent: true })
-          .modify({ isCurrent: false });
+          .where({ user_id: apiKey.user_id, is_current: true })
+          .modify({ is_current: false });
       }
     }
     
@@ -283,16 +320,16 @@ class AppDatabase extends Dexie {
     await this.apiKeys.delete(id);
   }
 
-  async getUserApiKeys(userId: number): Promise<ApiKey[]> {
-    return this.apiKeys.where('userId').equals(userId).toArray();
+  async getUserApiKeys(user_id: number): Promise<ApiKey[]> {
+    return this.apiKeys.where('user_id').equals(user_id).toArray();
   }
 
-  async getCurrentApiKey(userId: number): Promise<ApiKey | undefined> {
-    console.log('Getting current API Key for user:', userId);
-    // 先获取所有该用户的API Key，然后找到isCurrent为true的那个
-    const userApiKeys = await this.apiKeys.where('userId').equals(userId).toArray();
+  async getCurrentApiKey(user_id: number): Promise<ApiKey | undefined> {
+    console.log('Getting current API Key for user:', user_id);
+    // 先获取所有该用户的API Key，然后找到is_current为true的那个
+    const userApiKeys = await this.apiKeys.where('user_id').equals(user_id).toArray();
     console.log('All user API Keys:', userApiKeys);
-    const currentApiKey = userApiKeys.find(key => key.isCurrent);
+    const currentApiKey = userApiKeys.find(key => key.is_current);
     console.log('Found current API Key:', currentApiKey);
     return currentApiKey;
   }

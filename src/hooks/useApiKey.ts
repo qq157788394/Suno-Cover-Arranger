@@ -17,14 +17,14 @@ export const useApiKey = () => {
       const modelApiKey = userApiKeys.find((key) => key.model === targetModel);
       console.log('Found API Key for model', targetModel, ':', modelApiKey);
 
-      setApiKey(modelApiKey?.apiKey || '');
+      setApiKey(modelApiKey?.api_key || '');
       setModel(targetModel);
 
       // 将所有API Key的isCurrent设置为false，然后将指定模型的API Key设置为当前
       console.log('Updating current API Key status for model', targetModel);
       for (const key of userApiKeys) {
         await db.updateApiKey(key.id!, {
-          isCurrent: key.model === targetModel,
+          is_current: key.model === targetModel,
         });
       }
     } catch (error) {
@@ -45,7 +45,7 @@ export const useApiKey = () => {
 
         if (currentApiKey) {
           console.log('Found current API Key:', currentApiKey);
-          setApiKey(currentApiKey.apiKey);
+          setApiKey(currentApiKey.api_key);
           setModel(currentApiKey.model);
         } else {
           // 如果没有当前API Key，默认使用deepseek并尝试加载其API Key
@@ -82,10 +82,10 @@ export const useApiKey = () => {
         model: newModel,
       });
       const savedApiKey = await db.createApiKey({
-        userId: 1,
-        apiKey: newApiKey,
+        user_id: 1,
+        api_key: newApiKey,
         model: newModel,
-        isCurrent: true,
+        is_current: true,
       });
       console.log('Saved API Key and Model to DB:', savedApiKey);
       setApiKey(newApiKey);
@@ -123,11 +123,17 @@ export const useApiKey = () => {
   const validateApiKey = (apiKeyToValidate: string) => {
     // DeepSeek API Key格式：sk-开头的字符串
     // Google Gemini API Key格式：AIza开头的字符串
+    // 小米MiMo API Key格式：sk-开头的字符串
     const deepSeekRegex = /^sk-/;
     const geminiRegex = /^AIza/;
+    const mimoRegex = /^sk-/;
 
     const trimmedApiKey = apiKeyToValidate.trim();
-    return deepSeekRegex.test(trimmedApiKey) || geminiRegex.test(trimmedApiKey);
+    return (
+      deepSeekRegex.test(trimmedApiKey) ||
+      geminiRegex.test(trimmedApiKey) ||
+      mimoRegex.test(trimmedApiKey)
+    );
   };
 
   return {

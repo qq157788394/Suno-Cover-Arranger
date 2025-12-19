@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, it, jest } from '@jest/globals';
+// Jest全局变量会自动注入，无需显式导入
 import { generateUserPrompt } from '@/services/deepseek';
-import type { GenerateRequest, ReferenceSong } from '@/shared/types';
+import type { GenerateRequest, ReferenceSong } from '@/shared/types/types';
 
 // 模拟fetch API
 global.fetch = jest.fn();
@@ -24,7 +24,9 @@ describe('deepseek service', () => {
     ];
 
     const request: GenerateRequest = {
-      apiKey: 'test-api-key',
+      api_key: 'test-api-key',
+      model: 'deepseek',
+      song_name: 'Test Song',
       song_language: 'Mandarin',
       target_artist: 'Test Singer',
       reference_songs: referenceSongs,
@@ -47,7 +49,9 @@ describe('deepseek service', () => {
 
   it('should generate user prompt correctly without reference songs', () => {
     const request: GenerateRequest = {
-      apiKey: 'test-api-key',
+      api_key: 'test-api-key',
+      model: 'deepseek',
+      song_name: 'Test Song',
       song_language: 'English',
       target_artist: 'Test Singer',
       reference_songs: [],
@@ -68,7 +72,9 @@ describe('deepseek service', () => {
 
   it('should handle empty style description correctly', () => {
     const request: GenerateRequest = {
-      apiKey: 'test-api-key',
+      api_key: 'test-api-key',
+      model: 'deepseek',
+      song_name: 'Test Song',
       song_language: 'Mandarin',
       target_artist: 'Test Singer',
       reference_songs: [],
@@ -85,7 +91,9 @@ describe('deepseek service', () => {
 
   it('should handle empty lyrics correctly', () => {
     const request: GenerateRequest = {
-      apiKey: 'test-api-key',
+      api_key: 'test-api-key',
+      model: 'deepseek',
+      song_name: 'Test Song',
       song_language: 'Mandarin',
       target_artist: 'Test Singer',
       reference_songs: [],

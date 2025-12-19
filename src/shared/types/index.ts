@@ -65,8 +65,8 @@ export interface UserInput {
   songLanguage: string;
   /** 目标歌手 */
   targetSinger: string;
-  /** 参考歌曲列表 */
-  referenceSongs: string[];
+  /** 参考歌曲列表（JSON 字符串） */
+  referenceSongs: string;
   /** 风格描述 */
   styleDescription: string;
   /** 歌词 */
@@ -99,45 +99,8 @@ export interface AIResult {
   model: string;
 }
 
-/**
- * 提示词记录类型
- * 用于表示用户生成提示词的记录信息
- */
-export interface PromptRecord {
-  /** 记录ID（自动生成） */
-  id?: number;
-  /** 用户ID（关联到用户表） */
-  userId: number;
-  /** 用户输入信息 */
-  userInput: UserInput;
-  /** DeepSeek API返回的结果信息（向后兼容） */
-  deepSeekResult?: DeepSeekResult;
-  /** AI 模型返回的结果信息（多模型支持） */
-  aiResult?: AIResult;
-  /** 使用的 AI 模型名称（多模型支持） */
-  model?: string;
-  /** 创建时间（自动生成） */
-  createdAt?: Date;
-}
-
-/**
- * API Key 类型
- * 用于表示用户的 AI 模型 API Key 信息
- */
-export interface ApiKey {
-  /** API Key ID（自动生成） */
-  id?: number;
-  /** 用户ID（关联到用户表） */
-  userId: number;
-  /** AI 模型 API Key */
-  apiKey: string;
-  /** AI 模型名称（如 deepseek, gemini） */
-  model: string;
-  /** 是否为当前使用的 API Key */
-  isCurrent: boolean;
-  /** 创建时间（自动生成） */
-  createdAt?: Date;
-}
+// 提示词记录类型已移至 types.ts 文件中，使用统一的 snake_case 命名规范
+// 请从 '@/shared/types/types' 导入 PromptRecord 类型
 
 /**
  * 参考歌曲类型
@@ -150,40 +113,5 @@ export interface ReferenceSong {
   artist?: string;
 }
 
-/**
- * 生成请求类型
- * 用于表示用户生成 Suno 提示词的请求参数
- */
-export interface GenerateRequest {
-  /** API 密钥 */
-  apiKey: string;
-  /** 使用的 AI 模型名称 */
-  model: string;
-  /** 歌曲名称 */
-  song_name: string;
-  /** 歌曲语言 */
-  song_language: string;
-  /** 目标艺术家 */
-  target_artist: string;
-  /** 参考歌曲列表 */
-  reference_songs: ReferenceSong[];
-  /** 风格备注（可选） */
-  style_note?: string;
-  /** 额外备注（可选） */
-  extra_note?: string;
-  /** 原始歌词 */
-  lyrics_raw: string;
-}
-
-/**
- * 生成响应类型
- * 用于表示 AI 生成的 Suno 提示词结果
- */
-export interface GenerateResponse {
-  /** 生成的 Styles 提示词 */
-  styles: string;
-  /** 生成的 Lyrics 提示词 */
-  lyrics: string;
-  /** 生成时间戳 */
-  timestamp: string;
-}
+// 生成请求和响应类型已移至 types.ts 文件中，使用统一的 snake_case 命名规范
+// 请从 '@/shared/types/types' 导入 GenerateRequest 和 GenerateResponse 类型
