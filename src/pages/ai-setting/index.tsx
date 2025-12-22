@@ -82,7 +82,7 @@ const AISettingPage: React.FC = () => {
 
   return (
     <PageContainer>
-      <Space direction="vertical" size="large" style={{ display: 'flex' }}>
+      <Space orientation="vertical" size="large">
         <ProCard>
           <ProForm
             layout="vertical"

@@ -42,11 +42,12 @@ export class MimoService extends BaseAIService {
               content: userPrompt,
             },
           ],
-          temperature: 0.7,
+          temperature: 0.8,
+          top_p: 0.95,
           max_tokens: 4096,
           stream: false,
           extra_body: {
-            "thinking": {"type": "disabled"}
+            "thinking": {"type": "enabled"}
           }
         }),
       });

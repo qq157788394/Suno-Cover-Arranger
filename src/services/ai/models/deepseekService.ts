@@ -42,7 +42,7 @@ export class DeepSeekService extends BaseAIService {
               content: userPrompt,
             },
           ],
-          temperature: 0.7,
+          temperature: 1.3,
           max_tokens: 4096,
         }),
       });

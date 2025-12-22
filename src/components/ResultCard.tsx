@@ -35,7 +35,7 @@ const ResultCard = memo(
             复制
           </Button>
         }
-        style={{ marginBottom: 24 }}
+        style={{ height: '100%' }}
       >
         <Input.TextArea
           value={value}

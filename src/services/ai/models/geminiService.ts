@@ -28,7 +28,7 @@ export class GeminiService extends BaseAIService {
       const genAI = new GoogleGenAI({ apiKey });
 
       const result = await genAI.models.generateContent({ 
-        model: 'gemini-3-pro-preview',
+        model: 'gemini-3-flash-preview',
         contents: [
           {
             parts: [

@@ -292,6 +292,7 @@ const SunoCover: React.FC = () => {
                   翻唱配置
                 </span>
               }
+              style={{ height: '100%' }}
             >
               {/* 延迟渲染：只有在数据加载完成后才显示表单 */}
               {!isFormInitialized ? (

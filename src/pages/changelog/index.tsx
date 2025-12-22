@@ -1,7 +1,10 @@
 import { PageContainer } from '@ant-design/pro-components';
 import { XMarkdown } from '@ant-design/x-markdown';
+import { useModel } from '@umijs/max';
 import { Card, Spin, Typography } from 'antd';
 import React, { useEffect, useState } from 'react';
+import '@ant-design/x-markdown/themes/light.css';
+import '@ant-design/x-markdown/themes/dark.css';
 
 // 构建时注入的CHANGELOG内容（通过构建脚本处理）
 declare global {
@@ -11,6 +14,13 @@ declare global {
 const ChangelogPage: React.FC = () => {
   const [changelogContent, setChangelogContent] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
+  // 获取全局初始状态，包含主题设置
+  const { initialState } = useModel('@@initialState');
+  // 根据主题设置确定XMarkdown的主题类
+  const isDarkTheme = initialState?.settings?.navTheme === 'realDark';
+  const markdownThemeClass = isDarkTheme
+    ? 'x-markdown-dark'
+    : 'x-markdown-light';
 
   useEffect(() => {
     // 开发环境：使用mock API获取内容
@@ -65,9 +75,9 @@ const ChangelogPage: React.FC = () => {
             <Spin size="large" />
           </div>
         ) : (
-          <Typography>
-            <XMarkdown>{changelogContent}</XMarkdown>
-          </Typography>
+          <XMarkdown className={markdownThemeClass}>
+            {changelogContent}
+          </XMarkdown>
         )}
       </Card>
     </PageContainer>

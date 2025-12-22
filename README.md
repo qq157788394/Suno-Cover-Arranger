@@ -11,7 +11,7 @@ Suno翻唱编曲大师是一款专为Suno翻唱创作者设计的AI工具，帮�
 
 如果您有任何问题、建议或反馈，请通过以下方式联系开发者：
 
-<img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/88ec29ed2e554f6db6b8ce014885a171.JPG~tplv-a9rns2rl98-image-qvalue.image?rcl=202512200219394C365BD95A2C4849AD5D&rk3s=8e244e95&rrcfp=b669a9d6&x-expires=1766254780&x-signature=uNzJ8mDSItsxWSDXp6G4%2B78I3VA%3D" width="320" alt="开发者微信">
+<img src="https://cdn.jsdelivr.net/gh/qq157788394/My-Image/%E5%BC%80%E5%8F%91%E8%80%85%E5%BE%AE%E4%BF%A1.JPG" width="320" alt="开发者微信">
 
 ## 支持一下
 
@@ -21,7 +21,7 @@ Suno翻唱编曲大师是一款专为Suno翻唱创作者设计的AI工具，帮�
 - 关注开发者B站 / 抖音 / 小红书，全网同名“黄优优yoyo”
 - 请我抽包利群
 
-<img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/832e1cb3e5d84de8a5d284a3934fa224.JPG~tplv-a9rns2rl98-image-qvalue.image?rcl=2025122002544699E4174113C58B4BC809&rk3s=8e244e95&rrcfp=b669a9d6&x-expires=1766256887&x-signature=Im%2F99deGb7T%2BnoZPtOx1w3EH2UM%3D" width="320" alt="抽包利群">
+<img src="https://cdn.jsdelivr.net/gh/qq157788394/My-Image/IMG_2566.JPG" width="320" alt="抽包利群">
 
 ## 解决的痛点
 
