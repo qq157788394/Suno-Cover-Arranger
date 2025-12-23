@@ -23,8 +23,14 @@ export class MimoService extends BaseAIService {
     const systemPrompt = SYSTEM_PROMPT;
 
     try {
-      // 使用代理地址避免CORS问题
-      const response = await fetch('/mimo-api/v1/chat/completions', {
+      // 确定API请求URL
+      // 开发环境：使用代理地址避免CORS问题
+      // 生产环境：直接使用真实的API域名
+      const apiUrl = process.env.NODE_ENV === 'development' 
+        ? '/mimo-api/v1/chat/completions' 
+        : 'https://api.xiaomimimo.com/v1/chat/completions';
+      
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
