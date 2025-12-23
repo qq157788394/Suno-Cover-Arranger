@@ -23,40 +23,77 @@ export class MimoService extends BaseAIService {
     const systemPrompt = SYSTEM_PROMPT;
 
     try {
-      // 确定API请求URL
-      // 开发环境：使用代理地址避免CORS问题
-      // 生产环境：直接使用真实的API域名
-      const apiUrl = process.env.NODE_ENV === 'development' 
-        ? '/mimo-api/v1/chat/completions' 
-        : 'https://api.xiaomimimo.com/v1/chat/completions';
+      // 确定API请求URL和配置
+      let apiUrl: string;
+      let fetchOptions: RequestInit;
       
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model: 'mimo-v2-flash',
-          messages: [
-            {
-              role: 'system',
-              content: systemPrompt,
-            },
-            {
-              role: 'user',
-              content: userPrompt,
-            },
-          ],
-          temperature: 0.8,
-          top_p: 0.95,
-          max_tokens: 4096,
-          stream: false,
-          extra_body: {
-            "thinking": {"type": "enabled"}
-          }
-        }),
-      });
+      if (process.env.NODE_ENV === 'development') {
+        // 开发环境：使用代理地址避免CORS问题
+        apiUrl = '/mimo-api/v1/chat/completions';
+        fetchOptions = {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model: 'mimo-v2-flash',
+            messages: [
+              {
+                role: 'system',
+                content: systemPrompt,
+              },
+              {
+                role: 'user',
+                content: userPrompt,
+              },
+            ],
+            temperature: 0.8,
+            top_p: 0.95,
+            max_tokens: 4096,
+            stream: false,
+            extra_body: {
+              "thinking": {"type": "enabled"}
+            }
+          }),
+        };
+      } else {
+        // 生产环境：使用CORS代理服务解决跨域问题
+        // 使用自定义的Vercel代理服务，避免公共CORS代理的限制
+        const targetUrl = 'https://api.xiaomimimo.com/v1/chat/completions';
+        // 使用Vercel部署的CORS代理
+        apiUrl = `https://cors-proxy-vercel-xiakeyao.vercel.app/api/proxy?url=${encodeURIComponent(targetUrl)}`;
+        
+        fetchOptions = {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model: 'mimo-v2-flash',
+            messages: [
+              {
+                role: 'system',
+                content: systemPrompt,
+              },
+              {
+                role: 'user',
+                content: userPrompt,
+              },
+            ],
+            temperature: 0.8,
+            top_p: 0.95,
+            max_tokens: 4096,
+            stream: false,
+            extra_body: {
+              "thinking": {"type": "enabled"}
+            }
+          }),
+        };
+      }
+      
+      const response = await fetch(apiUrl, fetchOptions);
 
       if (!response.ok) {
         const errorData = await response.text();
