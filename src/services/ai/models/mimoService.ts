@@ -23,77 +23,37 @@ export class MimoService extends BaseAIService {
     const systemPrompt = SYSTEM_PROMPT;
 
     try {
-      // 确定API请求URL和配置
-      let apiUrl: string;
-      let fetchOptions: RequestInit;
+      // 直接使用MiMo API地址，不使用代理
+      // 注意：在GitHub Pages上可能会遇到CORS问题
+      const apiUrl = 'https://api.xiaomimimo.com/v1/chat/completions';
       
-      if (process.env.NODE_ENV === 'development') {
-        // 开发环境：使用代理地址避免CORS问题
-        apiUrl = '/mimo-api/v1/chat/completions';
-        fetchOptions = {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`,
-          },
-          body: JSON.stringify({
-            model: 'mimo-v2-flash',
-            messages: [
-              {
-                role: 'system',
-                content: systemPrompt,
-              },
-              {
-                role: 'user',
-                content: userPrompt,
-              },
-            ],
-            temperature: 0.8,
-            top_p: 0.95,
-            max_tokens: 4096,
-            stream: false,
-            extra_body: {
-              "thinking": {"type": "enabled"}
-            }
-          }),
-        };
-      } else {
-        // 生产环境：使用CORS代理服务解决跨域问题
-        // 使用自定义的Vercel代理服务，避免公共CORS代理的限制
-        const targetUrl = 'https://api.xiaomimimo.com/v1/chat/completions';
-        // 使用Vercel部署的CORS代理
-        apiUrl = `https://cors-proxy-vercel-xiakeyao.vercel.app/api/proxy?url=${encodeURIComponent(targetUrl)}`;
-        
-        fetchOptions = {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`,
-          },
-          body: JSON.stringify({
-            model: 'mimo-v2-flash',
-            messages: [
-              {
-                role: 'system',
-                content: systemPrompt,
-              },
-              {
-                role: 'user',
-                content: userPrompt,
-              },
-            ],
-            temperature: 0.8,
-            top_p: 0.95,
-            max_tokens: 4096,
-            stream: false,
-            extra_body: {
-              "thinking": {"type": "enabled"}
-            }
-          }),
-        };
-      }
-      
-      const response = await fetch(apiUrl, fetchOptions);
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: 'mimo-v2-flash',
+          messages: [
+            {
+              role: 'system',
+              content: systemPrompt,
+            },
+            {
+              role: 'user',
+              content: userPrompt,
+            },
+          ],
+          temperature: 0.8,
+          top_p: 0.95,
+          max_tokens: 4096,
+          stream: false,
+          extra_body: {
+            "thinking": {"type": "enabled"}
+          }
+        }),
+      });
 
       if (!response.ok) {
         const errorData = await response.text();
@@ -113,6 +73,23 @@ export class MimoService extends BaseAIService {
       return this.parseResponse(aiResponse);
     } catch (error) {
       console.error('Error calling MiMo API:', error);
+      
+      // 检测是否为CORS错误
+      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        throw new Error(
+          'MiMo API 请求失败：遇到跨域问题（CORS）。\n' +
+          '解决方案：\n' +
+          '1. 建议在本地开发环境中使用 MiMo 模型\n' +
+          '2. 或使用其他模型如 DeepSeek 或 Gemini\n' +
+          '3. 或部署自己的 CORS 代理服务\n' +
+          '\n本地开发环境启动方式：\n' +
+          '1. 克隆仓库到本地\n' +
+          '2. 运行 pnpm install 安装依赖\n' +
+          '3. 运行 pnpm dev 启动开发服务器\n' +
+          '4. 在 http://localhost:8000 上使用应用'
+        );
+      }
+      
       throw error;
     }
   }
