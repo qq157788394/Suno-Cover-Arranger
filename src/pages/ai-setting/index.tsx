@@ -117,7 +117,7 @@ const AISettingPage: React.FC = () => {
                     value: 'gemini',
                     label: 'Google Gemini 3（推荐，可免费白嫖）',
                   },
-                  { value: 'mimo', label: '小米MiMo V2 Flash（限时免费白嫖）' },
+                  { value: 'mimo', label: '小米MiMo V2 Flash（限时免费白嫖，但需要在本地运行，线上无法使用）' },
                 ]}
                 onChange={handleModelChange}
               />
@@ -270,6 +270,7 @@ const AISettingPage: React.FC = () => {
               </ol>
               <Title level={4}>💡 常见问题</Title>
               <ul>
+                <li>无法使用？ 请确保在本地运行项目，线上环境无法使用</li>
                 <li>需要付费吗？ 新模型，面向全球公测，限时免费！</li>
                 <li>访问限制？ 国内可直接访问，无需科学上网</li>
                 <li>
