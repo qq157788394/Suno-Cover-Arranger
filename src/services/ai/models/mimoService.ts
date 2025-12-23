@@ -23,9 +23,12 @@ export class MimoService extends BaseAIService {
     const systemPrompt = SYSTEM_PROMPT;
 
     try {
-      // 直接使用MiMo API地址，不使用代理
-      // 注意：在GitHub Pages上可能会遇到CORS问题
-      const apiUrl = 'https://api.xiaomimimo.com/v1/chat/completions';
+      // 确定API请求URL
+      // 开发环境：使用代理地址避免CORS问题
+      // 生产环境：直接使用真实的API域名
+      const apiUrl = process.env.NODE_ENV === 'development' 
+        ? '/mimo-api/v1/chat/completions' 
+        : 'https://api.xiaomimimo.com/v1/chat/completions';
       
       const response = await fetch(apiUrl, {
         method: 'POST',
@@ -75,7 +78,7 @@ export class MimoService extends BaseAIService {
       console.error('Error calling MiMo API:', error);
       
       // 检测是否为CORS错误
-      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+      if (process.env.NODE_ENV === 'production' && error instanceof TypeError && error.message.includes('Failed to fetch')) {
         throw new Error(
           'MiMo API 请求失败：遇到跨域问题（CORS）。\n' +
           '解决方案：\n' +
