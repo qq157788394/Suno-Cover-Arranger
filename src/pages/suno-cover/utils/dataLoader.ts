@@ -92,7 +92,7 @@ export const loadRecordData = async (
 
   try {
     // 查询数据库记录
-    const record = await db.getPromptRecord(parseInt(recordId));
+    const record = await db.getPromptRecord(parseInt(recordId, 10));
 
     if (!record) {
       message.error('记录不存在');
@@ -119,7 +119,7 @@ export const loadRecordData = async (
     });
 
     return { formValues, hasRecord: true };
-  } catch (error) {
+  } catch (_error) {
     message.error('数据加载失败');
     return { formValues, hasRecord: false };
   }

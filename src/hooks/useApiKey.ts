@@ -23,9 +23,11 @@ export const useApiKey = () => {
       // 将所有API Key的isCurrent设置为false，然后将指定模型的API Key设置为当前
       console.log('Updating current API Key status for model', targetModel);
       for (const key of userApiKeys) {
-        await db.updateApiKey(key.id!, {
-          is_current: key.model === targetModel,
-        });
+        if (key.id) {
+          await db.updateApiKey(key.id, {
+            is_current: key.model === targetModel,
+          });
+        }
       }
     } catch (error) {
       console.error('Failed to load API Key for model:', targetModel, error);
@@ -105,9 +107,9 @@ export const useApiKey = () => {
       const userApiKeys = await db.getUserApiKeys(1);
       const modelApiKey = userApiKeys.find((key) => key.model === model);
 
-      if (modelApiKey) {
+      if (modelApiKey?.id) {
         console.log('Deleting API Key with ID:', modelApiKey.id);
-        await db.deleteApiKey(modelApiKey.id!);
+        await db.deleteApiKey(modelApiKey.id);
       }
 
       setApiKey('');

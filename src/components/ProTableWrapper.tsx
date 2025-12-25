@@ -3,7 +3,7 @@ import {
   ProTable,
   type RequestData,
 } from '@ant-design/pro-components';
-import { Button, Space } from 'antd';
+import { Space } from 'antd';
 import React from 'react';
 
 interface ProTableWrapperProps<T extends Record<string, any>> {

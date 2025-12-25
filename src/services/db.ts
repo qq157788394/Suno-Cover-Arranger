@@ -12,6 +12,7 @@ import Dexie from 'dexie';
 import type { User, Project, StyleConfig } from '@/shared/types';
 import type { ApiKey } from '@/shared/types/types';
 import type { PromptRecord } from '@/shared/types/types';
+import type { LyricsRecord } from '@/shared/types/types';
 
 /**
  * 应用数据库类
@@ -23,6 +24,7 @@ class AppDatabase extends Dexie {
   styleConfigs: Dexie.Table<StyleConfig, number>; // 风格配置表
   promptRecords: Dexie.Table<PromptRecord & { ai_result?: { styles: string; lyrics: string; model: string } }, number>; // 提示词记录表
   apiKeys: Dexie.Table<ApiKey, number>; // API Key 表
+  lyricsRecords: Dexie.Table<LyricsRecord, number>; // 歌词记录表
 
   /**
    * 数据库类构造函数
@@ -75,12 +77,27 @@ class AppDatabase extends Dexie {
         console.log('数据库升级到版本4，统一字段命名规范为snake_case');
       });
 
+    // 版本5：添加歌词记录表
+    this.version(5)
+      .stores({
+        users: '++id, name, email, created_at',
+        projects: '++id, title, user_id, created_at, updated_at',
+        styleConfigs: '++id, name, user_id, is_default, created_at, updated_at',
+        promptRecords: '++id, user_id, created_at',
+        apiKeys: '++id, user_id, api_key, model, is_current, created_at',
+        lyricsRecords: '++id, created_at'
+      })
+      .upgrade(async (tx) => {
+        console.log('数据库升级到版本5，添加歌词记录表');
+      });
+
     // 初始化表
     this.users = this.table('users');
     this.projects = this.table('projects');
     this.styleConfigs = this.table('styleConfigs');
     this.promptRecords = this.table('promptRecords');
     this.apiKeys = this.table('apiKeys');
+    this.lyricsRecords = this.table('lyricsRecords');
   }
 
   // 用户相关操作
@@ -333,6 +350,68 @@ class AppDatabase extends Dexie {
     console.log('Found current API Key:', currentApiKey);
     return currentApiKey;
   }
+
+  // 歌词记录相关操作
+  async createLyricsRecord(record: Omit<LyricsRecord, 'id'>): Promise<LyricsRecord> {
+    const newRecord = {
+      ...record,
+      created_at: record.created_at || new Date()
+    };
+    const id = await this.lyricsRecords.add(newRecord);
+    return { ...newRecord, id };
+  }
+
+  async getLyricsRecord(id: number): Promise<LyricsRecord | undefined> {
+    return this.lyricsRecords.get(id);
+  }
+
+  async updateLyricsRecord(id: number, updates: Partial<LyricsRecord>): Promise<number> {
+    return this.lyricsRecords.update(id, updates);
+  }
+
+  async deleteLyricsRecord(id: number): Promise<void> {
+    await this.lyricsRecords.delete(id);
+  }
+
+  async getAllLyricsRecords(limit?: number): Promise<LyricsRecord[]> {
+    const records = await this.lyricsRecords.toArray();
+    const sortedRecords = records.sort((a, b) => 
+      (b.created_at?.getTime() || 0) - (a.created_at?.getTime() || 0)
+    );
+
+    if (limit) {
+      return sortedRecords.slice(0, limit);
+    }
+    return sortedRecords;
+  }
+
+  async searchLyricsRecords(keyword: string, limit?: number): Promise<LyricsRecord[]> {
+    const allRecords = await this.getAllLyricsRecords();
+    
+    const filteredRecords = allRecords.filter(record => {
+      const searchText = JSON.stringify(record).toLowerCase();
+      return searchText.includes(keyword.toLowerCase());
+    });
+
+    if (limit) {
+      return filteredRecords.slice(0, limit);
+    }
+    return filteredRecords;
+  }
+
+  async getRecentLyricsRecords(days: number = 7): Promise<LyricsRecord[]> {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+
+    const records = await this.lyricsRecords.toArray();
+    const filteredRecords = records.filter(record => 
+      (record.created_at || new Date(0)) >= cutoffDate
+    );
+    const sortedRecords = filteredRecords.sort((a, b) => 
+      (b.created_at?.getTime() || 0) - (a.created_at?.getTime() || 0)
+    );
+    return sortedRecords;
+  }
 }
 
 // 导出类
@@ -342,4 +421,4 @@ export default AppDatabase;
 export const db = new AppDatabase();
 
 // 导出类型
-export type { User, Project, StyleConfig, PromptRecord, ApiKey };
+export type { User, Project, StyleConfig, PromptRecord, ApiKey, LyricsRecord };

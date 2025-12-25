@@ -1,7 +1,7 @@
 import { PageContainer } from '@ant-design/pro-components';
 import { XMarkdown } from '@ant-design/x-markdown';
 import { useModel } from '@umijs/max';
-import { Card, Spin, Typography } from 'antd';
+import { Card, Spin } from 'antd';
 import React, { useEffect, useState } from 'react';
 import '@ant-design/x-markdown/themes/light.css';
 import '@ant-design/x-markdown/themes/dark.css';

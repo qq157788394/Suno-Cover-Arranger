@@ -96,3 +96,72 @@ export interface PromptRecord {
   // 可选的标签或备注
   tags?: string[];
 }
+
+// 枚举选项接口定义
+export interface EnumOption {
+  value: string;
+  label: string;
+  description: string;
+}
+
+/**
+ * 大师风格卡接口定义
+ */
+export interface MasterStyleCard {
+  id: string;
+  name: string;
+  description: string;
+  stylesRawData: string;
+}
+
+// 歌词表单数据模型
+export interface LyricsFormData {
+  song_name: string; // 歌曲名称
+  song_language: string; // 歌曲语言
+  song_style: string; // 歌曲风格
+  song_structure: string; // 曲式结构
+  creation_mode: string; // 创作模式
+  raw_material: string; // 原始素材
+  requirements?: string; // 创作要求（可选）
+  persona: string; // 叙事人设
+  wording_style?: string[]; // 用词风格（可选，最多2项）
+  allow_english: boolean; // 是否允许英文词汇
+  master_id?: string; // 参考风格（风格卡，可选）
+  reference_lyrics?: string; // 参考歌词（可选）
+  closeness: number; // 贴近度（1-5）
+  rhyme_type: string; // 押韵类型
+  rhyme_tone?: string; // 韵脚（可选）
+  rhyme_strict: boolean; // 是否严格押韵
+  output_count: number; // 输出数量
+}
+
+// 歌词生成请求
+export interface LyricsGenerationRequest {
+  system_prompt: string; // 系统提示词
+  user_prompt: string; // 用户提示词
+  model: string; // AI 模型名称
+  closeness: number; // 贴近度（0-100）
+}
+
+// 歌词生成响应
+export interface LyricsGenerationResponse {
+  lyrics: string; // 生成的歌词
+  model: string; // 使用的 AI 模型名称
+  timestamp: string; // 生成时间戳
+}
+
+// 歌词记录数据模型
+export interface LyricsRecord {
+  id?: number; // 记录ID
+  created_at: Date; // 创建时间
+  // 用户提交的表单数据
+  form_data: LyricsFormData;
+  // AI 返回的结果
+  ai_result: {
+    lyrics: string; // 生成的歌词
+    model: string; // 使用的 AI 模型名称
+    closeness: number; // 贴近度
+  };
+  // 可选的标签或备注
+  tags?: string[];
+}

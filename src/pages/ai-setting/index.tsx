@@ -1,17 +1,13 @@
-import { DeleteOutlined, SaveOutlined } from '@ant-design/icons';
 import {
   PageContainer,
   ProCard,
   ProForm,
   ProFormText,
 } from '@ant-design/pro-components';
-import { Alert, Form, message, Radio, Row, Space, Typography } from 'antd';
-import { FormInstance } from 'antd/es/form';
+import { Alert, Form, message, Radio, Space, Typography } from 'antd';
 import React, { useEffect } from 'react';
 
 import { useApiKey } from '@/hooks/useApiKey';
-import { db } from '@/services/db';
-import type { ApiKey } from '@/shared/types/types';
 
 const { Text, Paragraph, Title, Link } = Typography;
 
@@ -117,7 +113,11 @@ const AISettingPage: React.FC = () => {
                     value: 'gemini',
                     label: 'Google Gemini 3（推荐，可免费白嫖）',
                   },
-                  { value: 'mimo', label: '小米MiMo V2 Flash（限时免费白嫖，但需要在本地运行，线上无法使用）' },
+                  {
+                    value: 'mimo',
+                    label:
+                      '小米MiMo V2 Flash（限时免费白嫖，但需要在本地运行，线上无法使用）',
+                  },
                 ]}
                 onChange={handleModelChange}
               />

@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 // 检查是否使用pnpm作为包管理器
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
 
 function checkPnpm() {
   // 检查是否存在pnpm-lock.yaml文件

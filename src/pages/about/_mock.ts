@@ -1,11 +1,11 @@
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 /**
  * Mock API：获取README.md文件内容
  */
 export default {
-  'GET /api/readme': (req: any, res: any) => {
+  'GET /api/readme': (_req: any, res: any) => {
     try {
       // 读取项目根目录下的README.md文件
       const readmePath = join(process.cwd(), 'README.md');

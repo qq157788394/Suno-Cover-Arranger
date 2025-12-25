@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { db } from '@/services/db';
 import type { PromptRecord } from '@/shared/types/types';
 
@@ -197,7 +197,12 @@ export const usePromptRecords = (currentUserId: number) => {
     try {
       const userRecords = await db.getUserPromptRecords(currentUserId);
       await Promise.all(
-        userRecords.map((record) => db.deletePromptRecord(record.id!)),
+        userRecords.map((record) => {
+          if (record.id) {
+            return db.deletePromptRecord(record.id);
+          }
+          return Promise.resolve();
+        }),
       );
       setRecords([]);
       return { success: true };

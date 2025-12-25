@@ -17,7 +17,7 @@ const { REACT_APP_ENV = 'dev' } = process.env;
 // 配置GitHub Pages的公共路径，仓库名称为Suno-Cover-Arranger
 const PUBLIC_PATH: string = '/Suno-Cover-Arranger/';
 
-export default defineConfig({
+const config: any = defineConfig({
   /**
    * @name 开启 hash 模式
    * @description 让 build 之后的产物包含 hash 后缀。通常用于增量发布和避免浏览器加载缓存。
@@ -196,3 +196,5 @@ export default defineConfig({
     'process.env.CI': process.env.CI,
   },
 });
+
+export default config;

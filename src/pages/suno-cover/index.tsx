@@ -3,8 +3,6 @@
  * 负责处理用户输入的翻唱配置信息，并生成高质量的 Suno 翻唱歌曲提示词
  */
 
-// Ant Design Icons
-import { CopyOutlined } from '@ant-design/icons';
 // Ant Design Pro Components
 import {
   PageContainer,
@@ -24,7 +22,6 @@ import {
   Col,
   Flex,
   Form,
-  Input,
   Modal,
   message,
   Row,
@@ -57,14 +54,7 @@ const SunoCover: React.FC = () => {
   // 使用antd的message hook
   const [messageApi, contextHolder] = message.useMessage();
   // 使用自定义hook管理API Key和模型
-  const {
-    apiKey,
-    model,
-    isLoading: apiKeyLoading,
-    saveApiKey,
-    deleteApiKey,
-    validateApiKey,
-  } = useApiKey();
+  const { apiKey, model } = useApiKey();
 
   // 表单实例，用于管理翻唱配置表单的数据
   const [form] = Form.useForm<GenerateRequest>();
@@ -101,52 +91,48 @@ const SunoCover: React.FC = () => {
   // 统一的数据库保存方法（可复用于正常提交和模拟生成）
   const saveRecordToDB = useCallback(
     async (values: any, result: any, isMock: boolean = false) => {
-      try {
-        const userId = 1; // 模拟当前用户ID
+      const userId = 1; // 模拟当前用户ID
 
-        // 获取参考歌曲
-        const referenceSongsArray = Array.isArray(values.reference_songs)
-          ? values.reference_songs
-          : [];
+      // 获取参考歌曲
+      const referenceSongsArray = Array.isArray(values.reference_songs)
+        ? values.reference_songs
+        : [];
 
-        const referenceSongs = JSON.stringify(
-          referenceSongsArray.filter(
-            (song: any) => song && song.title && typeof song.title === 'string',
-          ),
-        );
+      const referenceSongs = JSON.stringify(
+        referenceSongsArray.filter(
+          (song: any) => song?.title && typeof song.title === 'string',
+        ),
+      );
 
-        // 确保必填字段有默认值
-        const songLanguage = values.song_language || 'Mandarin';
-        const targetSinger = values.target_artist || '未知艺术家';
-        const lyrics = values.lyrics_raw || '无歌词';
+      // 确保必填字段有默认值
+      const songLanguage = values.song_language || 'Mandarin';
+      const targetSinger = values.target_artist || '未知艺术家';
+      const lyrics = values.lyrics_raw || '无歌词';
 
-        // 准备保存到数据库的记录
-        const recordToSave = {
-          user_id: userId,
-          user_input: {
-            song_name: values.song_name,
-            song_language: songLanguage,
-            target_singer: targetSinger,
-            reference_songs: referenceSongs,
-            style_description: values.style_note || '',
-            lyrics,
-            scene: values.extra_note || '',
-          },
-          ai_result: {
-            styles: result.styles,
-            lyrics: result.lyrics,
-            model: isMock ? 'mock' : model, // 区分正常生成和模拟生成
-          },
-        };
+      // 准备保存到数据库的记录
+      const recordToSave = {
+        user_id: userId,
+        user_input: {
+          song_name: values.song_name,
+          song_language: songLanguage,
+          target_singer: targetSinger,
+          reference_songs: referenceSongs,
+          style_description: values.style_note || '',
+          lyrics,
+          scene: values.extra_note || '',
+        },
+        ai_result: {
+          styles: result.styles,
+          lyrics: result.lyrics,
+          model: isMock ? 'mock' : model, // 区分正常生成和模拟生成
+        },
+      };
 
-        const record = await db.createPromptRecord(recordToSave);
+      const record = await db.createPromptRecord(recordToSave);
 
-        messageApi.success('记录已成功保存');
+      messageApi.success('记录已成功保存');
 
-        return record;
-      } catch (dbError) {
-        throw dbError;
-      }
+      return record;
     },
     [model, messageApi],
   );
@@ -250,7 +236,7 @@ const SunoCover: React.FC = () => {
 
       // 使用统一的数据库保存方法（标记为模拟生成）
       await saveRecordToDB(formValues, result, true);
-    } catch (error) {
+    } catch (_error) {
       messageApi.error('模拟生成失败，请稍后再试');
     } finally {
       setLoading(false);

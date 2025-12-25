@@ -30,6 +30,23 @@ export default [
     component: './ai-setting',
   },
   {
+    name: '大师写歌词',
+    icon: 'EditOutlined',
+    path: '/lyrics-craft',
+    component: './lyrics-craft',
+  },
+  {
+    name: '歌词记录',
+    icon: 'FileTextOutlined',
+    path: '/lyrics-records',
+    component: './lyrics-records',
+  },
+  {
+    path: '/lyrics-records/:id',
+    component: './lyrics-records/detail',
+    hideInMenu: true,
+  },
+  {
     name: '项目介绍',
     icon: 'InfoCircleOutlined',
     path: '/about',

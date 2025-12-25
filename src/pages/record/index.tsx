@@ -88,7 +88,11 @@ const RecordPage: React.FC = () => {
         cancelText: '取消',
         onOk: async () => {
           try {
-            await deleteRecord(record.id!);
+            if (!record.id) {
+              message.error('记录ID不存在');
+              return;
+            }
+            await deleteRecord(record.id);
             message.success('删除成功');
           } catch (error) {
             message.error('删除失败');
@@ -108,7 +112,7 @@ const RecordPage: React.FC = () => {
 
   // 处理表格参数变化并获取数据
   const handleTableChange = useCallback(
-    async (pagination: any, filters: any, sorter: any, extra: any) => {
+    async (_pagination: any, _filters: any, _sorter: any, extra: any) => {
       // 从extra中获取搜索表单的参数
       const { action, searchFormValues } = extra;
 
@@ -297,7 +301,7 @@ const RecordPage: React.FC = () => {
           span: 6,
         }}
         // 添加request属性以确保表格能正确处理数据
-        request={async (params, sort, filter) => {
+        request={async (params, _sort, _filter) => {
           // 当表格首次加载或分页变化时也会调用此方法
           // params包含了搜索表单的值
           const keyword = params?.keyword || '';
