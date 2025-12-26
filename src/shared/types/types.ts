@@ -14,7 +14,7 @@ export interface ReferenceSong {
 // 生成请求接口定义
 export interface GenerateRequest {
   api_key: string; // AI 模型 API 密钥
-  model: string; // AI 模型名称（如 deepseek, gemini 等）
+  model: string; // AI 模型名称（如 deepseek, gemini, mimo 等）
   song_name: string; // 歌曲名称
   song_language: string; // 歌曲语言（如 Mandarin, English 等）
   target_artist: string; // 目标翻唱艺术家
@@ -66,7 +66,7 @@ export interface ApiKey {
   id?: number;
   user_id: number;
   api_key: string;
-  model: string; // AI 模型名称（如 deepseek, gemini 等）
+  model: string; // AI 模型名称（如 deepseek, gemini, mimo 等）
   is_current: boolean;
   created_at: Date;
 }
@@ -147,6 +147,14 @@ export interface LyricsGenerationRequest {
 export interface LyricsGenerationResponse {
   lyrics: string; // 生成的歌词
   model: string; // 使用的 AI 模型名称
+  timestamp: string; // 生成时间戳
+}
+
+// 歌词生成响应（用于AI Provider）
+export interface LyricsGenerateResponse {
+  success: boolean; // 是否成功
+  error?: string; // 错误信息（可选）
+  lyrics: string; // 生成的歌词（原始内容）
   timestamp: string; // 生成时间戳
 }
 

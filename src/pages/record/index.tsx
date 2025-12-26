@@ -2,36 +2,36 @@ import {
   ClockCircleOutlined,
   DeleteOutlined,
   EyeOutlined,
-} from '@ant-design/icons';
+} from "@ant-design/icons";
 import {
   PageContainer,
   type ProColumns,
   ProTable,
-} from '@ant-design/pro-components';
-import { useNavigate } from '@umijs/max';
-import { Alert, Button, Modal, message, Space, Tooltip } from 'antd';
-import React, { useCallback, useEffect, useMemo } from 'react';
-import { usePromptRecords } from '@/hooks/usePromptRecords';
-import type { PromptRecord } from '@/shared/types/types';
+} from "@ant-design/pro-components";
+import { useNavigate } from "@umijs/max";
+import { Alert, Button, Modal, message, Space, Tooltip } from "antd";
+import React, { useCallback, useEffect, useMemo } from "react";
+import { usePromptRecords } from "@/hooks/usePromptRecords";
+import type { PromptRecord } from "@/shared/types/types";
 
 // 结构化日志系统
 const log = {
   info: (message: string, data?: any) => {
-    console.log(`[INFO] ${new Date().toISOString()}: ${message}`, data || '');
+    console.log(`[INFO] ${new Date().toISOString()}: ${message}`, data || "");
   },
   warn: (message: string, data?: any) => {
-    console.warn(`[WARN] ${new Date().toISOString()}: ${message}`, data || '');
+    console.warn(`[WARN] ${new Date().toISOString()}: ${message}`, data || "");
   },
   error: (message: string, error?: any) => {
     console.error(
       `[ERROR] ${new Date().toISOString()}: ${message}`,
-      error || '',
+      error || ""
     );
   },
   debug: (message: string, data?: any) => {
     console.debug(
       `[DEBUG] ${new Date().toISOString()}: ${message}`,
-      data || '',
+      data || ""
     );
   },
 };
@@ -54,54 +54,54 @@ const RecordPage: React.FC = () => {
   const handleViewDetail = useCallback(
     (record: PromptRecord) => {
       try {
-        log.info('点击查看详情，准备传递的记录ID', {
+        log.info("点击查看详情，准备传递的记录ID", {
           recordId: record.id,
           record,
         });
 
         // 确保record对象存在且有ID
         if (!record || !record.id) {
-          log.error('record或record.id为空', { record });
-          message.error('查看详情失败，记录数据不完整');
+          log.error("record或record.id为空", { record });
+          message.error("查看详情失败，记录数据不完整");
           return;
         }
 
         // 使用URL参数传递记录ID
-        log.info('开始跳转到首页，携带记录ID参数', { recordId: record.id });
+        log.info("开始跳转到首页，携带记录ID参数", { recordId: record.id });
         navigate(`/?recordId=${record.id}`);
       } catch (error) {
-        log.error('导航到详情页失败', error);
-        message.error('查看详情失败，请稍后重试');
+        log.error("导航到详情页失败", error);
+        message.error("查看详情失败，请稍后重试");
       }
     },
-    [navigate],
+    [navigate]
   );
 
   // 删除单条记录
   const handleDelete = useCallback(
     async (record: PromptRecord) => {
       Modal.confirm({
-        title: '确认删除',
-        content: '确定要删除这条记录吗？该操作无法恢复。',
-        okText: '删除',
-        okType: 'danger',
-        cancelText: '取消',
+        title: "确认删除",
+        content: "确定要删除这条记录吗？该操作无法恢复。",
+        okText: "删除",
+        okType: "danger",
+        cancelText: "取消",
         onOk: async () => {
           try {
             if (!record.id) {
-              message.error('记录ID不存在');
+              message.error("记录ID不存在");
               return;
             }
             await deleteRecord(record.id);
-            message.success('删除成功');
+            message.success("删除成功");
           } catch (error) {
-            message.error('删除失败');
-            console.error('删除失败：', error);
+            message.error("删除失败");
+            console.error("删除失败：", error);
           }
         },
       });
     },
-    [deleteRecord],
+    [deleteRecord]
   );
 
   // 处理搜索表单提交前的参数处理
@@ -117,8 +117,8 @@ const RecordPage: React.FC = () => {
       const { action, searchFormValues } = extra;
 
       // 只有在搜索操作时才执行筛选
-      if (action === 'search') {
-        const keyword = searchFormValues?.keyword || '';
+      if (action === "search") {
+        const keyword = searchFormValues?.keyword || "";
         const dateRange = searchFormValues?.created_at;
         const songLanguages = searchFormValues?.song_language;
         const targetSinger = searchFormValues?.target_singer;
@@ -135,25 +135,25 @@ const RecordPage: React.FC = () => {
         });
       }
     },
-    [fetchRecords],
+    [fetchRecords]
   );
 
   // 表格列配置
   const columns = useMemo<ProColumns<PromptRecord>[]>(
     () => [
       {
-        title: 'ID',
-        dataIndex: 'id',
-        key: 'id',
+        title: "ID",
+        dataIndex: "id",
+        key: "id",
         width: 80,
         hideInSearch: true,
       },
       {
-        title: '时间',
-        dataIndex: 'created_at',
-        key: 'created_at',
+        title: "时间",
+        dataIndex: "created_at",
+        key: "created_at",
         width: 180,
-        valueType: 'dateRange',
+        valueType: "dateRange",
         render: (_, record) => {
           const createdAt = record.created_at || new Date(0);
           return (
@@ -167,9 +167,9 @@ const RecordPage: React.FC = () => {
         },
       },
       {
-        title: '歌曲名称',
-        dataIndex: ['user_input', 'song_name'],
-        key: 'song_name',
+        title: "歌曲名称",
+        dataIndex: ["user_input", "song_name"],
+        key: "song_name",
         width: 150,
         search: true,
         ellipsis: {
@@ -177,19 +177,19 @@ const RecordPage: React.FC = () => {
         },
       },
       {
-        title: '歌曲语言',
-        dataIndex: ['user_input', 'song_language'],
-        key: 'song_language',
+        title: "歌曲语言",
+        dataIndex: ["user_input", "song_language"],
+        key: "song_language",
         width: 120,
-        valueType: 'select',
+        valueType: "select",
         valueEnum: {
-          Mandarin: { text: '华语（普通话）' },
-          Cantonese: { text: '粤语' },
-          Minnan: { text: '闽南语' },
-          English: { text: '英语' },
-          Korean: { text: '韩语' },
-          Japanese: { text: '日语' },
-          Other: { text: '其他' },
+          Mandarin: { text: "华语（普通话）" },
+          Cantonese: { text: "粤语" },
+          Minnan: { text: "闽南语" },
+          English: { text: "英语" },
+          Korean: { text: "韩语" },
+          Japanese: { text: "日语" },
+          Other: { text: "其他" },
         },
         search: true,
         // 使用自定义筛选配置，通过类型断言绕过 TypeScript 检查
@@ -197,25 +197,25 @@ const RecordPage: React.FC = () => {
           search: {
             multiple: true,
             fieldProps: {
-              mode: 'multiple',
+              mode: "multiple",
               options: [
-                { value: 'Mandarin', label: '华语（普通话）' },
-                { value: 'Cantonese', label: '粤语' },
-                { value: 'Minnan', label: '闽南语' },
-                { value: 'English', label: '英语' },
-                { value: 'Korean', label: '韩语' },
-                { value: 'Japanese', label: '日语' },
-                { value: 'Other', label: '其他' },
+                { value: "Mandarin", label: "华语（普通话）" },
+                { value: "Cantonese", label: "粤语" },
+                { value: "Minnan", label: "闽南语" },
+                { value: "English", label: "英语" },
+                { value: "Korean", label: "韩语" },
+                { value: "Japanese", label: "日语" },
+                { value: "Other", label: "其他" },
               ],
-              maxTagCount: 'responsive',
+              maxTagCount: "responsive",
             },
           },
         } as any),
       },
       {
-        title: '模仿歌手',
-        dataIndex: ['user_input', 'target_singer'],
-        key: 'target_singer',
+        title: "模仿歌手",
+        dataIndex: ["user_input", "target_singer"],
+        key: "target_singer",
         width: 150,
         search: true,
         ellipsis: {
@@ -223,9 +223,9 @@ const RecordPage: React.FC = () => {
         },
       },
       {
-        title: '风格备注',
-        dataIndex: ['user_input', 'style_description'],
-        key: 'style_description',
+        title: "风格备注",
+        dataIndex: ["user_input", "style_description"],
+        key: "style_description",
         width: 200,
         search: true,
         ellipsis: {
@@ -233,10 +233,10 @@ const RecordPage: React.FC = () => {
         },
       },
       {
-        title: '操作',
-        key: 'action',
+        title: "操作",
+        key: "action",
         width: 120,
-        fixed: 'right',
+        fixed: "right",
         hideInSearch: true,
         render: (_, record) => (
           <Space size="middle">
@@ -264,7 +264,7 @@ const RecordPage: React.FC = () => {
         ),
       },
     ],
-    [handleViewDetail, handleDelete],
+    [handleViewDetail, handleDelete]
   );
 
   return (
@@ -286,17 +286,17 @@ const RecordPage: React.FC = () => {
           density: true,
           fullScreen: true,
         }}
-        scroll={{ x: 'max-content' }}
+        scroll={{ x: "max-content" }}
         // 使用onChange处理表格参数变化
         onChange={handleTableChange}
         pagination={{
-          pageSize: 10,
+          pageSize: 20,
           showSizeChanger: true,
           showQuickJumper: true,
           showTotal: (total: number) => `共 ${total} 条记录`,
         }}
         search={{
-          labelWidth: 'auto',
+          labelWidth: "auto",
           defaultCollapsed: false,
           span: 6,
         }}
@@ -304,7 +304,7 @@ const RecordPage: React.FC = () => {
         request={async (params, _sort, _filter) => {
           // 当表格首次加载或分页变化时也会调用此方法
           // params包含了搜索表单的值
-          const keyword = params?.keyword || '';
+          const keyword = params?.keyword || "";
           const dateRange = params?.created_at;
           const songLanguages = params?.song_language;
           const targetSinger = params?.target_singer;

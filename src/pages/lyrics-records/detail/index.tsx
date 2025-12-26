@@ -1,94 +1,60 @@
 /**
- * 歌词记录详情页面
+ * 歌词记录详情组件
  * 展示歌词生成记录的详细信息，包括表单数据和生成的歌词
  */
 
-import {
-  ArrowLeftOutlined,
-  CopyOutlined,
-  DeleteOutlined,
-} from '@ant-design/icons';
-import {
-  PageContainer,
-  ProCard,
-  ProDescriptions,
-} from '@ant-design/pro-components';
-import { useNavigate, useParams } from '@umijs/max';
+import { CopyOutlined } from "@ant-design/icons";
+import { ProCard, ProDescriptions } from "@ant-design/pro-components";
+import { XMarkdown } from "@ant-design/x-markdown";
 import {
   Button,
-  Card,
-  Col,
+  Drawer,
   message,
-  Popconfirm,
-  Row,
   Space,
-  Tag,
   Typography,
-} from 'antd';
-import React, { useEffect, useState } from 'react';
-import { MASTER_STYLE_CARDS } from '@/config/masterStyleConfig';
-import { useLyricsRecords } from '@/hooks/useLyricsRecords';
-import type { LyricsRecord } from '@/shared/types/types';
+  Divider,
+  Segmented,
+} from "antd";
+import React from "react";
+import { MASTER_STYLE_CARDS } from "@/config/masterStyleConfig";
+import {
+  CLOSENESS_LEVEL_OPTIONS,
+  CREATION_MODE_OPTIONS,
+  PERSONA_OPTIONS,
+  RHYME_TYPE_OPTIONS,
+  SONG_LANGUAGE_OPTIONS,
+  SONG_STYLE_OPTIONS,
+  SONG_STRUCTURE_OPTIONS,
+  WORDING_STYLE_OPTIONS,
+} from "@/config/lyricsEnums";
+import { useModel } from "@umijs/max";
+import type { LyricsRecord } from "@/shared/types/types";
 
 const { Paragraph, Text } = Typography;
 
-const LyricsRecordDetailPage: React.FC = () => {
-  const navigate = useNavigate();
-  const { id } = useParams<{ id: string }>();
-  const { getRecord, deleteRecord } = useLyricsRecords();
-  const [loading, setLoading] = useState<boolean>(true);
-  const [record, setRecord] = useState<LyricsRecord | null>(null);
+interface LyricsRecordDetailProps {
+  record: LyricsRecord;
+  onClose: () => void;
+}
 
-  useEffect(() => {
-    loadRecord();
-  }, [id]);
+const LyricsRecordDetail: React.FC<LyricsRecordDetailProps> = ({
+  record,
+  onClose,
+}) => {
+  const { initialState } = useModel("@@initialState");
 
-  const loadRecord = async () => {
-    if (!id) {
-      message.error('记录ID不存在');
-      navigate('/lyrics-records');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const recordData = await getRecord(Number(id));
-      if (recordData) {
-        setRecord(recordData);
-      } else {
-        message.error('记录不存在');
-        navigate('/lyrics-records');
-      }
-    } catch (_ror) {
-      message.error('加载记录失败');
-      navigate('/lyrics-records');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!record?.id) return;
-
-    try {
-      const result = await deleteRecord(record.id);
-      if (result.success) {
-        message.success('删除成功');
-        navigate('/lyrics-records');
-      } else {
-        message.error('删除失败');
-      }
-    } catch (_error) {
-      message.error('删除失败');
-    }
-  };
+  // 根据主题设置确定XMarkdown的主题类
+  const isDarkTheme = initialState?.settings?.navTheme === "realDark";
+  const markdownThemeClass = isDarkTheme
+    ? "markdown-body-dark"
+    : "markdown-body-light";
 
   const handleCopy = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      message.success('复制成功');
+      message.success("复制成功");
     } catch (_error) {
-      message.error('复制失败');
+      message.error("复制失败");
     }
   };
 
@@ -99,231 +65,233 @@ const LyricsRecordDetailPage: React.FC = () => {
     return MASTER_STYLE_CARDS.find((m) => m.id === masterId);
   };
 
-  const renderLyrics = (lyrics: string) => {
-    const sections = lyrics.split('\n\n---\n\n');
-    return sections.map((section) => {
-      const sectionKey = section.substring(0, 50).replace(/\s/g, '');
-      return (
-        <Card key={`section-${sectionKey}`} style={{ marginBottom: 16 }}>
-          <Paragraph style={{ whiteSpace: 'pre-wrap', margin: 0 }}>
-            {section}
-          </Paragraph>
-        </Card>
-      );
-    });
-  };
-
-  if (loading) {
-    return (
-      <PageContainer title="歌词详情">
-        <div style={{ textAlign: 'center', padding: '100px 0' }}>加载中...</div>
-      </PageContainer>
-    );
-  }
-
   if (!record) {
     return (
-      <PageContainer title="歌词详情">
-        <div style={{ textAlign: 'center', padding: '100px 0' }}>
+      <Drawer
+        title="歌词生成详情"
+        placement="right"
+        open={true}
+        size={992}
+        onClose={onClose}
+      >
+        <div style={{ textAlign: "center", padding: "100px 0" }}>
           记录不存在
         </div>
-      </PageContainer>
+      </Drawer>
     );
   }
 
   const masterInfo = getMasterInfo(record.form_data.master_id);
-  const languageMap: Record<string, string> = {
-    mandarin: '普通话',
-    cantonese: '粤语',
-    minnan: '闽南语',
+
+  // Segmented选项
+  const segmentedOptions = [
+    { label: "基本信息", value: "basic-info" },
+    { label: "大师歌词", value: "generated-lyrics" },
+    { label: "原始素材", value: "raw-material" },
+    { label: "参考歌词", value: "reference-lyrics" },
+    { label: "创作参数", value: "creation-parameters" },
+  ];
+
+  // 当前选中的Segmented项
+  const [activeItem, setActiveItem] = React.useState<string>("basic-info");
+
+  // 滚动到指定元素
+  const scrollToElement = (elementId: string) => {
+    const element = document.getElementById(elementId);
+    if (element) {
+      // 获取当前Drawer的滚动容器
+      const currentDrawer = element.closest(".ant-drawer");
+      if (currentDrawer) {
+        const drawerContent = currentDrawer.querySelector(".ant-drawer-body");
+        if (drawerContent instanceof HTMLElement) {
+          // 计算滚动位置，考虑到顶部边距
+          const elementTop = element.offsetTop - 57 - 24;
+          drawerContent.scrollTo({
+            top: elementTop,
+            behavior: "smooth",
+          });
+        }
+      }
+    }
   };
-  const styleMap: Record<string, string> = {
-    pop: '流行',
-    rock: '摇滚',
-    ballad: '民谣',
-    rnb: 'R&B',
-    folk: '古风',
-    electronic: '电子',
-  };
+
+  // 监听滚动事件，自动更新activeItem
+  React.useEffect(() => {
+    // 获取当前Drawer的滚动容器
+    const basicInfoElement = document.getElementById("basic-info");
+    if (!basicInfoElement) return;
+
+    const currentDrawer = basicInfoElement.closest(".ant-drawer");
+    if (!currentDrawer) return;
+
+    const drawerContent = currentDrawer.querySelector(".ant-drawer-body");
+    if (!(drawerContent instanceof HTMLElement)) return;
+
+    const handleScroll = () => {
+      const scrollPosition = drawerContent.scrollTop + 50;
+
+      // 检查每个内容区域的位置
+      for (const option of segmentedOptions) {
+        const element = document.getElementById(option.value);
+        if (element) {
+          const elementTop = element.offsetTop;
+          const elementBottom = elementTop + element.offsetHeight;
+
+          if (scrollPosition >= elementTop && scrollPosition < elementBottom) {
+            setActiveItem(option.value);
+            break;
+          }
+        }
+      }
+    };
+
+    // 添加滚动事件监听
+    drawerContent.addEventListener("scroll", handleScroll);
+
+    // 清理函数
+    return () => {
+      drawerContent.removeEventListener("scroll", handleScroll);
+    };
+  }, [segmentedOptions]);
 
   return (
-    <PageContainer
-      title="歌词详情"
+    <Drawer
+      title="歌词生成详情"
+      placement="right"
+      open={true}
+      size={992}
+      onClose={onClose}
       extra={
-        <Space>
-          <Button
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate('/lyrics-records')}
-          >
-            返回列表
-          </Button>
-          <Popconfirm
-            title="确认删除"
-            description="确定要删除这条记录吗？"
-            onConfirm={handleDelete}
-            okText="确定"
-            cancelText="取消"
-          >
-            <Button danger icon={<DeleteOutlined />}>
-              删除记录
-            </Button>
-          </Popconfirm>
-        </Space>
+        <Segmented
+          options={segmentedOptions}
+          value={activeItem}
+          onChange={(value) => {
+            setActiveItem(value);
+            scrollToElement(value);
+          }}
+        />
       }
     >
-      <Space direction="vertical" size="large" style={{ width: '100%' }}>
-        <ProCard title="基本信息" headerBordered>
-          <Row gutter={[16, 16]}>
-            <Col xs={24} md={12}>
-              <ProDescriptions column={1}>
-                <ProDescriptions.Item label="歌曲名称">
-                  {record.form_data.song_name}
-                </ProDescriptions.Item>
-                <ProDescriptions.Item label="语言">
-                  <Tag>
-                    {languageMap[record.form_data.song_language] ||
-                      record.form_data.song_language}
-                  </Tag>
-                </ProDescriptions.Item>
-                <ProDescriptions.Item label="风格">
-                  <Tag color="purple">
-                    {styleMap[record.form_data.song_style] ||
-                      record.form_data.song_style}
-                  </Tag>
-                </ProDescriptions.Item>
-                <ProDescriptions.Item label="曲式结构">
-                  {record.form_data.song_structure}
-                </ProDescriptions.Item>
-              </ProDescriptions>
-            </Col>
-            <Col xs={24} md={12}>
-              <ProDescriptions column={1}>
-                <ProDescriptions.Item label="风格大师">
-                  {masterInfo ? (
-                    <Space direction="vertical" size="small">
-                      <Space>
-                        <Tag color="blue">{masterInfo.name}</Tag>
-                        <Text type="secondary">{masterInfo.description}</Text>
-                      </Space>
-                    </Space>
-                  ) : (
-                    <Tag>无</Tag>
-                  )}
-                </ProDescriptions.Item>
-                <ProDescriptions.Item label="贴近度">
-                  <Tag
-                    color={
-                      record.form_data.closeness >= 80
-                        ? 'red'
-                        : record.form_data.closeness >= 60
-                          ? 'orange'
-                          : 'green'
-                    }
-                  >
-                    {record.form_data.closeness}%
-                  </Tag>
-                </ProDescriptions.Item>
-                <ProDescriptions.Item label="创作模式">
-                  {record.form_data.creation_mode}
-                </ProDescriptions.Item>
-                <ProDescriptions.Item label="生成时间">
-                  {new Date(record.created_at).toLocaleString('zh-CN')}
-                </ProDescriptions.Item>
-              </ProDescriptions>
-            </Col>
-          </Row>
-        </ProCard>
+      <ProDescriptions id="basic-info" column={2} title="基本信息">
+        <ProDescriptions.Item label="歌曲名称">
+          {record.form_data.song_name}
+        </ProDescriptions.Item>
+        <ProDescriptions.Item label="歌曲语言">
+          {SONG_LANGUAGE_OPTIONS.find(
+            (item) =>
+              String(item.value) === String(record.form_data.song_language)
+          )?.label || record.form_data.song_language}
+        </ProDescriptions.Item>
+        <ProDescriptions.Item label="大师风格">
+          {masterInfo ? (
+            <Space>
+              <Text>{masterInfo.name}</Text>
+              <Text type="secondary">{masterInfo.description}</Text>
+            </Space>
+          ) : (
+            <Text>无</Text>
+          )}
+        </ProDescriptions.Item>
+        <ProDescriptions.Item label="歌曲风格">
+          {SONG_STYLE_OPTIONS.find(
+            (item) => String(item.value) === String(record.form_data.song_style)
+          )?.label || record.form_data.song_style}
+        </ProDescriptions.Item>
+      </ProDescriptions>
 
-        <ProCard
-          title="创作参数"
-          headerBordered
-          extra={
-            <Button
-              size="small"
-              icon={<CopyOutlined />}
-              onClick={() =>
-                handleCopy(
-                  `创作模式：${record.form_data.creation_mode}\n人设：${record.form_data.persona}\n措辞风格：${record.form_data.wording_style}\n押韵类型：${record.form_data.rhyme_type}`,
+      <Divider />
+
+      <ProCard
+        id="generated-lyrics"
+        title="大师歌词"
+        ghost
+        extra={
+          <Button
+            size="small"
+            type="text"
+            icon={<CopyOutlined />}
+            onClick={() => handleCopy(record.ai_result.lyrics)}
+          >
+            复制歌词
+          </Button>
+        }
+      >
+        <XMarkdown className={markdownThemeClass} config={{ breaks: true }}>
+          {record.ai_result.lyrics}
+        </XMarkdown>
+      </ProCard>
+
+      <Divider />
+
+      <ProCard id="raw-material" title="原始素材" ghost>
+        <XMarkdown className={markdownThemeClass} config={{ breaks: true }}>
+          {record.form_data.raw_material}
+        </XMarkdown>
+      </ProCard>
+
+      <Divider />
+
+      <ProCard id="reference-lyrics" title="参考歌词" ghost>
+        <XMarkdown className={markdownThemeClass} config={{ breaks: true }}>
+          {record.form_data.reference_lyrics || "无"}
+        </XMarkdown>
+      </ProCard>
+
+      <Divider />
+
+      <ProDescriptions id="creation-parameters" column={2} title="创作参数">
+        <ProDescriptions.Item label="参考歌词" span={2}></ProDescriptions.Item>
+        <ProDescriptions.Item label="措辞要求">
+          {Array.isArray(record.form_data.wording_style)
+            ? record.form_data.wording_style
+                .map(
+                  (style) =>
+                    WORDING_STYLE_OPTIONS.find(
+                      (item) => String(item.value) === String(style)
+                    )?.label || style
                 )
-              }
-            >
-              复制参数
-            </Button>
-          }
-        >
-          <Row gutter={[16, 16]}>
-            <Col xs={24} md={8}>
-              <Text strong>创作模式：</Text>
-              <Text>{record.form_data.creation_mode}</Text>
-            </Col>
-            <Col xs={24} md={8}>
-              <Text strong>人设：</Text>
-              <Text>{record.form_data.persona}</Text>
-            </Col>
-            <Col xs={24} md={8}>
-              <Text strong>措辞风格：</Text>
-              <Text>{record.form_data.wording_style}</Text>
-            </Col>
-            <Col xs={24} md={8}>
-              <Text strong>押韵类型：</Text>
-              <Text>{record.form_data.rhyme_type}</Text>
-            </Col>
-            <Col xs={24} md={8}>
-              <Text strong>输出数量：</Text>
-              <Text>{record.form_data.output_count}</Text>
-            </Col>
-          </Row>
-        </ProCard>
-
-        <ProCard
-          title="原始素材"
-          headerBordered
-          extra={
-            <Button
-              size="small"
-              icon={<CopyOutlined />}
-              onClick={() => handleCopy(record.form_data.raw_material)}
-            >
-              复制素材
-            </Button>
-          }
-        >
-          <Paragraph style={{ whiteSpace: 'pre-wrap' }}>
-            {record.form_data.raw_material}
-          </Paragraph>
-        </ProCard>
-
-        <ProCard
-          title="生成的歌词"
-          headerBordered
-          extra={
-            <Button
-              size="small"
-              icon={<CopyOutlined />}
-              onClick={() => handleCopy(record.ai_result.lyrics)}
-            >
-              复制歌词
-            </Button>
-          }
-        >
-          {renderLyrics(record.ai_result.lyrics)}
-        </ProCard>
-
-        <ProCard title="AI信息" headerBordered>
-          <Row gutter={[16, 16]}>
-            <Col xs={24} md={12}>
-              <Text strong>模型：</Text>
-              <Text>{record.ai_result.model}</Text>
-            </Col>
-            <Col xs={24} md={12}>
-              <Text strong>贴近度：</Text>
-              <Text>{record.ai_result.closeness}%</Text>
-            </Col>
-          </Row>
-        </ProCard>
-      </Space>
-    </PageContainer>
+                .join("、")
+            : record.form_data.wording_style || "无"}
+        </ProDescriptions.Item>
+        <ProDescriptions.Item label="贴近度">
+          {CLOSENESS_LEVEL_OPTIONS.find(
+            (item) => String(item.value) === String(record.form_data.closeness)
+          )?.label || `${record.form_data.closeness}`}
+        </ProDescriptions.Item>
+        <ProDescriptions.Item label="创作模式">
+          {CREATION_MODE_OPTIONS.find(
+            (item) =>
+              String(item.value) === String(record.form_data.creation_mode)
+          )?.label || record.form_data.creation_mode}
+        </ProDescriptions.Item>
+        <ProDescriptions.Item label="曲式结构">
+          {SONG_STRUCTURE_OPTIONS.find(
+            (item) =>
+              String(item.value) === String(record.form_data.song_structure)
+          )?.label || record.form_data.song_structure}
+        </ProDescriptions.Item>
+        <ProDescriptions.Item label="叙事人设">
+          {PERSONA_OPTIONS.find(
+            (item) => String(item.value) === String(record.form_data.persona)
+          )?.label || record.form_data.persona}
+        </ProDescriptions.Item>
+        <ProDescriptions.Item label="押韵类型">
+          {RHYME_TYPE_OPTIONS.find(
+            (item) => String(item.value) === String(record.form_data.rhyme_type)
+          )?.label || record.form_data.rhyme_type}
+        </ProDescriptions.Item>
+        <ProDescriptions.Item label="输出数量">
+          {record.form_data.output_count}
+        </ProDescriptions.Item>
+        <ProDescriptions.Item label="AI模型">
+          {record.ai_result.model}
+        </ProDescriptions.Item>
+        <ProDescriptions.Item label="生成时间">
+          {new Date(record.created_at).toLocaleString("zh-CN")}
+        </ProDescriptions.Item>
+      </ProDescriptions>
+    </Drawer>
   );
 };
 
-export default LyricsRecordDetailPage;
+export default LyricsRecordDetail;

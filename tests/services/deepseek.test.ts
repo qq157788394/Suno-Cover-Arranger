@@ -1,114 +1,24 @@
 // Jest全局变量会自动注入，无需显式导入
 
-import { container } from '@/services/ai/container';
-import { DeepSeekService } from '@/services/ai/models/deepseekService';
-import type { GenerateRequest, ReferenceSong } from '@/shared/types/types';
+import { AIProviderFactory } from "@/services/ai/providers";
+import type { DeepSeekProvider } from "@/services/ai/providers/deepseekProvider";
+import type { AIProviderRequest } from "@/services/ai/providers/baseAIProvider";
+import { BusinessType } from "@/config/aiTemperatureConfig";
 
 // 模拟fetch API
 global.fetch = jest.fn();
 
-describe('DeepSeekService', () => {
-  let deepSeekService: DeepSeekService;
+describe("DeepSeekProvider", () => {
+  let deepSeekProvider: DeepSeekProvider;
 
   beforeEach(() => {
-    deepSeekService = container.resolve(DeepSeekService);
+    deepSeekProvider = AIProviderFactory.createProvider(
+      "deepseek"
+    ) as DeepSeekProvider;
     jest.clearAllMocks();
   });
 
-  it('should generate user prompt correctly with reference songs', () => {
-    const referenceSongs: ReferenceSong[] = [
-      {
-        title: 'Song 1',
-        artist: 'Singer 1',
-      },
-      {
-        title: 'Song 2',
-        artist: 'Singer 2',
-      },
-    ];
-
-    const request: GenerateRequest = {
-      api_key: 'test-api-key',
-      model: 'deepseek',
-      song_name: 'Test Song',
-      song_language: 'Mandarin',
-      target_artist: 'Test Singer',
-      reference_songs: referenceSongs,
-      style_note: 'Test style description',
-      lyrics_raw: 'Test lyrics',
-    };
-
-    const prompt = (deepSeekService as any).generateUserPrompt(request);
-
-    expect(prompt).toContain('Song language: Mandarin Chinese');
-    expect(prompt).toContain('Target cover artist');
-    expect(prompt).toContain('Test Singer');
-    expect(prompt).toContain('Song 1');
-    expect(prompt).toContain('Song 2');
-    expect(prompt).toContain('Test style description');
-    expect(prompt).toContain('Test lyrics');
-  });
-
-  it('should generate user prompt correctly without reference songs', () => {
-    const request: GenerateRequest = {
-      api_key: 'test-api-key',
-      model: 'deepseek',
-      song_name: 'Test Song',
-      song_language: 'English',
-      target_artist: 'Test Singer',
-      reference_songs: [],
-      style_note: 'Test style description',
-      lyrics_raw: 'Test lyrics',
-    };
-
-    const prompt = (deepSeekService as any).generateUserPrompt(request);
-
-    expect(prompt).toContain('Song language: English');
-    expect(prompt).toContain('Target cover artist');
-    expect(prompt).toContain('Test Singer');
-    expect(prompt).toContain('None provided');
-    expect(prompt).toContain('Test style description');
-    expect(prompt).toContain('Test lyrics');
-  });
-
-  it('should handle empty style description correctly', () => {
-    const request: GenerateRequest = {
-      api_key: 'test-api-key',
-      model: 'deepseek',
-      song_name: 'Test Song',
-      song_language: 'Mandarin',
-      target_artist: 'Test Singer',
-      reference_songs: [],
-      style_note: '',
-      lyrics_raw: 'Test lyrics',
-    };
-
-    const prompt = (deepSeekService as any).generateUserPrompt(request);
-
-    expect(prompt).toContain('User style note');
-    expect(prompt).toContain('""');
-    expect(prompt).toContain('Test lyrics');
-  });
-
-  it('should handle empty lyrics correctly', () => {
-    const request: GenerateRequest = {
-      api_key: 'test-api-key',
-      model: 'deepseek',
-      song_name: 'Test Song',
-      song_language: 'Mandarin',
-      target_artist: 'Test Singer',
-      reference_songs: [],
-      style_note: 'Test style description',
-      lyrics_raw: '',
-    };
-
-    const prompt = (deepSeekService as any).generateUserPrompt(request);
-
-    expect(prompt).toContain('Test style description');
-    expect(prompt).toContain('Here are the raw lyrics:');
-  });
-
-  it('should call DeepSeek API with correct parameters', async () => {
+  it("should call DeepSeek API with correct parameters", async () => {
     const mockFetch = global.fetch as jest.MockedFunction<typeof fetch>;
     mockFetch.mockResolvedValueOnce({
       ok: true,
@@ -116,83 +26,216 @@ describe('DeepSeekService', () => {
         choices: [
           {
             message: {
-              content:
-                '### Styles\n```text\nTest styles\n```\n\n### Lyrics\n```text\nTest lyrics\n```',
+              content: "Test response content",
             },
           },
         ],
       }),
     } as Response);
 
-    const request: GenerateRequest = {
-      api_key: 'test-api-key',
-      model: 'deepseek',
-      song_name: 'Test Song',
-      song_language: 'Mandarin',
-      target_artist: 'Test Singer',
-      reference_songs: [],
-      style_note: 'Test style',
-      lyrics_raw: 'Test lyrics',
+    const request: AIProviderRequest = {
+      api_key: "test-api-key",
+      system_prompt: "Test system prompt",
+      user_prompt: "Test user prompt",
+      business_type: BusinessType.LYRICS,
     };
 
-    const result = await deepSeekService.generate(request);
+    const result = await deepSeekProvider.generate(request);
 
     expect(mockFetch).toHaveBeenCalledWith(
-      'https://api.deepseek.com/v1/chat/completions',
+      "https://api.deepseek.com/chat/completions",
       expect.objectContaining({
-        method: 'POST',
+        method: "POST",
         headers: expect.objectContaining({
-          'Content-Type': 'application/json',
-          Authorization: 'Bearer test-api-key',
+          "Content-Type": "application/json",
+          Authorization: "Bearer test-api-key",
         }),
-        body: expect.stringContaining('deepseek-chat'),
-      }),
+        body: expect.stringContaining("deepseek-chat"),
+      })
     );
 
-    expect(result).toEqual({
-      styles: 'Test styles',
-      lyrics: 'Test lyrics',
-      timestamp: expect.any(String),
-    });
+    expect(result.success).toBe(true);
+    expect(result.content).toBe("Test response content");
   });
 
-  it('should throw error when API key is missing', async () => {
-    const request: GenerateRequest = {
-      api_key: '',
-      model: 'deepseek',
-      song_name: 'Test Song',
-      song_language: 'Mandarin',
-      target_artist: 'Test Singer',
-      reference_songs: [],
-      style_note: 'Test style',
-      lyrics_raw: 'Test lyrics',
+  it("should throw error when API key is missing", async () => {
+    const request: AIProviderRequest = {
+      api_key: "",
+      system_prompt: "Test system prompt",
+      user_prompt: "Test user prompt",
+      business_type: BusinessType.LYRICS,
     };
 
-    await expect(deepSeekService.generate(request)).rejects.toThrow(
-      'DeepSeek API key is required',
-    );
+    const result = await deepSeekProvider.generate(request);
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe("API Key不能为空");
   });
 
-  it('should throw error when API request fails', async () => {
+  it("should throw error when system prompt is missing", async () => {
+    const request: AIProviderRequest = {
+      api_key: "test-api-key",
+      system_prompt: "",
+      user_prompt: "Test user prompt",
+      business_type: BusinessType.LYRICS,
+    };
+
+    const result = await deepSeekProvider.generate(request);
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe("System Prompt不能为空");
+  });
+
+  it("should throw error when user prompt is missing", async () => {
+    const request: AIProviderRequest = {
+      api_key: "test-api-key",
+      system_prompt: "Test system prompt",
+      user_prompt: "",
+      business_type: BusinessType.LYRICS,
+    };
+
+    const result = await deepSeekProvider.generate(request);
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe("User Prompt不能为空");
+  });
+
+  it("should handle API request failure", async () => {
     const mockFetch = global.fetch as jest.MockedFunction<typeof fetch>;
     mockFetch.mockResolvedValueOnce({
       ok: false,
-      text: async () => 'API Error',
+      json: async () => ({
+        error: {
+          message: "API Error",
+        },
+      }),
     } as Response);
 
-    const request: GenerateRequest = {
-      api_key: 'test-api-key',
-      model: 'deepseek',
-      song_name: 'Test Song',
-      song_language: 'Mandarin',
-      target_artist: 'Test Singer',
-      reference_songs: [],
-      style_note: 'Test style',
-      lyrics_raw: 'Test lyrics',
+    const request: AIProviderRequest = {
+      api_key: "test-api-key",
+      system_prompt: "Test system prompt",
+      user_prompt: "Test user prompt",
+      business_type: BusinessType.LYRICS,
     };
 
-    await expect(deepSeekService.generate(request)).rejects.toThrow(
-      'DeepSeek API request failed',
-    );
+    const result = await deepSeekProvider.generate(request);
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain("API请求失败");
+  });
+
+  it("should handle invalid API key error", async () => {
+    const mockFetch = global.fetch as jest.MockedFunction<typeof fetch>;
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      json: async () => ({
+        error: {
+          message: "invalid_api_key",
+        },
+      }),
+    } as Response);
+
+    const request: AIProviderRequest = {
+      api_key: "test-api-key",
+      system_prompt: "Test system prompt",
+      user_prompt: "Test user prompt",
+      business_type: BusinessType.LYRICS,
+    };
+
+    const result = await deepSeekProvider.generate(request);
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe("API Key 无效，请检查您的 API Key");
+  });
+
+  it("should handle rate limit error", async () => {
+    const mockFetch = global.fetch as jest.MockedFunction<typeof fetch>;
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      json: async () => ({
+        error: {
+          message: "rate_limit_exceeded",
+        },
+      }),
+    } as Response);
+
+    const request: AIProviderRequest = {
+      api_key: "test-api-key",
+      system_prompt: "Test system prompt",
+      user_prompt: "Test user prompt",
+      business_type: BusinessType.LYRICS,
+    };
+
+    const result = await deepSeekProvider.generate(request);
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe("API 请求频率过高，请稍后再试");
+  });
+
+  it("should handle empty response content", async () => {
+    const mockFetch = global.fetch as jest.MockedFunction<typeof fetch>;
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        choices: [
+          {
+            message: {
+              content: "",
+            },
+          },
+        ],
+      }),
+    } as Response);
+
+    const request: AIProviderRequest = {
+      api_key: "test-api-key",
+      system_prompt: "Test system prompt",
+      user_prompt: "Test user prompt",
+      business_type: BusinessType.LYRICS,
+    };
+
+    const result = await deepSeekProvider.generate(request);
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe("AI 生成内容为空");
+  });
+
+  it("should handle malformed response", async () => {
+    const mockFetch = global.fetch as jest.MockedFunction<typeof fetch>;
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        choices: [],
+      }),
+    } as Response);
+
+    const request: AIProviderRequest = {
+      api_key: "test-api-key",
+      system_prompt: "Test system prompt",
+      user_prompt: "Test user prompt",
+      business_type: BusinessType.LYRICS,
+    };
+
+    const result = await deepSeekProvider.generate(request);
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe("API 响应数据格式不正确");
+  });
+
+  it("should handle network error", async () => {
+    const mockFetch = global.fetch as jest.MockedFunction<typeof fetch>;
+    mockFetch.mockRejectedValueOnce(new Error("Network error"));
+
+    const request: AIProviderRequest = {
+      api_key: "test-api-key",
+      system_prompt: "Test system prompt",
+      user_prompt: "Test user prompt",
+      business_type: BusinessType.LYRICS,
+    };
+
+    const result = await deepSeekProvider.generate(request);
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe("Network error");
   });
 });

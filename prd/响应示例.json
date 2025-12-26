@@ -1,0 +1,35 @@
+{
+    "candidates": [
+        {
+            "content": {
+                "parts": [
+                    {
+                        "text": "[心动]\n\n[Intro]\n\n[Verse 1]\n咖啡店一角，雨滴落在窗边\n模糊了视线，也模糊了界限\n试探的眼神，藏在杯底的烟圈\n一句没说出口，却已千回百转\n\n[Chorus]\n心动，是风吹过耳边的轻叹\n是夜晚无法入睡的辗转\n是明知没有结果，还想要奋不顾身\n是进退两难，剪不断理还乱\n\n[Verse 2]\n手机屏幕亮了又暗，消息删了又添\n对话框里的话，斟酌了又斟酌\n怕打扰，怕唐突，怕一切都是自作多情\n怕靠近，怕失去，怕这暧昧不明\n\n[Chorus]\n心动，是风吹过耳边的轻叹\n是夜晚无法入睡的辗转\n是明知没有结果，还想要奋不顾身\n是进退两难，剪不断理还乱\n\n[Bridge]\n也许，只是寂寞在作祟\n也许，只是想找个人来陪\n但当你的笑容，映入眼帘的那一刻\n我知道，一切都已无法挽回\n\n[Chorus]\n心动，是风吹过耳边的轻叹\n是夜晚无法入睡的辗转\n是明知没有结果，还想要奋不顾身\n是进退两难，剪不断理还乱\n\n[Outro]\n终于，还是没有说出口\n这份心动，就让它静静流走\n或许，多年以后，想起这个雨夜\n嘴角还会扬起，一丝温柔\n"
+                    }
+                ],
+                "role": "model"
+            },
+            "finishReason": "STOP",
+            "avgLogprobs": -0.36022970589603026
+        }
+    ],
+    "usageMetadata": {
+        "promptTokenCount": 3070,
+        "candidatesTokenCount": 357,
+        "totalTokenCount": 3427,
+        "promptTokensDetails": [
+            {
+                "modality": "TEXT",
+                "tokenCount": 3070
+            }
+        ],
+        "candidatesTokensDetails": [
+            {
+                "modality": "TEXT",
+                "tokenCount": 357
+            }
+        ]
+    },
+    "modelVersion": "gemini-2.0-flash-exp",
+    "responseId": "X4lOacv5Iq_RjuMPlPuXgQU"
+}

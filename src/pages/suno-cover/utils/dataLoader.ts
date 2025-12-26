@@ -66,13 +66,15 @@ export const processReferenceSongs = async (
 /**
  * 从URL参数加载记录数据
  * @param recordId 记录ID
- * @returns 表单初始值
+ * @returns 表单初始值和结果数据
  */
 export const loadRecordData = async (
   recordId: string | null,
 ): Promise<{
   formValues: any;
   hasRecord: boolean;
+  stylesResult: string;
+  lyricsResult: string;
 }> => {
   // 先定义空的表单数据结构（无论是否有recordId都需要）
   const formValues = {
@@ -84,10 +86,14 @@ export const loadRecordData = async (
     extra_note: '',
     reference_songs: [] as Array<{ title: string; artist: string }>,
   };
+  
+  // 定义结果数据
+  let stylesResult = '';
+  let lyricsResult = '';
 
   // 如果没有recordId，直接返回空表单
   if (!recordId) {
-    return { formValues, hasRecord: false };
+    return { formValues, hasRecord: false, stylesResult, lyricsResult };
   }
 
   try {
@@ -96,7 +102,7 @@ export const loadRecordData = async (
 
     if (!record) {
       message.error('记录不存在');
-      return { formValues, hasRecord: false };
+      return { formValues, hasRecord: false, stylesResult, lyricsResult };
     }
 
     // 处理参考歌曲数据
@@ -117,10 +123,16 @@ export const loadRecordData = async (
           ? processedReferenceSongs
           : [{ title: '', artist: '' }],
     });
+    
+    // 提取AI生成的结果数据
+    if (record.ai_result) {
+      stylesResult = record.ai_result.styles || '';
+      lyricsResult = record.ai_result.lyrics || '';
+    }
 
-    return { formValues, hasRecord: true };
+    return { formValues, hasRecord: true, stylesResult, lyricsResult };
   } catch (_error) {
     message.error('数据加载失败');
-    return { formValues, hasRecord: false };
+    return { formValues, hasRecord: false, stylesResult, lyricsResult };
   }
 };

@@ -75,7 +75,7 @@ const About: React.FC = () => {
             <Spin size="large" />
           </div>
         ) : (
-          <XMarkdown className={markdownThemeClass}>{readmeContent}</XMarkdown>
+          <XMarkdown className={markdownThemeClass} config={{ breaks: true }}>{readmeContent}</XMarkdown>
         )}
       </Card>
     </PageContainer>

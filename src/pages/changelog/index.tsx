@@ -75,7 +75,7 @@ const ChangelogPage: React.FC = () => {
             <Spin size="large" />
           </div>
         ) : (
-          <XMarkdown className={markdownThemeClass}>
+          <XMarkdown className={markdownThemeClass} config={{ breaks: true }}>
             {changelogContent}
           </XMarkdown>
         )}

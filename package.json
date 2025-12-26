@@ -1,8 +1,8 @@
 {
   "name": "suno-cover-arranger",
-  "version": "1.3.4",
+  "version": "2.0.0",
   "private": true,
-  "description": "Suno翻唱编曲大师 - 用中文思考，用英文说服Suno。帮翻唱创作者，把'感觉'和'编曲想法'变成可直接粘贴进Suno的Styles & Lyrics提示词。",
+  "description": "大师来了！ - 懂编曲，更懂作词的 Suno 终极辅助。",
   "repository": "git@github.com:qq157788394/Suno-Cover-Arranger.git",
   "scripts": {
     "preinstall": "node -e \"if(process.env.npm_config_user_agent?.includes('npm'))throw new Error('Please use pnpm instead of npm: https://pnpm.io/installation')\"",
