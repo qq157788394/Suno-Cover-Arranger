@@ -76,6 +76,11 @@ const AISettingPage: React.FC = () => {
     }
   };
 
+  // 使用条件渲染避免 initialValues 警告
+  if (isLoading) {
+    return <PageContainer loading />;
+  }
+
   return (
     <PageContainer>
       <Space orientation="vertical" size="large">
@@ -95,7 +100,7 @@ const AISettingPage: React.FC = () => {
                 resetText: '删除 API Key',
               },
             }}
-            loading={isLoading}
+            loading={false}
           >
             <ProForm.Item
               name="model"

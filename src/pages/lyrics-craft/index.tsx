@@ -13,24 +13,28 @@ import {
   ProFormSwitch,
   ProFormText,
   ProFormTextArea,
-} from "@ant-design/pro-components";
-import { XMarkdown } from "@ant-design/x-markdown";
-import { useModel, useNavigate } from "@umijs/max";
+} from '@ant-design/pro-components';
+import { XMarkdown } from '@ant-design/x-markdown';
+import { useModel, useNavigate } from '@umijs/max';
 import {
   Button,
   Col,
   Empty,
   message,
   Row,
-  Spin,
   Space,
+  Spin,
   Typography,
-} from "antd";
-const { Text } = Typography;
-import React, { useState } from "react";
-import "@ant-design/x-markdown/themes/light.css";
-import "@ant-design/x-markdown/themes/dark.css";
+} from 'antd';
 
+const { Text } = Typography;
+
+import React, { useState } from 'react';
+import '@ant-design/x-markdown/themes/light.css';
+import '@ant-design/x-markdown/themes/dark.css';
+
+import { ApiKeyAlert } from '@/components';
+import { BusinessType } from '@/config/aiTemperatureConfig';
 import {
   CLOSENESS_LEVEL_OPTIONS,
   CREATION_MODE_OPTIONS,
@@ -41,17 +45,15 @@ import {
   SONG_STRUCTURE_OPTIONS,
   SONG_STYLE_OPTIONS,
   WORDING_STYLE_OPTIONS,
-} from "@/config/lyricsEnums";
-import { MASTER_STYLE_CARDS } from "@/config/masterStyleConfig";
-import { useApiKey } from "@/hooks/useApiKey";
-import { useLyricsRecords } from "@/hooks/useLyricsRecords";
-import { AIProviderFactory } from "@/services/ai/providers";
-import type { LyricsFormData } from "@/shared/types/types";
-import { BusinessType } from "@/config/aiTemperatureConfig";
-import { copyToClipboard } from "@/shared/utils";
-import { ApiKeyAlert } from "@/components";
-import { LyricsCraftPromptBuilder } from "./utils/promptBuilder";
-import { LyricsCraftResponseParser } from "./utils/responseParser";
+} from '@/config/lyricsEnums';
+import { MASTER_STYLE_CARDS } from '@/config/masterStyleConfig';
+import { useApiKey } from '@/hooks/useApiKey';
+import { useLyricsRecords } from '@/hooks/useLyricsRecords';
+import { AIProviderFactory } from '@/services/ai/providers';
+import type { LyricsFormData } from '@/shared/types/types';
+import { copyToClipboard } from '@/shared/utils';
+import { LyricsCraftPromptBuilder } from './utils/promptBuilder';
+import { LyricsCraftResponseParser } from './utils/responseParser';
 
 const LyricsCraftPage: React.FC = () => {
   const navigate = useNavigate();
@@ -59,25 +61,25 @@ const LyricsCraftPage: React.FC = () => {
     useApiKey();
   const { createRecord } = useLyricsRecords();
   const [loading, setLoading] = useState<boolean>(false);
-  const [generatedLyrics, setGeneratedLyrics] = useState<string>("");
+  const [generatedLyrics, setGeneratedLyrics] = useState<string>('');
   const [messageApi, contextHolder] = message.useMessage();
-  const { initialState } = useModel("@@initialState");
+  const { initialState } = useModel('@@initialState');
   // 根据主题设置确定XMarkdown的主题类
-  const isDarkTheme = initialState?.settings?.navTheme === "realDark";
+  const isDarkTheme = initialState?.settings?.navTheme === 'realDark';
   const markdownThemeClass = isDarkTheme
-    ? "x-markdown-dark"
-    : "x-markdown-light";
+    ? 'x-markdown-dark'
+    : 'x-markdown-light';
 
   const defaultFormValues: Partial<LyricsFormData> = {
-    song_language: "mandarin",
-    song_style: "lyrical_pop",
-    song_structure: "standard_pop",
-    creation_mode: "new",
-    persona: "unlimited",
+    song_language: 'mandarin',
+    song_style: 'lyrical_pop',
+    song_structure: 'standard_pop',
+    creation_mode: 'new',
+    persona: 'unlimited',
     wording_style: [],
     allow_english: false,
     closeness: 3,
-    rhyme_type: "mix",
+    rhyme_type: 'mix',
     rhyme_strict: true,
     output_count: 1,
   };
@@ -88,31 +90,31 @@ const LyricsCraftPage: React.FC = () => {
     }
 
     if (!values.song_name || !values.song_name.trim()) {
-      messageApi.error("歌曲名称不能为空");
+      messageApi.error('歌曲名称不能为空');
       return;
     }
 
     if (!values.raw_material || !values.raw_material.trim()) {
-      messageApi.error("原始素材不能为空");
+      messageApi.error('原始素材不能为空');
       return;
     }
 
     if (values.output_count < 1 || values.output_count > 5) {
-      messageApi.error("生成数量必须在1-5之间");
+      messageApi.error('生成数量必须在1-5之间');
       return;
     }
 
     if (values.closeness < 0 || values.closeness > 100) {
-      messageApi.error("贴近度必须在0-100之间");
+      messageApi.error('贴近度必须在0-100之间');
       return;
     }
 
     setLoading(true);
-    setGeneratedLyrics("");
+    setGeneratedLyrics('');
 
     try {
       const provider = AIProviderFactory.createProvider(
-        model as "deepseek" | "gemini" | "mimo"
+        model as 'deepseek' | 'gemini' | 'mimo',
       );
 
       const systemPrompt = LyricsCraftPromptBuilder.buildSystemPrompt(values);
@@ -126,11 +128,11 @@ const LyricsCraftPage: React.FC = () => {
       });
 
       if (!response.success) {
-        throw new Error(response.error || "AI生成失败");
+        throw new Error(response.error || 'AI生成失败');
       }
 
       const parsedResponse = LyricsCraftResponseParser.parseResponse(
-        response.content
+        response.content,
       );
 
       if (parsedResponse.success && parsedResponse.lyrics) {
@@ -147,16 +149,16 @@ const LyricsCraftPage: React.FC = () => {
         });
 
         if (result.success && result.data?.id) {
-          messageApi.success("歌词生成成功！");
+          messageApi.success('歌词生成成功！');
         } else {
-          messageApi.error("歌词生成成功，但保存失败");
+          messageApi.error('歌词生成成功，但保存失败');
         }
       } else {
-        messageApi.error(parsedResponse.error || "歌词生成失败");
+        messageApi.error(parsedResponse.error || '歌词生成失败');
       }
     } catch (error) {
-      console.error("歌词生成失败：", error);
-      messageApi.error("歌词生成失败，请稍后重试");
+      console.error('歌词生成失败：', error);
+      messageApi.error('歌词生成失败，请稍后重试');
     } finally {
       setLoading(false);
     }
@@ -173,8 +175,8 @@ const LyricsCraftPage: React.FC = () => {
         />
         <Spin spinning={loading} fullscreen size="large" />
         <Row gutter={[24, 0]}>
-          <Col xxl={16} xl={12} lg={12} md={12} sm={12} xs={12}>
-            <ProCard title="创作配置" style={{ height: "100%" }}>
+          <Col xxl={16} xl={12} lg={24} md={24} sm={24} xs={24}>
+            <ProCard title="创作配置" style={{ height: '100%' }}>
               <ProForm<LyricsFormData>
                 layout="vertical"
                 grid
@@ -199,8 +201,8 @@ const LyricsCraftPage: React.FC = () => {
                   label="歌曲名称"
                   placeholder="请输入歌曲名称"
                   rules={[
-                    { required: true, message: "请输入歌曲名称" },
-                    { max: 50, message: "歌曲名称最多 50 个字" },
+                    { required: true, message: '请输入歌曲名称' },
+                    { max: 50, message: '歌曲名称最多 50 个字' },
                   ]}
                   colProps={{ span: 24 }}
                 />
@@ -219,7 +221,7 @@ const LyricsCraftPage: React.FC = () => {
                     ),
                     value: option.value,
                   }))}
-                  rules={[{ required: true, message: "请选择歌曲语言" }]}
+                  rules={[{ required: true, message: '请选择歌曲语言' }]}
                   colProps={{ xxl: 12, xl: 24, lg: 24, md: 24, sm: 24, xs: 24 }}
                   fieldProps={{ popupMatchSelectWidth: false }}
                 />
@@ -236,13 +238,13 @@ const LyricsCraftPage: React.FC = () => {
                     label: option.label,
                     value: option.value,
                   }))}
-                  rules={[{ required: true, message: "请选择输出方案数量" }]}
+                  rules={[{ required: true, message: '请选择输出方案数量' }]}
                   colProps={{ xxl: 6, xl: 12, lg: 12, md: 12, sm: 12, xs: 12 }}
                 />
                 <ProFormSelect
                   name="master_id"
-                  label="大师风格"
-                  placeholder="请选择大师风格"
+                  label="大师风格（众多大师风格供选择）"
+                  placeholder="请选择 / 搜索大师风格"
                   options={MASTER_STYLE_CARDS.map((master) => ({
                     label: master.description ? (
                       <Space align="center">
@@ -253,10 +255,24 @@ const LyricsCraftPage: React.FC = () => {
                       <Text>{master.name}</Text>
                     ),
                     value: master.id,
+                    name: master.name,
+                    description: master.description || '',
                   }))}
-                  rules={[{ required: true, message: "请选择大师风格" }]}
+                  rules={[{ required: true, message: '请选择大师风格' }]}
                   colProps={{ xxl: 12, xl: 24, lg: 24, md: 24, sm: 24, xs: 24 }}
-                  fieldProps={{ popupMatchSelectWidth: false }}
+                  fieldProps={{
+                    popupMatchSelectWidth: false,
+                    showSearch: true,
+                    filterOption: (input, option) => {
+                      if (!option || typeof option !== 'object') return false;
+                      const name = (option as any).name || '';
+                      const description = (option as any).description || '';
+                      return (
+                        name.toLowerCase().includes(input.toLowerCase()) ||
+                        description.toLowerCase().includes(input.toLowerCase())
+                      );
+                    },
+                  }}
                 />
                 <ProFormSelect
                   name="wording_style"
@@ -275,36 +291,39 @@ const LyricsCraftPage: React.FC = () => {
                   mode="multiple"
                   rules={[
                     {
-                      type: "array",
+                      type: 'array',
                       max: 2,
-                      message: "措辞要求最多选择 2 项",
+                      message: '措辞要求最多选择 2 项',
                     },
                   ]}
                   colProps={{ xxl: 12, xl: 24, lg: 24, md: 24, sm: 24, xs: 24 }}
                   fieldProps={{
                     popupMatchSelectWidth: false,
                     maxCount: 2,
-                    maxTagCount: "responsive",
+                    maxTagCount: 'responsive',
                   }}
                 />
                 <ProFormSlider
                   name="closeness"
                   label="贴近度"
-                  rules={[{ required: true, message: "请选择贴近度" }]}
+                  rules={[{ required: true, message: '请选择贴近度' }]}
                   colProps={{ span: 24 }}
                   min={1}
                   max={5}
-                  marks={CLOSENESS_LEVEL_OPTIONS.reduce((acc, opt) => {
-                    acc[opt.value as number] = opt.label;
-                    return acc;
-                  }, {} as Record<number, React.ReactNode>)}
+                  marks={CLOSENESS_LEVEL_OPTIONS.reduce(
+                    (acc, opt) => {
+                      acc[opt.value as number] = opt.label;
+                      return acc;
+                    },
+                    {} as Record<number, React.ReactNode>,
+                  )}
                   step={1}
                   fieldProps={{
                     tooltip: {
                       formatter: (value: number | undefined) => {
-                        if (value === undefined) return "";
+                        if (value === undefined) return '';
                         const option = CLOSENESS_LEVEL_OPTIONS.find(
-                          (opt) => opt.value === value
+                          (opt) => opt.value === value,
                         );
                         if (!option) return String(value);
                         return option.tooltip_example
@@ -312,7 +331,7 @@ const LyricsCraftPage: React.FC = () => {
                           : option.description;
                       },
                     },
-                    style: { margin: "0 32px" },
+                    style: { margin: '0 32px' },
                   }}
                 />
                 <ProFormSelect
@@ -330,7 +349,7 @@ const LyricsCraftPage: React.FC = () => {
                     ),
                     value: option.value,
                   }))}
-                  rules={[{ required: true, message: "请选择创作模式" }]}
+                  rules={[{ required: true, message: '请选择创作模式' }]}
                   colProps={{ xxl: 12, xl: 24, lg: 24, md: 24, sm: 24, xs: 24 }}
                   fieldProps={{ popupMatchSelectWidth: false }}
                 />
@@ -349,7 +368,7 @@ const LyricsCraftPage: React.FC = () => {
                     ),
                     value: option.value,
                   }))}
-                  rules={[{ required: true, message: "请选择歌曲风格" }]}
+                  rules={[{ required: true, message: '请选择歌曲风格' }]}
                   colProps={{ xxl: 12, xl: 24, lg: 24, md: 24, sm: 24, xs: 24 }}
                   fieldProps={{ popupMatchSelectWidth: false }}
                 />
@@ -369,7 +388,7 @@ const LyricsCraftPage: React.FC = () => {
                     ),
                     value: option.value,
                   }))}
-                  rules={[{ required: true, message: "请选择曲式结构" }]}
+                  rules={[{ required: true, message: '请选择曲式结构' }]}
                   colProps={{ xxl: 12, xl: 24, lg: 24, md: 24, sm: 24, xs: 24 }}
                   fieldProps={{ popupMatchSelectWidth: false }}
                 />
@@ -388,7 +407,7 @@ const LyricsCraftPage: React.FC = () => {
                     ),
                     value: option.value,
                   }))}
-                  rules={[{ required: true, message: "请选择叙事人设" }]}
+                  rules={[{ required: true, message: '请选择叙事人设' }]}
                   colProps={{ xxl: 12, xl: 24, lg: 24, md: 24, sm: 24, xs: 24 }}
                   fieldProps={{ popupMatchSelectWidth: false }}
                 />
@@ -397,8 +416,8 @@ const LyricsCraftPage: React.FC = () => {
                   label="原始素材"
                   placeholder="请输入原始素材（主题、大意、歌词片段等），每一行视为一个参考素材"
                   rules={[
-                    { required: true, message: "请输入原始素材" },
-                    { max: 1000, message: "原始素材最多1000字" },
+                    { required: true, message: '请输入原始素材' },
+                    { max: 1000, message: '原始素材最多1000字' },
                   ]}
                   fieldProps={{
                     rows: 6,
@@ -411,7 +430,7 @@ const LyricsCraftPage: React.FC = () => {
                   name="reference_lyrics"
                   label="参考歌曲和歌词（可选）"
                   placeholder="请输入参考歌曲名称和歌词全文，仅作为技法参考，不要求结构对齐"
-                  rules={[{ max: 1000, message: "参考歌曲和歌词最多1000字" }]}
+                  rules={[{ max: 1000, message: '参考歌曲和歌词最多1000字' }]}
                   fieldProps={{
                     rows: 6,
                     showCount: true,
@@ -423,7 +442,7 @@ const LyricsCraftPage: React.FC = () => {
                   name="requirements"
                   label="创作要求（可选）"
                   placeholder="请输入创作要求（情绪走向、禁止出现的内容等）"
-                  rules={[{ max: 1000, message: "创作要求最多1000字" }]}
+                  rules={[{ max: 1000, message: '创作要求最多1000字' }]}
                   fieldProps={{
                     rows: 4,
                     showCount: true,
@@ -446,7 +465,7 @@ const LyricsCraftPage: React.FC = () => {
                     ),
                     value: option.value,
                   }))}
-                  rules={[{ required: true, message: "请选择押韵类型" }]}
+                  rules={[{ required: true, message: '请选择押韵类型' }]}
                   colProps={{ xxl: 12, xl: 24, lg: 24, md: 24, sm: 24, xs: 24 }}
                   fieldProps={{ popupMatchSelectWidth: false }}
                 />
@@ -466,20 +485,20 @@ const LyricsCraftPage: React.FC = () => {
             </ProCard>
           </Col>
 
-          <Col xxl={8} xl={12} lg={12} md={12} sm={12} xs={12}>
+          <Col xxl={8} xl={12} lg={24} md={24} sm={24} xs={24}>
             <ProCard
               title="生成的歌词"
               extra={
                 generatedLyrics && (
                   <Button
                     size="small"
-                    onClick={() => copyToClipboard(generatedLyrics, "歌词")}
+                    onClick={() => copyToClipboard(generatedLyrics, '歌词')}
                   >
                     复制歌词
                   </Button>
                 )
               }
-              style={{ height: "100%" }}
+              style={{ height: '100%' }}
             >
               {!generatedLyrics ? (
                 <Empty

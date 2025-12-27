@@ -12,9 +12,9 @@ import {
   ProFormSelect,
   ProFormText,
   ProFormTextArea,
-} from "@ant-design/pro-components";
+} from '@ant-design/pro-components';
 // Umi
-import { history, useSearchParams } from "@umijs/max";
+import { history, useSearchParams } from '@umijs/max';
 // Ant Design Base Components
 import {
   Button,
@@ -26,25 +26,24 @@ import {
   Row,
   Space,
   Spin,
-} from "antd";
+} from 'antd';
 // React
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 // 可复用的结果卡片组件
-import { ResultCard, ApiKeyAlert } from "@/components";
-
+import { ApiKeyAlert, ResultCard } from '@/components';
+import { BusinessType } from '@/config/aiTemperatureConfig';
+import { SYSTEM_PROMPT } from '@/config/prompts';
 // Custom Hook
-import { useApiKey } from "@/hooks/useApiKey";
-import { AIProviderFactory } from "@/services/ai/providers";
-import { db } from "@/services/db";
-import { mockGenerate } from "@/services/mockData";
-import { BusinessType } from "@/config/aiTemperatureConfig";
-import type { GenerateRequest } from "@/shared/types/types";
-import { copyToClipboard } from "@/shared/utils";
-import { SunoCoverPromptBuilder } from "./utils/promptBuilder";
-import { SunoCoverResponseParser } from "./utils/responseParser";
-import { SYSTEM_PROMPT } from "@/config/prompts";
-import { FIELD_CONFIGS, VALIDATION_RULES } from "./config/validationConfig";
-import { loadRecordData } from "./utils/dataLoader";
+import { useApiKey } from '@/hooks/useApiKey';
+import { AIProviderFactory } from '@/services/ai/providers';
+import { db } from '@/services/db';
+import { mockGenerate } from '@/services/mockData';
+import type { GenerateRequest } from '@/shared/types/types';
+import { copyToClipboard } from '@/shared/utils';
+import { FIELD_CONFIGS, VALIDATION_RULES } from './config/validationConfig';
+import { loadRecordData } from './utils/dataLoader';
+import { SunoCoverPromptBuilder } from './utils/promptBuilder';
+import { SunoCoverResponseParser } from './utils/responseParser';
 
 const SunoCover: React.FC = () => {
   // 使用antd的message hook
@@ -64,8 +63,8 @@ const SunoCover: React.FC = () => {
 
   // 简化的状态管理
   const [loading, setLoading] = useState(false); // 加载状态
-  const [stylesResult, setStylesResult] = useState(""); // Styles提示词结果
-  const [lyricsResult, setLyricsResult] = useState(""); // Lyrics提示词结果
+  const [stylesResult, setStylesResult] = useState(''); // Styles提示词结果
+  const [lyricsResult, setLyricsResult] = useState(''); // Lyrics提示词结果
   const [isFormInitialized, setIsFormInitialized] = useState(false); // 表单是否已初始化
 
   // 统一的数据库保存方法（可复用于正常提交和模拟生成）
@@ -80,14 +79,14 @@ const SunoCover: React.FC = () => {
 
       const referenceSongs = JSON.stringify(
         referenceSongsArray.filter(
-          (song: any) => song?.title && typeof song.title === "string"
-        )
+          (song: any) => song?.title && typeof song.title === 'string',
+        ),
       );
 
       // 确保必填字段有默认值
-      const songLanguage = values.song_language || "Mandarin";
-      const targetSinger = values.target_artist || "未知艺术家";
-      const lyrics = values.lyrics_raw || "无歌词";
+      const songLanguage = values.song_language || 'Mandarin';
+      const targetSinger = values.target_artist || '未知艺术家';
+      const lyrics = values.lyrics_raw || '无歌词';
 
       // 准备保存到数据库的记录
       const recordToSave = {
@@ -97,30 +96,30 @@ const SunoCover: React.FC = () => {
           song_language: songLanguage,
           target_singer: targetSinger,
           reference_songs: referenceSongs,
-          style_description: values.style_note || "",
+          style_description: values.style_note || '',
           lyrics,
-          scene: values.extra_note || "",
+          scene: values.extra_note || '',
         },
         ai_result: {
           styles: result.styles,
           lyrics: result.lyrics,
-          model: isMock ? "mock" : model, // 区分正常生成和模拟生成
+          model: isMock ? 'mock' : model, // 区分正常生成和模拟生成
         },
       };
 
       const record = await db.createPromptRecord(recordToSave);
 
-      messageApi.success("记录已成功保存");
+      messageApi.success('记录已成功保存');
 
       return record;
     },
-    [model, messageApi]
+    [model, messageApi],
   );
 
   // 从URL参数加载记录数据并初始化表单
   useEffect(() => {
     const loadRecordFromURL = async () => {
-      const recordId = searchParams.get("recordId");
+      const recordId = searchParams.get('recordId');
 
       // 使用模块化函数加载数据
       const { formValues, hasRecord, stylesResult, lyricsResult } =
@@ -128,8 +127,8 @@ const SunoCover: React.FC = () => {
 
       // 设置结果数据
       if (hasRecord) {
-        setStylesResult(stylesResult || "");
-        setLyricsResult(lyricsResult || "");
+        setStylesResult(stylesResult || '');
+        setLyricsResult(lyricsResult || '');
       }
 
       // 设置表单值（无论是否有数据都设置）
@@ -153,7 +152,7 @@ const SunoCover: React.FC = () => {
       setLoading(true);
       try {
         const provider = AIProviderFactory.createProvider(
-          model as "deepseek" | "gemini" | "mimo"
+          model as 'deepseek' | 'gemini' | 'mimo',
         );
 
         const userPrompt = SunoCoverPromptBuilder.buildUserPrompt(values);
@@ -166,7 +165,7 @@ const SunoCover: React.FC = () => {
         });
 
         if (!response.success) {
-          throw new Error(response.error || "AI生成失败");
+          throw new Error(response.error || 'AI生成失败');
         }
 
         const result = SunoCoverResponseParser.parseResponse(response.content);
@@ -174,7 +173,7 @@ const SunoCover: React.FC = () => {
         setStylesResult(result.styles);
         setLyricsResult(result.lyrics);
 
-        messageApi.success("提示词已成功生成！");
+        messageApi.success('提示词已成功生成！');
 
         await saveRecordToDB(values, result, false);
       } catch (error) {
@@ -187,7 +186,7 @@ const SunoCover: React.FC = () => {
         setLoading(false);
       }
     },
-    [checkApiKey, apiKey, model, messageApi]
+    [checkApiKey, apiKey, model, messageApi],
   );
 
   /**
@@ -207,12 +206,12 @@ const SunoCover: React.FC = () => {
       setStylesResult(result.styles);
       setLyricsResult(result.lyrics);
 
-      messageApi.success("模拟生成已完成");
+      messageApi.success('模拟生成已完成');
 
       // 使用统一的数据库保存方法（标记为模拟生成）
       await saveRecordToDB(formValues, result, true);
     } catch (_error) {
-      messageApi.error("模拟生成失败，请稍后再试");
+      messageApi.error('模拟生成失败，请稍后再试');
     } finally {
       setLoading(false);
     }
@@ -238,18 +237,18 @@ const SunoCover: React.FC = () => {
 
         <Row gutter={[24, 0]}>
           {/* 左侧输入表单 */}
-          <Col span={8}>
+          <Col xxl={8} xl={8} lg={12} md={24} sm={24} xs={24}>
             <ProCard
               title={
-                <span onClick={handleTitleClick} style={{ cursor: "pointer" }}>
+                <span onClick={handleTitleClick} style={{ cursor: 'pointer' }}>
                   翻唱配置
                 </span>
               }
-              style={{ height: "100%" }}
+              style={{ height: '100%' }}
             >
               {/* 延迟渲染：只有在数据加载完成后才显示表单 */}
               {!isFormInitialized ? (
-                <div style={{ textAlign: "center", padding: "40px 0" }}>
+                <div style={{ textAlign: 'center', padding: '40px 0' }}>
                   <Spin size="large" />
                 </div>
               ) : (
@@ -290,13 +289,13 @@ const SunoCover: React.FC = () => {
                     placeholder="请选择歌曲语言"
                     rules={VALIDATION_RULES.language}
                     options={[
-                      { value: "Mandarin", label: "华语（普通话）" },
-                      { value: "Cantonese", label: "粤语" },
-                      { value: "Minnan", label: "闽南语" },
-                      { value: "English", label: "英语" },
-                      { value: "Korean", label: "韩语" },
-                      { value: "Japanese", label: "日语" },
-                      { value: "Other", label: "其他" },
+                      { value: 'Mandarin', label: '华语（普通话）' },
+                      { value: 'Cantonese', label: '粤语' },
+                      { value: 'Minnan', label: '闽南语' },
+                      { value: 'English', label: '英语' },
+                      { value: 'Korean', label: '韩语' },
+                      { value: 'Japanese', label: '日语' },
+                      { value: 'Other', label: '其他' },
                     ]}
                   />
 
@@ -314,26 +313,26 @@ const SunoCover: React.FC = () => {
                     actionRef={proFormListRef}
                     name="reference_songs"
                     label="参考歌曲（可选，最多 3 首）"
-                    initialValue={[{ title: "", artist: "" }]}
+                    initialValue={[{ title: '', artist: '' }]}
                     creatorButtonProps={{
-                      creatorButtonText: "添加参考歌曲",
-                      type: "dashed",
+                      creatorButtonText: '添加参考歌曲',
+                      type: 'dashed',
                       block: true,
                     }}
                     deleteIconProps={{
-                      tooltipText: "删除该参考歌曲",
+                      tooltipText: '删除该参考歌曲',
                     }}
                     copyIconProps={false}
                     max={3}
                   >
                     {(meta) => (
-                      <Space key={meta.name} style={{ width: "100%" }}>
+                      <Space key={meta.name} style={{ width: '100%' }}>
                         <ProFormText
                           name="title"
                           placeholder="歌曲名"
                           rules={VALIDATION_RULES.referenceSongTitle}
                           fieldProps={{
-                            style: { width: "100%" },
+                            style: { width: '100%' },
                             ...FIELD_CONFIGS.referenceSongTitle,
                           }}
                         />
@@ -342,7 +341,7 @@ const SunoCover: React.FC = () => {
                           placeholder="演唱者（可选）"
                           rules={VALIDATION_RULES.referenceSongArtist}
                           fieldProps={{
-                            style: { width: "100%" },
+                            style: { width: '100%' },
                             ...FIELD_CONFIGS.referenceSongArtist,
                           }}
                         />
@@ -380,20 +379,20 @@ const SunoCover: React.FC = () => {
           </Col>
 
           {/* 中间Styles输出 */}
-          <Col span={8}>
+          <Col xxl={8} xl={8} lg={6} md={12} sm={12} xs={12}>
             <ResultCard
               title="Styles 提示词（可直接复制用于 Suno）"
               value={stylesResult}
-              onCopy={() => copyToClipboard(stylesResult, "Styles")}
+              onCopy={() => copyToClipboard(stylesResult, 'Styles')}
             />
           </Col>
 
           {/* 右侧Lyrics输出 */}
-          <Col span={8}>
+          <Col xxl={8} xl={8} lg={6} md={12} sm={12} xs={12}>
             <ResultCard
               title="Lyrics 提示词（可直接复制用于 Suno）"
               value={lyricsResult}
-              onCopy={() => copyToClipboard(lyricsResult, "Lyrics")}
+              onCopy={() => copyToClipboard(lyricsResult, 'Lyrics')}
             />
           </Col>
         </Row>

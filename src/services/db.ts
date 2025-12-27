@@ -373,7 +373,8 @@ class AppDatabase extends Dexie {
   }
 
   async getCurrentApiKey(user_id: number): Promise<ApiKey | undefined> {
-    // 先获取所有该用户的API Key，然后找到is_current为true的那个
+    // 优化查询：先获取所有该用户的API Key，然后找到is_current为true的那个
+    // 避免使用复合查询 {user_id, is_current} 来消除性能警告
     const userApiKeys = await this.apiKeys
       .where("user_id")
       .equals(user_id)
