@@ -5,7 +5,7 @@
   "description": "大师来了！ - 懂编曲，更懂作词的 Suno 终极辅助。",
   "repository": "git@github.com:qq157788394/Suno-Cover-Arranger.git",
   "scripts": {
-    "preinstall": "node -e \"if(process.env.npm_config_user_agent?.includes('npm'))throw new Error('Please use pnpm instead of npm: https://pnpm.io/installation')\"",
+    "preinstall": "node -e \"if(!process.env.npm_config_user_agent?.includes('pnpm'))throw new Error('Please use pnpm instead of npm: https://pnpm.io/installation')\"",
     "analyze": "cross-env ANALYZE=1 max build",
     "biome:lint": "npx @biomejs/biome lint",
     "build": "cross-env NODE_ENV=production UMI_ENV=prod max build && cp README.md dist/ && node scripts/inject-readme.js",

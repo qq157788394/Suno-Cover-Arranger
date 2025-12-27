@@ -11296,8 +11296,8 @@ packages:
     resolution: {integrity: sha512-1klA3Gi5PD1Wv9Q0wUoOQN1IWAuPu0D1U03ThXTr0cJ20+/iq2tHSDnK7Kk/0LXJ1ztUB2/1Os0wKmfyNgUQfg==}
     hasBin: true
 
-  splaytree@3.2.1:
-    resolution: {integrity: sha512-l0U2X2+2PejAVQfjMlD8i2ijYGqbGrDT3aXqqOvfZxiWUdmLsDpjFjKPzcYC+BdmTVLTCepQplMlEUejkP9H4g==}
+  splaytree@3.2.3:
+    resolution: {integrity: sha512-7OXrNWzy6CK+r7Ch9OLPBDTKfB6XlWHjX4P0RU5B3IgFuWPeYN0XtRtlexGRjgbQxpfaUve6jTAwBGWuGntz/w==}
     engines: {node: '>=18.20 || >=20'}
 
   split-on-first@1.1.0:
@@ -17288,7 +17288,7 @@ snapshots:
 
   '@types/history@5.0.0':
     dependencies:
-      history: 5.3.0
+      history: 4.10.1
 
   '@types/hoist-non-react-statics@3.3.7(@types/react@19.2.7)':
     dependencies:
@@ -17415,7 +17415,7 @@ snapshots:
       '@types/history': 4.7.11
       '@types/react': 19.2.7
       '@types/react-router': 5.1.20
-      redux: 4.2.1
+      redux: 3.7.2
 
   '@types/react-router@5.1.20':
     dependencies:
@@ -25574,7 +25574,7 @@ snapshots:
   polygon-clipping@0.15.7:
     dependencies:
       robust-predicates: 3.0.2
-      splaytree: 3.2.1
+      splaytree: 3.2.3
 
   polyline-miter-util@1.0.1:
     dependencies:
@@ -25856,7 +25856,7 @@ snapshots:
       lodash: 4.17.21
       postcss: 8.5.6
 
-  postcss-syntax@0.36.2(postcss-html@0.36.0)(postcss-less@3.1.4)(postcss-scss@2.1.1)(postcss@7.0.39):
+  postcss-syntax@0.36.2(postcss-html@0.36.0(postcss-syntax@0.36.2(postcss@8.5.6))(postcss@7.0.39))(postcss-less@3.1.4)(postcss-scss@2.1.1)(postcss@7.0.39):
     dependencies:
       postcss: 7.0.39
     optionalDependencies:
@@ -27742,7 +27742,7 @@ snapshots:
 
   specificity@0.4.1: {}
 
-  splaytree@3.2.1: {}
+  splaytree@3.2.3: {}
 
   split-on-first@1.1.0: {}
 
@@ -28073,7 +28073,7 @@ snapshots:
       postcss-sass: 0.4.4
       postcss-scss: 2.1.1
       postcss-selector-parser: 6.1.2
-      postcss-syntax: 0.36.2(postcss-html@0.36.0)(postcss-less@3.1.4)(postcss-scss@2.1.1)(postcss@7.0.39)
+      postcss-syntax: 0.36.2(postcss-html@0.36.0(postcss-syntax@0.36.2(postcss@8.5.6))(postcss@7.0.39))(postcss-less@3.1.4)(postcss-scss@2.1.1)(postcss@7.0.39)
       postcss-value-parser: 4.2.0
       resolve-from: 5.0.0
       slash: 3.0.0
