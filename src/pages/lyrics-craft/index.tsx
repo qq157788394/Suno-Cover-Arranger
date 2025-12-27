@@ -3,10 +3,14 @@
  * 负责处理歌词创作相关功能，使用ProForm实现15个表单项
  */
 
+import { LikeFilled } from '@ant-design/icons';
 import {
+  ModalForm,
   PageContainer,
   ProCard,
+  ProDescriptions,
   ProForm,
+  type ProFormInstance,
   ProFormRadio,
   ProFormSelect,
   ProFormSlider,
@@ -21,6 +25,7 @@ import {
   Col,
   Empty,
   message,
+  Radio,
   Row,
   Space,
   Spin,
@@ -29,7 +34,7 @@ import {
 
 const { Text } = Typography;
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import '@ant-design/x-markdown/themes/light.css';
 import '@ant-design/x-markdown/themes/dark.css';
 
@@ -38,6 +43,7 @@ import { BusinessType } from '@/config/aiTemperatureConfig';
 import {
   CLOSENESS_LEVEL_OPTIONS,
   CREATION_MODE_OPTIONS,
+  INSPIRATION_SCENARIOS,
   OUTPUT_COUNT_OPTIONS,
   PERSONA_OPTIONS,
   RHYME_TYPE_OPTIONS,
@@ -62,7 +68,11 @@ const LyricsCraftPage: React.FC = () => {
   const { createRecord } = useLyricsRecords();
   const [loading, setLoading] = useState<boolean>(false);
   const [generatedLyrics, setGeneratedLyrics] = useState<string>('');
+  const [inspirationModalVisible, setInspirationModalVisible] =
+    useState<boolean>(false);
+  const [selectedInspiration, setSelectedInspiration] = useState<string>('');
   const [messageApi, contextHolder] = message.useMessage();
+  const formRef = useRef<ProFormInstance<LyricsFormData>>(null);
   const { initialState } = useModel('@@initialState');
   // 根据主题设置确定XMarkdown的主题类
   const isDarkTheme = initialState?.settings?.navTheme === 'realDark';
@@ -164,9 +174,95 @@ const LyricsCraftPage: React.FC = () => {
     }
   };
 
+  /**
+   * 处理灵感选择
+   */
+  const handleInspirationSelect = async (values: {
+    inspiration: string;
+  }): Promise<boolean> => {
+    if (formRef.current) {
+      // 使用ProForm API获取当前原始素材的值
+      const currentValues = formRef.current.getFieldsValue();
+      const currentRawMaterial = currentValues.raw_material || '';
+
+      // 构建新的原始素材内容
+      const newRawMaterial = currentRawMaterial
+        ? `${currentRawMaterial}\n\n${values.inspiration}`
+        : values.inspiration;
+
+      // 使用ProForm API设置新的值
+      formRef.current.setFieldsValue({
+        raw_material: newRawMaterial,
+      });
+
+      messageApi.success('灵感已添加到原始素材中');
+      setInspirationModalVisible(false);
+      setSelectedInspiration('');
+      return true;
+    }
+
+    return false;
+  };
+
+  /**
+   * 打开灵感选择弹窗
+   */
+  const handleOpenInspirationModal = () => {
+    setInspirationModalVisible(true);
+  };
+
   return (
     <>
       {contextHolder}
+
+      {/* 灵感选择弹窗 */}
+      <ModalForm
+        title="灵感来了"
+        open={inspirationModalVisible}
+        onOpenChange={setInspirationModalVisible}
+        onFinish={handleInspirationSelect}
+        modalProps={{
+          destroyOnClose: true,
+          maskClosable: false,
+        }}
+      >
+        <ProForm.Item
+          name="inspiration"
+          label="选择一个灵感吧，自动生成原始素材"
+          rules={[{ required: true, message: '请选择一个灵感' }]}
+        >
+          <Radio.Group
+            style={{ width: '100%' }}
+            value={selectedInspiration}
+            onChange={(e) => setSelectedInspiration(e.target.value)}
+          >
+            <ProDescriptions
+              column={1}
+              layout="vertical"
+              bordered
+              size="middle"
+              style={{ width: '100%' }}
+            >
+              {INSPIRATION_SCENARIOS.map((category) => (
+                <ProDescriptions.Item
+                  key={category.categoryName}
+                  label={<Text strong>{category.categoryName}</Text>}
+                  valueType="text"
+                >
+                  <Space size="middle" wrap>
+                    {category.items.map((item) => (
+                      <Radio key={item.label} value={item.value}>
+                        {item.label}
+                      </Radio>
+                    ))}
+                  </Space>
+                </ProDescriptions.Item>
+              ))}
+            </ProDescriptions>
+          </Radio.Group>
+        </ProForm.Item>
+      </ModalForm>
+
       <PageContainer>
         {/* 只有在用户没有设置AI API Key时才显示Alert提示 */}
         <ApiKeyAlert
@@ -181,6 +277,7 @@ const LyricsCraftPage: React.FC = () => {
                 layout="vertical"
                 grid
                 onFinish={handleSubmit}
+                formRef={formRef}
                 submitter={{
                   render: () => (
                     <Button
@@ -413,7 +510,7 @@ const LyricsCraftPage: React.FC = () => {
                 />
                 <ProFormTextArea
                   name="raw_material"
-                  label="原始素材"
+                  // label="原始素材"
                   placeholder="请输入原始素材（主题、大意、歌词片段等），每一行视为一个参考素材"
                   rules={[
                     { required: true, message: '请输入原始素材' },
@@ -425,6 +522,20 @@ const LyricsCraftPage: React.FC = () => {
                     maxLength: 1000,
                   }}
                   colProps={{ xxl: 12, xl: 24, lg: 24, md: 24, sm: 24, xs: 24 }}
+                  label={
+                    <Space align="center">
+                      <Text>原始素材</Text>
+
+                      <Button
+                        type="primary"
+                        size="small"
+                        icon={<LikeFilled />}
+                        onClick={handleOpenInspirationModal}
+                      >
+                        找灵感
+                      </Button>
+                    </Space>
+                  }
                 />
                 <ProFormTextArea
                   name="reference_lyrics"

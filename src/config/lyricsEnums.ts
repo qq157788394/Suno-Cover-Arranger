@@ -125,72 +125,83 @@ export const SONG_STRUCTURE_OPTIONS: EnumOption[] = [
   {
     value: 'standard_pop',
     label: '经典流行 ABAB',
-    description: '最稳妥结构：主歌铺垫-副歌高潮，含过门与桥段',
+    description: '最稳妥结构：主歌铺垫-副歌高潮，含间奏与终段骤停设计',
     tooltip_example: '例：周杰伦《简单爱》、大多数华语情歌',
     prompt_instruction: `
-请严格按照以下结构进行创作：
+请严格按照以下结构进行创作（注意【骤停】设计与【间奏】留白）：
 [Intro]
-(前奏：纯音乐，营造情绪氛围，无需歌词)
+(前奏：纯音乐氛围引入，严禁填词)
 
 [Verse 1]
- (主歌1：故事开篇，平稳叙事，交代背景)
+(主歌1：故事开篇，交代背景)
 
 [Chorus]
-(副歌：全曲核心，情感爆发，最洗脑的记忆点)
+(副歌：情感爆发，全曲核心记忆点)
 
 [Verse 2]
-(主歌2：推进情节，细节描写)
+(主歌2：细节递进)
 
 [Chorus]
-(副歌：重复核心旋律，加强记忆)
+(副歌：重复核心旋律，加深记忆)
+
+[Interlude]
+(间奏：纯音乐/器乐Solo，给予呼吸空间，严禁填词)
 
 [Bridge]
-(桥段：情绪转折或升华，打破重复感，准备最后冲刺)
+(桥段：情绪转折/升华，打破重复感)
 
-[Chorus]
-(副歌：最后的高潮爆发)
+[Final Chorus]
+(终段副歌：全曲最高潮，可重复两遍，情绪极致释放)
+
+[Breakdown]
+(骤停/抽空：乐器突然停止，仅保留人声清唱或单乐器。请在此处写一句最扎心的“金句”或重复副歌最后一句)
 
 [Outro]
-(尾奏：情绪渐落，余音绕梁)
-
+(尾奏：纯音乐Fade out，严禁填实词)
 `,
   },
   {
     value: 'verse_pre_chorus',
     label: '层递进阶 Pre-Chorus',
-    description: "增加'导歌'段落，情绪层层递进，适合大线条抒情歌",
-    tooltip_example: '例：邓紫棋《泡沫》（主歌 -> 预副歌 -> 副歌）',
+    description: "增加'导歌'段落，情绪层层递进，含高潮后的留白",
+    tooltip_example: '例：邓紫棋《泡沫》（主歌 -> 导歌 -> 副歌）',
     prompt_instruction: `
-请严格按照以下结构进行创作：
+请严格按照以下结构进行创作（强调动态反差与层次感）：
 [Intro]
- (前奏：器乐引入)
+(前奏：器乐引入，严禁填词)
 
 [Verse 1]
 (主歌1：低吟浅唱，叙事铺垫)
 
 [Pre-Chorus]
- (导歌：情绪爬坡，如同暴风雨前的宁静)
+(导歌：情绪爬坡，暴风雨前的宁静)
 
 [Chorus]
 (副歌：彻底释放，情感宣泄)
 
 [Verse 2]
-(主歌2：延续情绪，深入内心)
+(主歌2：延续情绪)
 
 [Pre-Chorus]
- (导歌：再次蓄力，准备爆发)
+(导歌：再次蓄力)
 
 [Chorus]
 (副歌：情感宣泄)
 
+[Interlude]
+(间奏：吉他或钢琴Solo，情绪过渡，严禁填词)
+
 [Bridge]
 (高音/独白：全曲最高亢或最深刻的时刻)
 
-[Chorus]
-(副歌：最后的辉煌)
+[Final Chorus]
+(终段副歌：最后的辉煌，请重复副歌核心段落，情绪拉满)
+
+[Breakdown]
+(情绪骤停：突然安静，仿佛时间静止。请写一句简短的、低声的独白)
 
 [Outro]
-(尾奏：慢慢结束)
+(尾奏：器乐渐弱，严禁填词)
 `,
   },
   {
@@ -204,22 +215,25 @@ export const SONG_STRUCTURE_OPTIONS: EnumOption[] = [
 (副歌前置：开篇即高潮！第一句就要抓住听众耳朵)
 
 [Verse 1]
-(主歌：回溯故事原委，解释背景)
+(主歌：回溯故事原委)
 
 [Pre-Chorus]
- (导歌：情绪推进)
+(导歌：情绪推进)
 
 [Chorus]
 (副歌：强化核心记忆点)
 
+[Interlude]
+(间奏：动感节奏过渡，严禁填词)
+
 [Verse 2]
 (主歌：故事发展)
 
-[Chorus]
-(副歌：全场大合唱的感觉)
+[Final Chorus]
+(终段副歌：全场大合唱的感觉，重复副歌金句)
 
 [Outro]
-(尾奏：短促有力或淡出)
+(尾奏：短促有力，严禁填词)
 `,
   },
   {
@@ -228,9 +242,9 @@ export const SONG_STRUCTURE_OPTIONS: EnumOption[] = [
     description: '双段主歌连续叙事，再进副歌。适合信息量大的故事',
     tooltip_example: '例：李宗盛《山丘》（大段念白式主歌）',
     prompt_instruction: `
-请严格按照以下结构进行创作（长叙事）：
+请严格按照以下结构进行创作（长叙事结构）：
 [Intro]
- (前奏：舒缓，像讲故事的开场)
+(前奏：舒缓，像讲故事的开场，严禁填词)
 
 [Verse 1]
 (主歌1：第一层叙事，娓娓道来)
@@ -241,14 +255,17 @@ export const SONG_STRUCTURE_OPTIONS: EnumOption[] = [
 [Chorus]
 (副歌：总结感悟，情感的总爆发)
 
+[Interlude]
+(间奏：器乐独奏，沉淀情绪，严禁填词)
+
 [Verse 3]
 (主歌3：新的视角或反思)
 
-[Chorus]
-(副歌：再次爆发)
+[Final Chorus]
+(终段副歌：再次爆发，可重复多次，直至情绪耗尽)
 
 [Outro]
-(尾奏：独白或留白)
+(尾奏：独白或留白，严禁填实词)
 `,
   },
   {
@@ -259,7 +276,7 @@ export const SONG_STRUCTURE_OPTIONS: EnumOption[] = [
     prompt_instruction: `
 请严格按照以下结构进行创作（民谣体）：
 [Intro]
- (前奏：吉他或钢琴独奏)
+(前奏：吉他或钢琴独奏，严禁填词)
 
 [Verse 1]
 (第一段：画面描写)
@@ -268,7 +285,7 @@ export const SONG_STRUCTURE_OPTIONS: EnumOption[] = [
 (第二段：叙事推进)
 
 [Interlude]
-(间奏：器乐独奏，口琴或吉他，给予呼吸空间)
+(间奏：器乐独奏，口琴或吉他，给予呼吸空间，严禁填词)
 
 [Verse 3]
 (第三段：情感深化)
@@ -277,7 +294,7 @@ export const SONG_STRUCTURE_OPTIONS: EnumOption[] = [
 (第四段：结局或远去)
 
 [Outro]
-(尾奏：轻声结束)
+(尾奏：轻声结束，严禁填词)
 (注意：此结构不强调爆发式副歌，注重歌词的流淌感)
 `,
   },
@@ -289,7 +306,7 @@ export const SONG_STRUCTURE_OPTIONS: EnumOption[] = [
     prompt_instruction: `
 请严格按照以下结构进行创作（自由体）：
 [Intro]
- (前奏)
+(前奏：严禁填词)
 
 [Verse]
 (主歌：自由表达)
@@ -297,10 +314,13 @@ export const SONG_STRUCTURE_OPTIONS: EnumOption[] = [
 [Chorus]
 (副歌：随情绪插入)
 
-(自由发挥：根据歌词意境，自由插入 [Bridge] 桥段或 [Interlude] 间奏)
+[Interlude]
+(间奏：纯音乐，严禁填词)
+
+(自由发挥：根据歌词意境，自由插入 [Bridge] 桥段或 [Final Chorus])
 
 [Outro]
-(尾奏)
+(尾奏：严禁填词)
 `,
   },
 ];
@@ -385,22 +405,6 @@ export type Persona = (typeof PERSONA_OPTIONS)[number]['value'];
  * 指令重点：规定词汇的难易度、修辞浓度以及性别气质
  */
 export const WORDING_STYLE_OPTIONS: EnumOption[] = [
-  // --- 原有基础风格 ---
-  {
-    value: 'colloquial',
-    label: '大白话 / 口语',
-    description: '直白、不做作，贴近生活',
-    prompt_instruction:
-      '【用词风格】：极度口语化。请使用日常生活中最简单的词汇，像平时聊天一样自然。严禁堆砌辞藻，拒绝成语和生僻字。',
-  },
-  {
-    value: 'literary',
-    label: '文艺 / 诗意',
-    description: '善用修辞和意象，优美含蓄',
-    prompt_instruction:
-      '【用词风格】：文艺诗意。请多使用比喻、拟人等修辞手法。用词要优美、含蓄，注重意境的营造，避免太直白的大白话。',
-  },
-
   // --- 新增：性别/气质维度 ---
   {
     value: 'feminine_delicate',
@@ -417,7 +421,21 @@ export const WORDING_STYLE_OPTIONS: EnumOption[] = [
       '【用词风格】：沧桑豪迈（男性视角）。请使用更具“颗粒感”和“重量感”的词汇（如：肩膀、风雨、胸膛、沉默）。语气要深沉、硬朗，多写责任与行动，拒绝过度矫情的小女生词汇。',
   },
 
-  // --- 原有进阶风格 ---
+  // --- 原有基础风格 ---
+  {
+    value: 'colloquial',
+    label: '大白话 / 口语',
+    description: '直白、不做作，贴近生活',
+    prompt_instruction:
+      '【用词风格】：极度口语化。请使用日常生活中最简单的词汇，像平时聊天一样自然。严禁堆砌辞藻，拒绝成语和生僻字。',
+  },
+  {
+    value: 'literary',
+    label: '文艺 / 诗意',
+    description: '善用修辞和意象，优美含蓄',
+    prompt_instruction:
+      '【用词风格】：文艺诗意。请多使用比喻、拟人等修辞手法。用词要优美、含蓄，注重意境的营造，避免太直白的大白话。',
+  },
   {
     value: 'restrained',
     label: '克制 / 隐忍',
@@ -546,3 +564,119 @@ export const CLOSENESS_LEVEL_OPTIONS: EnumOption[] = [
 ];
 
 export type ClosenessLevel = (typeof CLOSENESS_LEVEL_OPTIONS)[number]['value'];
+
+/**
+ * 灵感预置配置 (场景需求版)
+ * 设计理念：用户点菜，系统自动补全详细的 Prompt 描述
+ */
+
+export interface InspirationCategory {
+  categoryName: string; // 分类名，如 "💘 爱情百态"
+  items: {
+    label: string; // 按钮显示的文字，如 "舔狗情歌"
+    value: string; // 填入输入框的完整描述
+  }[];
+}
+
+export const INSPIRATION_SCENARIOS: InspirationCategory[] = [
+  {
+    categoryName: '💘 爱情百态',
+    items: [
+      {
+        label: '🐶 舔狗/备胎',
+        value:
+          '主题：卑微的单恋。描述一个人无怨无悔地付出，明明知道没有结果，却依然心甘情愿做配角。情感基调：酸楚、自我感动。',
+      },
+      {
+        label: '💔 分手/失恋',
+        value:
+          '主题：痛彻心扉的分手。描述失恋后的戒断反应，看着熟悉的旧物，回忆涌上心头。情感基调：遗憾、不舍、泪崩。',
+      },
+      {
+        label: '🍬 甜蜜/热恋',
+        value:
+          '主题：甜甜的恋爱。描述两个人在一起的各种小确幸，看星星、吹晚风，全世界都充满了粉色泡泡。情感基调：轻松、浪漫、治愈。',
+      },
+      {
+        label: '🌫️ 暧昧/拉扯',
+        value:
+          '主题：成年人的暧昧。描述友达以上、恋人未满的推拉感，互相试探又不敢戳破。情感基调：迷离、纠结、心跳。',
+      },
+      {
+        label: '💍 婚礼/告白',
+        value:
+          '主题：神圣的承诺。适合婚礼或求婚场景，回顾一路走来的不容易，许下相伴一生的誓言。情感基调：感动、坚定、幸福。',
+      },
+    ],
+  },
+  {
+    categoryName: '🔥 梦想热血',
+    items: [
+      {
+        label: '🏢 团队/荣耀',
+        value:
+          '主题：团队凝聚力。适合公司年会大合唱，描述大家为了同一个目标并肩作战，共创辉煌。情感基调：激情澎湃、振奋人心、正能量。',
+      },
+      {
+        label: '🏃‍♂️ 奋斗/追梦',
+        value:
+          '主题：不屈的梦想。描述在逆境中跌倒又爬起，虽然没人理解，但依然要坚持跑向终点。情感基调：热血、励志、燃。',
+      },
+      {
+        label: '🎓 毕业/离别',
+        value:
+          '主题：青春散场。描写毕业季的夏天，操场、校服、最后一次聚餐，约定未来顶峰相见。情感基调：怀念、不舍、希冀。',
+      },
+      {
+        label: '🏋️ 极限/挑战',
+        value:
+          '主题：突破极限。适合健身房或跑步BGM，描写汗水滴落、心跳加速、战胜惰性。情感基调：快节奏、强劲、爆发。',
+      },
+    ],
+  },
+  {
+    categoryName: '🏙️ 人生自我',
+    items: [
+      {
+        label: '🌃 深夜EMO',
+        value:
+          '主题：深夜的孤独。描述忙碌一天后回到空房间，卸下面具，独自面对内心的脆弱与迷茫。情感基调：孤独、清冷、自我对话。',
+      },
+      {
+        label: '🚬 浪子江湖',
+        value:
+          '主题：男人的江湖。描述四海为家、漂泊在外的沧桑，敬往事一杯酒，擦干泪继续走。情感基调：豪迈、粗犷、重情重义。',
+      },
+      {
+        label: '🧘 躺平佛系',
+        value:
+          '主题：拒绝内卷。描述不想努力了，只想晒太阳、喝咖啡，过一种慢节奏的随性生活。情感基调：慵懒、放松、反讽。',
+      },
+      {
+        label: '👩 女性成长',
+        value:
+          '主题：独立女性。描述不再依附于爱情，学会爱自己，活出自己的精彩与从容。情感基调：自信、洒脱、清醒。',
+      },
+    ],
+  },
+  {
+    categoryName: '🐉 特色风格',
+    items: [
+      {
+        label: '🎎 唯美古风',
+        value:
+          '主题：国风古韵。描述江南烟雨、断桥残雪或江湖恩怨，用词要雅致，意境要美。情感基调：凄美、古典、诗意。',
+      },
+      {
+        label: '🚗 公路旅行',
+        value:
+          '主题：在路上。描述开车行驶在无人的公路上，车窗外的风景后退，追逐自由与地平线。情感基调：广阔、自由、风的感觉。',
+      },
+      {
+        label: '🤣 玩梗/整活',
+        value:
+          '主题：幽默吐槽。用诙谐的语气吐槽生活中的奇葩事（如甲方、减肥、水逆），好玩有趣。情感基调：搞怪、快乐、解压。',
+      },
+    ],
+  },
+];

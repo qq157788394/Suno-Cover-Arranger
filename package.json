@@ -42,6 +42,7 @@
     "node": ">=20.0.0"
   },
   "dependencies": {
+    "@ant-design/happy-work-theme": "^2.0.0",
     "@ant-design/icons": "^6.1.0",
     "@ant-design/plots": "^2.6.0",
     "@ant-design/pro-components": "^2.8.10",

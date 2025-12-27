@@ -1,7 +1,8 @@
+import { HappyProvider } from '@ant-design/happy-work-theme';
 import type { Settings as LayoutSettings } from '@ant-design/pro-components';
 import { SettingDrawer } from '@ant-design/pro-components';
 import type { RequestConfig, RunTimeLayoutConfig } from '@umijs/max';
-import { Typography } from 'antd';
+import { ConfigProvider, Typography, theme } from 'antd';
 
 const { Link } = Typography;
 
@@ -45,10 +46,14 @@ export const layout: RunTimeLayoutConfig = ({
   return {
     links: [
       <Link key="suno" target="_blank" href="https://suno.com/">
-        Suno
+        Suno 音乐平台
       </Link>,
-      <Link key="deepseek" target="_blank" href="https://chat.deepseek.com/">
-        DeepSeek
+      <Link
+        key="deepseek"
+        target="_blank"
+        href="https://platform.deepseek.com/"
+      >
+        DeepSeek 开放平台
       </Link>,
       <Link
         key="google-ai"
@@ -57,14 +62,21 @@ export const layout: RunTimeLayoutConfig = ({
       >
         Google AI Studio
       </Link>,
+      <Link
+        key="github"
+        target="_blank"
+        href="https://github.com/qq157788394/Suno-Cover-Arranger"
+      >
+        Github 项目主页
+      </Link>,
     ],
     actionsRender: () => {
       return [
         <Link
           key="bilibili"
           target="_blank"
-          strong
           href="https://space.bilibili.com/421841720"
+          strong
         >
           作者B站
         </Link>,
@@ -89,7 +101,23 @@ export const layout: RunTimeLayoutConfig = ({
       // if (initialState?.loading) return <PageLoading />;
       return (
         <>
-          {children}
+          <ConfigProvider
+            // 全局组件配置 - 动态应用SettingDrawer的主题配置
+            popupMatchSelectWidth={false}
+            theme={{
+              // 应用SettingDrawer的主题配置
+              token: {
+                colorPrimary: initialState?.settings?.colorPrimary || '#ff9000',
+              },
+              // 根据SettingDrawer的navTheme配置应用对应的主题算法
+              algorithm:
+                initialState?.settings?.navTheme === 'realDark'
+                  ? theme.darkAlgorithm
+                  : theme.defaultAlgorithm,
+            }}
+          >
+            <HappyProvider>{children}</HappyProvider>
+          </ConfigProvider>
           <SettingDrawer
             disableUrlParams
             enableDarkTheme
