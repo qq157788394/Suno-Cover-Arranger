@@ -31,6 +31,7 @@ import {
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 // 可复用的结果卡片组件
 import { ApiKeyAlert, ResultCard } from '@/components';
+import type { AIProviderModelType } from '@/config/aiProviderConfig';
 import { BusinessType } from '@/config/aiTemperatureConfig';
 import { SYSTEM_PROMPT } from '@/config/prompts';
 // Custom Hook
@@ -152,7 +153,7 @@ const SunoCover: React.FC = () => {
       setLoading(true);
       try {
         const provider = AIProviderFactory.createProvider(
-          model as 'deepseek' | 'gemini' | 'mimo',
+          model as AIProviderModelType,
         );
 
         const userPrompt = SunoCoverPromptBuilder.buildUserPrompt(values);

@@ -4,23 +4,16 @@
  * temperature参数控制AI生成内容的创造性，值越高越有创造性，值越低越保守
  */
 
-/**
- * AI提供商类型枚举
- */
-export enum AIProviderType {
-  DEEPSEEK = "deepseek",
-  GEMINI = "gemini",
-  MIMO = "mimo",
-}
+import { AIProviderType } from './aiProviderConfig';
 
 /**
  * 业务类型枚举
  */
 export enum BusinessType {
   /** 大师做编曲业务 */
-  ARRANGEMENT = "arrangement",
+  ARRANGEMENT = 'arrangement',
   /** 大师写歌词业务 */
-  LYRICS = "lyrics",
+  LYRICS = 'lyrics',
 }
 
 /**
@@ -41,12 +34,14 @@ export const aiTemperatureConfig: AITemperatureConfig = {
   [BusinessType.ARRANGEMENT]: {
     [AIProviderType.DEEPSEEK]: 1.5,
     [AIProviderType.GEMINI]: 1,
+    [AIProviderType.GLM]: 1,
     [AIProviderType.MIMO]: 0.8,
   },
   // 大师写歌词业务
   [BusinessType.LYRICS]: {
     [AIProviderType.DEEPSEEK]: 1.5,
     [AIProviderType.GEMINI]: 1,
+    [AIProviderType.GLM]: 1,
     [AIProviderType.MIMO]: 0.8,
   },
 };
@@ -59,7 +54,7 @@ export const aiTemperatureConfig: AITemperatureConfig = {
  */
 export const getTemperatureByConfig = (
   businessType: BusinessType,
-  providerType: AIProviderType
+  providerType: AIProviderType,
 ): number => {
   return aiTemperatureConfig[businessType]?.[providerType] || 1;
 };

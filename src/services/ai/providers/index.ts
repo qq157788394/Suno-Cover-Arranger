@@ -1,8 +1,10 @@
 import { container } from "tsyringe";
 import { DeepSeekProvider } from "./deepseekProvider";
 import { GeminiProvider } from "./geminiProvider";
+import { GLMProvider } from "./glmProvider";
 import { MimoProvider } from "./mimoProvider";
 import type { BaseAIProvider } from "./baseAIProvider";
+import { AIProviderModelType } from "@/config/aiProviderConfig";
 
 /**
  * 注册所有AI Provider到tsyringe容器
@@ -10,6 +12,7 @@ import type { BaseAIProvider } from "./baseAIProvider";
 export function registerAIProviders(): void {
   container.register(DeepSeekProvider, { useClass: DeepSeekProvider });
   container.register(GeminiProvider, { useClass: GeminiProvider });
+  container.register(GLMProvider, { useClass: GLMProvider });
   container.register(MimoProvider, { useClass: MimoProvider });
 }
 
@@ -20,15 +23,17 @@ export function registerAIProviders(): void {
 export class AIProviderFactory {
   /**
    * 根据模型类型创建AI Provider实例
-   * @param model - 模型类型（deepseek | gemini | mimo）
+   * @param model - 模型类型（从配置文件中定义）
    * @returns AI Provider实例
    */
-  static createProvider(model: "deepseek" | "gemini" | "mimo"): BaseAIProvider {
+  static createProvider(model: AIProviderModelType): BaseAIProvider {
     switch (model) {
       case "deepseek":
         return container.resolve(DeepSeekProvider);
       case "gemini":
         return container.resolve(GeminiProvider);
+      case "glm":
+        return container.resolve(GLMProvider);
       case "mimo":
         return container.resolve(MimoProvider);
       default:

@@ -116,12 +116,16 @@ const AISettingPage: React.FC = () => {
                   },
                   {
                     value: 'gemini',
-                    label: 'Google Gemini 3（推荐，可免费白嫖）',
+                    label: 'Google Gemini 3（推荐，可白嫖）',
+                  },
+                  {
+                    value: 'glm',
+                    label: '智谱AI GLM-4.6V-Flash（可白嫖）',
                   },
                   {
                     value: 'mimo',
                     label:
-                      '小米MiMo V2 Flash（限时免费白嫖，但需要在本地运行，线上无法使用）',
+                      '小米MiMo V2 Flash（限时免费，但需要本地运行，不会写代码的别用）',
                   },
                 ]}
                 onChange={handleModelChange}
@@ -250,6 +254,39 @@ const AISettingPage: React.FC = () => {
 
         <ProCard split="vertical">
           <ProCard colSpan={12}>
+            <Title level={4}>智谱AI API Key 一分钟申请指南（新手版）</Title>
+            <Paragraph>
+              <ol>
+                <li>
+                  打开官网：
+                  <Link href="https://open.bigmodel.cn/" target="_blank">
+                    https://open.bigmodel.cn/
+                  </Link>
+                </li>
+                <li>
+                  点击右上角 <Text code>登录 / 注册</Text>
+                  （手机号、邮箱都可以）
+                </li>
+                <li>根据提示完成注册（手机号、邮箱都可以）</li>
+                <li>
+                  登录后，在左侧找到 <Text code>API 密钥 / API Keys</Text>
+                </li>
+                <li>
+                  点击 <Text code>创建 API Key</Text>，输入名称并确认
+                </li>
+                <li>复制生成的 API Key（记得先保存好，之后看不到完整内容）</li>
+                <li>回到本应用 → 打开 设置 / AI 设置 → 粘贴 API Key → 保存</li>
+                <li>完成！现在就可以正常使用各项 AI 生成功能了</li>
+              </ol>
+              <Title level={4}>💡 常见问题</Title>
+              <ul>
+                <li>需要付费吗？ 不需要，GLM-4.6V-Flash是免费模型。</li>
+                <li>是国货么？ 国货</li>
+                <li>模型水平如何？ 写代码水平不错。</li>
+              </ul>
+            </Paragraph>
+          </ProCard>
+          <ProCard colSpan={12}>
             <Title level={4}>小米MiMo API Key 申请指南（新手版）</Title>
             <Paragraph>
               <ol>
@@ -275,9 +312,11 @@ const AISettingPage: React.FC = () => {
               </ol>
               <Title level={4}>💡 常见问题</Title>
               <ul>
-                <li>无法使用？ 请确保在本地运行项目，线上环境无法使用</li>
+                <li>
+                  无法使用？
+                  请确保在本地运行项目，线上环境无法使用，不会写代码就别折腾了
+                </li>
                 <li>需要付费吗？ 新模型，面向全球公测，限时免费！</li>
-                <li>访问限制？ 国内可直接访问，无需科学上网</li>
                 <li>
                   模型水平如何？ 新模型，up主只开发了功能，并没有深入进行测试
                 </li>

@@ -1,10 +1,8 @@
 import { injectable } from "tsyringe";
 import { BaseAIProvider } from "./baseAIProvider";
 import type { AIProviderRequest, AIProviderResponse } from "./baseAIProvider";
-import {
-  AIProviderType,
-  getTemperatureByConfig,
-} from "../../../config/aiTemperatureConfig";
+import { AIProviderType } from "../../../config/aiProviderConfig";
+import { getTemperatureByConfig } from "../../../config/aiTemperatureConfig";
 
 /**
  * 小米MiMo AI Provider

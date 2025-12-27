@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
-import { history } from "@umijs/max";
-import { Modal } from "antd";
-import { db } from "@/services/db";
+import { history } from '@umijs/max';
+import { Modal } from 'antd';
+import { useEffect, useState } from 'react';
+import { db } from '@/services/db';
 
 export const useApiKey = () => {
-  const [apiKey, setApiKey] = useState<string>("");
-  const [model, setModel] = useState<string>("deepseek");
+  const [apiKey, setApiKey] = useState<string>('');
+  const [model, setModel] = useState<string>('deepseek');
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   /**
@@ -18,7 +18,7 @@ export const useApiKey = () => {
    * 跳转到AI设置页面
    */
   const navigateToSettings = () => {
-    history.push("/ai-setting");
+    history.push('/ai-setting');
   };
 
   /**
@@ -28,10 +28,10 @@ export const useApiKey = () => {
   const checkApiKey = (): boolean => {
     if (!apiKey) {
       Modal.confirm({
-        title: "尚未设置 AI API Key",
-        content: "设置完成后即可使用该功能，是否现在去设置？",
-        okText: "去设置",
-        cancelText: "取消",
+        title: '尚未设置 AI API Key',
+        content: '设置完成后即可使用该功能，是否现在去设置？',
+        okText: '去设置',
+        cancelText: '取消',
         onOk: navigateToSettings,
       });
       return false;
@@ -53,18 +53,18 @@ export const useApiKey = () => {
   // 加载指定模型的API Key
   const loadApiKeyForModel = async (targetModel: string) => {
     try {
-      console.log("Loading API Key for model:", targetModel);
+      console.log('Loading API Key for model:', targetModel);
       const userApiKeys = await db.getUserApiKeys(1);
 
       // 查找指定模型的API Key
       const modelApiKey = userApiKeys.find((key) => key.model === targetModel);
-      console.log("Found API Key for model", targetModel, ":", modelApiKey);
+      console.log('Found API Key for model', targetModel, ':', modelApiKey);
 
-      setApiKey(modelApiKey?.api_key || "");
+      setApiKey(modelApiKey?.api_key || '');
       setModel(targetModel);
 
       // 将所有API Key的isCurrent设置为false，然后将指定模型的API Key设置为当前
-      console.log("Updating current API Key status for model", targetModel);
+      console.log('Updating current API Key status for model', targetModel);
       for (const key of userApiKeys) {
         if (key.id) {
           await db.updateApiKey(key.id, {
@@ -73,8 +73,8 @@ export const useApiKey = () => {
         }
       }
     } catch (error) {
-      console.error("Failed to load API Key for model:", targetModel, error);
-      setApiKey("");
+      console.error('Failed to load API Key for model:', targetModel, error);
+      setApiKey('');
       setModel(targetModel);
     }
   };
@@ -91,11 +91,11 @@ export const useApiKey = () => {
           setModel(currentApiKey.model);
         } else {
           // 如果没有当前API Key，默认使用deepseek并尝试加载其API Key
-          console.log("No current API Key found, using default model deepseek");
-          await loadApiKeyForModel("deepseek");
+          console.log('No current API Key found, using default model deepseek');
+          await loadApiKeyForModel('deepseek');
         }
       } catch (error) {
-        console.error("Failed to load initial API Key and Model:", error);
+        console.error('Failed to load initial API Key and Model:', error);
       } finally {
         setIsLoading(false);
       }
@@ -116,10 +116,10 @@ export const useApiKey = () => {
   // 保存 API Key 和模型（暂时使用用户ID 1，实际应用中需要从用户登录状态获取）
   const saveApiKey = async (
     newApiKey: string,
-    newModel: string = "deepseek"
+    newModel: string = 'deepseek',
   ) => {
     try {
-      console.log("Saving API Key and Model:", {
+      console.log('Saving API Key and Model:', {
         apiKey: newApiKey,
         model: newModel,
       });
@@ -129,12 +129,12 @@ export const useApiKey = () => {
         model: newModel,
         is_current: true,
       });
-      console.log("Saved API Key and Model to DB:", savedApiKey);
+      console.log('Saved API Key and Model to DB:', savedApiKey);
       setApiKey(newApiKey);
       setModel(newModel);
       return true;
     } catch (error) {
-      console.error("Failed to save API Key and Model:", error);
+      console.error('Failed to save API Key and Model:', error);
       return false;
     }
   };
@@ -142,21 +142,21 @@ export const useApiKey = () => {
   // 删除 API Key（删除当前模型对应的API Key）
   const deleteApiKey = async () => {
     try {
-      console.log("Deleting API Key for model:", model);
+      console.log('Deleting API Key for model:', model);
       // 获取当前用户该模型对应的API Key
       const userApiKeys = await db.getUserApiKeys(1);
       const modelApiKey = userApiKeys.find((key) => key.model === model);
 
       if (modelApiKey?.id) {
-        console.log("Deleting API Key with ID:", modelApiKey.id);
+        console.log('Deleting API Key with ID:', modelApiKey.id);
         await db.deleteApiKey(modelApiKey.id);
       }
 
-      setApiKey("");
-      console.log("API Key deleted successfully");
+      setApiKey('');
+      console.log('API Key deleted successfully');
       return true;
     } catch (error) {
-      console.error("Failed to delete API Key:", error);
+      console.error('Failed to delete API Key:', error);
       return false;
     }
   };
@@ -166,15 +166,18 @@ export const useApiKey = () => {
     // DeepSeek API Key格式：sk-开头的字符串
     // Google Gemini API Key格式：AIza开头的字符串
     // 小米MiMo API Key格式：sk-开头的字符串
+    // 智谱AI GLM API Key格式：id.secret格式，例如：1234567890abcdef.abcdef1234567890
     const deepSeekRegex = /^sk-/;
     const geminiRegex = /^AIza/;
     const mimoRegex = /^sk-/;
+    const glmRegex = /^[a-zA-Z0-9]+\.[a-zA-Z0-9]+$/;
 
     const trimmedApiKey = apiKeyToValidate.trim();
     return (
       deepSeekRegex.test(trimmedApiKey) ||
       geminiRegex.test(trimmedApiKey) ||
-      mimoRegex.test(trimmedApiKey)
+      mimoRegex.test(trimmedApiKey) ||
+      glmRegex.test(trimmedApiKey)
     );
   };
 

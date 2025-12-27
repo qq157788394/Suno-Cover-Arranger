@@ -39,6 +39,7 @@ import '@ant-design/x-markdown/themes/light.css';
 import '@ant-design/x-markdown/themes/dark.css';
 
 import { ApiKeyAlert } from '@/components';
+import type { AIProviderModelType } from '@/config/aiProviderConfig';
 import { BusinessType } from '@/config/aiTemperatureConfig';
 import {
   CLOSENESS_LEVEL_OPTIONS,
@@ -124,7 +125,7 @@ const LyricsCraftPage: React.FC = () => {
 
     try {
       const provider = AIProviderFactory.createProvider(
-        model as 'deepseek' | 'gemini' | 'mimo',
+        model as AIProviderModelType,
       );
 
       const systemPrompt = LyricsCraftPromptBuilder.buildSystemPrompt(values);

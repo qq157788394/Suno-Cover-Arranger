@@ -1,18 +1,18 @@
 import { injectable } from "tsyringe";
 import { BaseAIProvider } from "./baseAIProvider";
 import type { AIProviderRequest, AIProviderResponse } from "./baseAIProvider";
-import { GoogleGenAI } from "@google/genai";
+import OpenAI from "openai";
 import { AIProviderType } from "../../../config/aiProviderConfig";
 import { getTemperatureByConfig } from "../../../config/aiTemperatureConfig";
 
 /**
- * Gemini AI Provider
- * 负责调用Gemini API，返回原始响应
+ * GLM AI Provider
+ * 负责调用智谱AI GLM-4.6V-Flash API，返回原始响应
  */
 @injectable()
-export class GeminiProvider extends BaseAIProvider {
+export class GLMProvider extends BaseAIProvider {
   /**
-   * 调用Gemini API生成内容
+   * 调用GLM API生成内容
    * @param request - AI Provider请求参数
    * @returns 包含原始AI响应的标准化响应
    */
@@ -31,29 +31,40 @@ export class GeminiProvider extends BaseAIProvider {
       user_prompt: userPrompt,
       business_type: businessType,
       temperature,
+      max_tokens = 8192,
     } = request;
 
-    // 从配置文件获取temperature参数，如果request中提供了temperature则优先使用
     const configTemperature = getTemperatureByConfig(
       businessType,
-      AIProviderType.GEMINI
+      AIProviderType.GLM
     );
     const finalTemperature =
       temperature !== undefined ? temperature : configTemperature;
 
     try {
-      const client = new GoogleGenAI({ apiKey });
-
-      // 使用Google GenAI SDK调用
-      const response = await client.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: systemPrompt + "\n\n" + userPrompt,
-        config: {
-          temperature: finalTemperature,
-        },
+      const client = new OpenAI({
+        apiKey,
+        baseURL: "https://open.bigmodel.cn/api/paas/v4/",
+        dangerouslyAllowBrowser: true,
       });
 
-      const content = response.text;
+      const response = await client.chat.completions.create({
+        model: "glm-4.6v-flash",
+        messages: [
+          {
+            role: "system",
+            content: systemPrompt,
+          },
+          {
+            role: "user",
+            content: userPrompt,
+          },
+        ],
+        temperature: finalTemperature,
+        max_tokens,
+      });
+
+      const content = response.choices[0]?.message?.content;
 
       if (!content || !content.trim()) {
         return this.createErrorResponse("AI 生成内容为空");
@@ -62,7 +73,7 @@ export class GeminiProvider extends BaseAIProvider {
       return this.createSuccessResponse(content);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "未知错误";
-      console.error("Gemini API调用失败:", error);
+      console.error("GLM API调用失败:", error);
       return this.createErrorResponse(errorMessage);
     }
   }

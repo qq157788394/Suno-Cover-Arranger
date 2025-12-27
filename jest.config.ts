@@ -16,10 +16,9 @@ module.exports = async () => {
       ...config.moduleNameMapper,
       '^@/(.*)$': '<rootDir>/src/$1',
     },
-    globals: {
-      localStorage: null,
-      React: require('react'),
-    },
+    transformIgnorePatterns: [
+      'node_modules/(?!(.*\\.mjs$|@google/genai|tsyringe|reflect-metadata))',
+    ],
     transform: {
       '^.+\\.(ts|tsx)$': [
         'ts-jest',
@@ -40,6 +39,12 @@ module.exports = async () => {
             ['@babel/preset-env', { targets: { node: 'current' } }],
             ['@babel/preset-react', { runtime: 'automatic' }],
           ],
+        },
+      ],
+      'node_modules/@google/genai/.+\\.mjs$': [
+        'babel-jest',
+        {
+          presets: [['@babel/preset-env', { targets: { node: 'current' } }]],
         },
       ],
     },
