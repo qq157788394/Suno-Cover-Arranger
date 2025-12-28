@@ -53,7 +53,7 @@ import {
   SONG_STYLE_OPTIONS,
   WORDING_STYLE_OPTIONS,
 } from '@/config/lyricsEnums';
-import { MASTER_STYLE_CARDS } from '@/config/masterStyleConfig';
+import { MASTER_GROUPS, MASTER_STYLE_CARDS } from '@/config/masterStyleConfig';
 import { useApiKey } from '@/hooks/useApiKey';
 import { useLyricsRecords } from '@/hooks/useLyricsRecords';
 import { AIProviderFactory } from '@/services/ai/providers';
@@ -84,7 +84,7 @@ const LyricsCraftPage: React.FC = () => {
   const defaultFormValues: Partial<LyricsFormData> = {
     song_language: 'mandarin',
     song_style: 'lyrical_pop',
-    song_structure: 'standard_pop',
+    song_structure: 'classic_three_verse',
     creation_mode: 'new',
     persona: 'unlimited',
     wording_style: [],
@@ -343,18 +343,23 @@ const LyricsCraftPage: React.FC = () => {
                   name="master_id"
                   label="大师风格（众多大师风格供选择）"
                   placeholder="请选择 / 搜索大师风格"
-                  options={MASTER_STYLE_CARDS.map((master) => ({
-                    label: master.description ? (
-                      <Space align="center">
+                  options={MASTER_GROUPS.map((group) => ({
+                    label: group.name,
+                    options: MASTER_STYLE_CARDS.filter(
+                      (master) => master.groupId === group.id,
+                    ).map((master) => ({
+                      label: master.description ? (
+                        <Space align="center">
+                          <Text>{master.name}</Text>
+                          <Text type="secondary">{master.description}</Text>
+                        </Space>
+                      ) : (
                         <Text>{master.name}</Text>
-                        <Text type="secondary">{master.description}</Text>
-                      </Space>
-                    ) : (
-                      <Text>{master.name}</Text>
-                    ),
-                    value: master.id,
-                    name: master.name,
-                    description: master.description || '',
+                      ),
+                      value: master.id,
+                      name: master.name,
+                      description: master.description || '',
+                    })),
                   }))}
                   rules={[{ required: true, message: '请选择大师风格' }]}
                   colProps={{ xxl: 12, xl: 24, lg: 24, md: 24, sm: 24, xs: 24 }}
