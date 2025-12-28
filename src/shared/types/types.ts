@@ -112,6 +112,16 @@ export interface MasterStyleCard {
   name: string;
   description: string;
   stylesRawData: string;
+  groupId?: string; // 风格组ID（可选）
+}
+
+/**
+ * 大师风格组接口定义
+ */
+export interface MasterGroup {
+  id: string; // 分组ID
+  name: string; // 分组名称
+  description: string; // 分组描述
 }
 
 // 歌词表单数据模型
