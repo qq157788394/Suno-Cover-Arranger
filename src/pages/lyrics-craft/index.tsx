@@ -72,6 +72,7 @@ const LyricsCraftPage: React.FC = () => {
   const [inspirationModalVisible, setInspirationModalVisible] =
     useState<boolean>(false);
   const [selectedInspiration, setSelectedInspiration] = useState<string>('');
+  const [masterSearchKeyword, setMasterSearchKeyword] = useState<string>('');
   const [messageApi, contextHolder] = message.useMessage();
   const formRef = useRef<ProFormInstance<LyricsFormData>>(null);
   const { initialState } = useModel('@@initialState');
@@ -94,6 +95,46 @@ const LyricsCraftPage: React.FC = () => {
     rhyme_strict: true,
     output_count: 1,
   };
+
+  const filteredMasterOptions = React.useMemo(() => {
+    if (!masterSearchKeyword.trim()) {
+      return MASTER_GROUPS.map((group) => ({
+        label: group.name,
+        options: MASTER_STYLE_CARDS.filter(
+          (master) => master.groupId === group.id,
+        ).map((master) => ({
+          label: master.description
+            ? `${master.name} - ${master.description}`
+            : master.name,
+          value: master.id,
+        })),
+      }));
+    }
+
+    const keyword = masterSearchKeyword.toLowerCase();
+    return MASTER_GROUPS.map((group) => {
+      const filteredMasters = MASTER_STYLE_CARDS.filter(
+        (master) =>
+          master.groupId === group.id &&
+          (`${master.name} ${master.description || ''}`
+            .toLowerCase()
+            .includes(keyword) ||
+            group.name.toLowerCase().includes(keyword)),
+      );
+      if (filteredMasters.length === 0) {
+        return null;
+      }
+      return {
+        label: group.name,
+        options: filteredMasters.map((master) => ({
+          label: master.description
+            ? `${master.name} - ${master.description}`
+            : master.name,
+          value: master.id,
+        })),
+      };
+    }).filter((group) => group !== null);
+  }, [masterSearchKeyword]);
 
   const handleSubmit = async (values: LyricsFormData) => {
     if (!checkApiKey()) {
@@ -341,40 +382,16 @@ const LyricsCraftPage: React.FC = () => {
                 />
                 <ProFormSelect
                   name="master_id"
-                  label="大师风格（众多大师风格供选择）"
+                  label={`大师风格（${MASTER_STYLE_CARDS.length} 位大师风格供选择）`}
                   placeholder="请选择 / 搜索大师风格"
-                  options={MASTER_GROUPS.map((group) => ({
-                    label: group.name,
-                    options: MASTER_STYLE_CARDS.filter(
-                      (master) => master.groupId === group.id,
-                    ).map((master) => ({
-                      label: master.description ? (
-                        <Space align="center">
-                          <Text>{master.name}</Text>
-                          <Text type="secondary">{master.description}</Text>
-                        </Space>
-                      ) : (
-                        <Text>{master.name}</Text>
-                      ),
-                      value: master.id,
-                      name: master.name,
-                      description: master.description || '',
-                    })),
-                  }))}
+                  options={filteredMasterOptions}
                   rules={[{ required: true, message: '请选择大师风格' }]}
                   colProps={{ xxl: 12, xl: 24, lg: 24, md: 24, sm: 24, xs: 24 }}
                   fieldProps={{
                     popupMatchSelectWidth: false,
                     showSearch: true,
-                    filterOption: (input, option) => {
-                      if (!option || typeof option !== 'object') return false;
-                      const name = (option as any).name || '';
-                      const description = (option as any).description || '';
-                      return (
-                        name.toLowerCase().includes(input.toLowerCase()) ||
-                        description.toLowerCase().includes(input.toLowerCase())
-                      );
-                    },
+                    onSearch: (value) => setMasterSearchKeyword(value),
+                    filterOption: false,
                   }}
                 />
                 <ProFormSelect
