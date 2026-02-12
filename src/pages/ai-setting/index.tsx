@@ -120,13 +120,13 @@ const AISettingPage: React.FC = () => {
                   },
                   {
                     value: 'glm',
-                    label: '智谱AI GLM-4.6V-Flash（可白嫖）',
+                    label: '智谱AI GLM-4.7-Flash（可白嫖）',
                   },
-                  {
-                    value: 'mimo',
-                    label:
-                      '小米MiMo V2 Flash（限时免费，但需要本地运行，不会写代码的别用）',
-                  },
+                  // {
+                  //   value: "mimo",
+                  //   label:
+                  //     "小米MiMo V2 Flash（限时免费，但需要本地运行，不会写代码的别用）",
+                  // },
                 ]}
                 onChange={handleModelChange}
               />
@@ -280,13 +280,13 @@ const AISettingPage: React.FC = () => {
               </ol>
               <Title level={4}>💡 常见问题</Title>
               <ul>
-                <li>需要付费吗？ 不需要，GLM-4.6V-Flash是免费模型。</li>
+                <li>需要付费吗？ 不需要，GLM-4.7-Flash是免费模型。</li>
                 <li>是国货么？ 国货</li>
                 <li>模型水平如何？ 写代码水平不错。</li>
               </ul>
             </Paragraph>
           </ProCard>
-          <ProCard colSpan={12}>
+          {/* <ProCard colSpan={12}>
             <Title level={4}>小米MiMo API Key 申请指南（新手版）</Title>
             <Paragraph>
               <ol>
@@ -322,7 +322,7 @@ const AISettingPage: React.FC = () => {
                 </li>
               </ul>
             </Paragraph>
-          </ProCard>
+          </ProCard> */}
         </ProCard>
       </Space>
     </PageContainer>
