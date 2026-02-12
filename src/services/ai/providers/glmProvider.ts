@@ -7,7 +7,7 @@ import { getTemperatureByConfig } from "../../../config/aiTemperatureConfig";
 
 /**
  * GLM AI Provider
- * 负责调用智谱AI GLM-4.6V-Flash API，返回原始响应
+ * 负责调用智谱AI GLM-4.7-Flash API，返回原始响应
  */
 @injectable()
 export class GLMProvider extends BaseAIProvider {
@@ -36,7 +36,7 @@ export class GLMProvider extends BaseAIProvider {
 
     const configTemperature = getTemperatureByConfig(
       businessType,
-      AIProviderType.GLM
+      AIProviderType.GLM,
     );
     const finalTemperature =
       temperature !== undefined ? temperature : configTemperature;
@@ -49,7 +49,7 @@ export class GLMProvider extends BaseAIProvider {
       });
 
       const response = await client.chat.completions.create({
-        model: "glm-4.6v-flash",
+        model: "glm-4.7-flash",
         messages: [
           {
             role: "system",
