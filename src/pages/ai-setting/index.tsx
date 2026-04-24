@@ -112,7 +112,8 @@ const AISettingPage: React.FC = () => {
                 options={[
                   {
                     value: 'deepseek',
-                    label: 'DeepSeek v3.2（需充值，10元起步，支持国货💪）',
+                    label:
+                      'DeepSeek v4（最新模型，需充值，10元起步，支持国货💪）',
                   },
                   {
                     value: 'gemini',

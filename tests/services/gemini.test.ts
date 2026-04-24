@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import { AIProviderType } from '@/config/aiProviderConfig';
 import { BusinessType } from '@/config/aiTemperatureConfig';
 import { AIProviderFactory } from '@/services/ai/providers';
 import type { AIProviderRequest } from '@/services/ai/providers/baseAIProvider';
@@ -9,7 +10,7 @@ describe('GeminiProvider', () => {
 
   beforeEach(() => {
     geminiProvider = AIProviderFactory.createProvider(
-      'gemini',
+      AIProviderType.GEMINI,
     ) as GeminiProvider;
     jest.clearAllMocks();
   });
