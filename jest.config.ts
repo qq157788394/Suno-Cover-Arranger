@@ -17,7 +17,7 @@ module.exports = async () => {
       '^@/(.*)$': '<rootDir>/src/$1',
     },
     transformIgnorePatterns: [
-      'node_modules/(?!(.*\\.mjs$|@google/genai|tsyringe|reflect-metadata))',
+      'node_modules/(?!(.*\\.mjs$|@google/genai|tsyringe|reflect-metadata|p-retry))',
     ],
     transform: {
       '^.+\\.(ts|tsx)$': [

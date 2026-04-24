@@ -1,5 +1,6 @@
 import 'reflect-metadata';
 import OpenAI from 'openai';
+import { AIProviderType } from '@/config/aiProviderConfig';
 import { BusinessType } from '@/config/aiTemperatureConfig';
 import { AIProviderFactory } from '@/services/ai/providers';
 import type { AIProviderRequest } from '@/services/ai/providers/baseAIProvider';
@@ -29,7 +30,9 @@ describe('GLMProvider', () => {
         }) as unknown as OpenAI,
     );
 
-    glmProvider = AIProviderFactory.createProvider('glm') as GLMProvider;
+    glmProvider = AIProviderFactory.createProvider(
+      AIProviderType.GLM,
+    ) as GLMProvider;
     jest.clearAllMocks();
   });
 
