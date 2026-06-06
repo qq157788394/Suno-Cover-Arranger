@@ -38,7 +38,7 @@
     "defaults"
   ],
   "engines": {
-    "pnpm": "^10.0.0",
+    "pnpm": ">=10.0.0",
     "node": ">=20.0.0"
   },
   "dependencies": {

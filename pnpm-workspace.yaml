@@ -1,0 +1,12 @@
+allowBuilds:
+  '@antv/l7-react': set this to true or false
+  '@google/genai': set this to true or false
+  '@scarf/scarf': set this to true or false
+  core-js: set this to true or false
+  core-js-pure: set this to true or false
+  es5-ext: set this to true or false
+  esbuild: set this to true or false
+  nice-napi: set this to true or false
+  protobufjs: set this to true or false
+  puppeteer-core: set this to true or false
+  unrs-resolver: set this to true or false
