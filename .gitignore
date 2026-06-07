@@ -9,6 +9,9 @@ _roadhog-api-doc
 # production
 /dist
 
+# prd
+/prd
+
 # misc
 .DS_Store
 npm-debug.log*
