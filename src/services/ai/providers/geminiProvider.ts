@@ -36,7 +36,7 @@ export class GeminiProvider extends BaseAIProvider {
     // 从配置文件获取temperature参数，如果request中提供了temperature则优先使用
     const configTemperature = getTemperatureByConfig(
       businessType,
-      AIProviderType.GEMINI
+      AIProviderType.GEMINI,
     );
     const finalTemperature =
       temperature !== undefined ? temperature : configTemperature;
@@ -46,7 +46,7 @@ export class GeminiProvider extends BaseAIProvider {
 
       // 使用Google GenAI SDK调用
       const response = await client.models.generateContent({
-        model: "gemini-3-flash-preview",
+        model: "gemini-3.5-flash",
         contents: systemPrompt + "\n\n" + userPrompt,
         config: {
           temperature: finalTemperature,

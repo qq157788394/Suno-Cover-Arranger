@@ -143,6 +143,8 @@ const config: any = defineConfig({
   headScripts: [
     // 解决首次加载时白屏的问题
     { src: join(PUBLIC_PATH, 'scripts/loading.js'), async: true },
+    // lamejs MP3 编码器（全局脚本，避免 CJS/ESM 互操作问题）
+    { src: join(PUBLIC_PATH, 'scripts/lame.all.js'), async: false },
   ],
   /**
    * @name 配置HTML头部的link标签

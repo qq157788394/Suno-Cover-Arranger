@@ -168,6 +168,102 @@ export interface LyricsGenerateResponse {
   timestamp: string; // 生成时间戳
 }
 
+// ==================== 参考音频预处理类型 ====================
+
+/** 预设强度等级 */
+export type PresetLevel = 'light' | 'medium' | 'heavy';
+
+/** EQ 频段定义 */
+export interface EqBand {
+  freq: number; // 中心频率（Hz）
+  gain: number; // 增益（线性乘数）
+}
+
+/** Phaser 相位器配置（对齐 ffmpeg 版 aphaser） */
+export interface PhaserConfig {
+  in_gain: number; // 输入增益
+  out_gain: number; // 输出增益
+  delay: number; // 延迟时间 (ms)
+  decay: number; // 衰减系数
+  speed: number; // 调制速度
+  type: 'triangular' | 'sinusoidal'; // 调制波形类型
+}
+
+/** 频域峰值位置微扰配置（对抗星座图特征提取） */
+export interface SpectralPeakShiftConfig {
+  enabled: boolean; // 是否启用
+  shift_range: number; // 最大频率偏移（bin数），建议1~3
+  attenuation: number; // 原位置衰减系数（0~1），如0.3
+}
+
+/** 频谱包络随机化配置（对抗音频向量嵌入） */
+export interface SpectralEnvelopeConfig {
+  enabled: boolean; // 是否启用
+  band_width: number; // 子带宽度（bin数），建议8~16
+  mix_min: number; // 混合比例下限，如0.3
+  mix_max: number; // 混合比例上限，如0.7
+}
+
+/** 立体声通道去相关配置 */
+export interface StereoDecorrelationConfig {
+  enabled: boolean; // 是否启用（仅立体声音频有效）
+  delay_ms: number; // 通道间微延迟（ms），建议5~20
+  phase_offset: number; // 相位偏移系数（0~1），建议0.1~0.5
+}
+
+/** Stage 2 预设配置 */
+export interface PresetConfig {
+  highpass_hz: number;
+  lowpass_hz: number;
+  eq_bands: EqBand[];
+  threshold: number; // 线性幅度阈值
+  ratio: number; // 压缩比
+  noise_floor_db: number; // 噪声底电平（dB）
+  phaser: PhaserConfig | null; // 相位偏移器（null=不启用）
+  rubberband: boolean; // 是否启用 rubberband 谱涂抹（仅 heavy）
+  rubberband_phase_jitter: number; // rubberband 相位扰动范围（rad），如0.6
+  rubberband_mag_jitter: number; // rubberband 幅度微扰范围，如0.1
+  spectral_peak_shift: SpectralPeakShiftConfig | null; // 频域峰值位置微扰（null=不启用）
+  spectral_envelope: SpectralEnvelopeConfig | null; // 频谱包络随机化（null=不启用）
+  stereo_decorrelation: StereoDecorrelationConfig | null; // 立体声通道去相关（null=不启用）
+}
+
+/** 处理进度回调 */
+export interface PipelineProgress {
+  stage: 'decode' | 'stage2' | 'stage3' | 'encode' | 'done';
+  progress: number; // 0-100
+  label: string;
+}
+
+/** Stage 3 变速模式 */
+export type SpeedMode = 'none' | 'slowdown' | 'speedup';
+
+/** 流水线输入 */
+export interface PipelineInput {
+  audioFile: File;
+  preset: PresetLevel;
+  speedMode: SpeedMode;
+  onProgress?: (progress: PipelineProgress) => void;
+}
+
+/** 流水线输出 */
+export interface PipelineOutput {
+  mp3Blob: Blob;
+  originalDuration: number; // 原始时长（秒）
+  processedDuration: number; // 处理后时长（秒）
+  preset: PresetLevel;
+  processingTimeMs: number; // 处理总耗时（毫秒）
+}
+
+/** FFT Backend 接口 */
+export interface FFTBackend {
+  rfft(input: Float32Array): Float32Array;
+  irfft(spectrum: Float32Array, outputLength: number): Float32Array;
+  dispose(): void;
+}
+
+// ==================== 歌词记录数据模型 ====================
+
 // 歌词记录数据模型
 export interface LyricsRecord {
   id?: number; // 记录ID

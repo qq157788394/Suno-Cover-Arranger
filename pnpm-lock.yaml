@@ -32,6 +32,12 @@ importers:
       '@google/genai':
         specifier: ^1.50.1
         version: 1.52.0
+      '@soundtouchjs/core':
+        specifier: ^2.0.3
+        version: 2.0.3
+      '@soundtouchjs/stretch-phase-vocoder':
+        specifier: ^2.0.3
+        version: 2.0.3(@soundtouchjs/core@2.0.3)
       antd:
         specifier: ^6.3.6
         version: 6.4.3(date-fns@2.0.0)(moment@2.30.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -56,6 +62,9 @@ importers:
       inversify:
         specifier: ^7.11.0
         version: 7.11.0(reflect-metadata@0.2.2)
+      lamejs:
+        specifier: ^1.2.1
+        version: 1.2.1
       marked:
         specifier: ^17.0.6
         version: 17.0.6
@@ -89,6 +98,9 @@ importers:
       tsyringe:
         specifier: ^4.10.0
         version: 4.10.0
+      webfft:
+        specifier: ^1.0.3
+        version: 1.0.3
     devDependencies:
       '@ant-design/pro-cli':
         specifier: ^3.4.0
@@ -3212,6 +3224,17 @@ packages:
 
   '@sinonjs/fake-timers@15.4.0':
     resolution: {integrity: sha512-DsG+8/LscQIQg68J6Ef3dv10u6nVyetYn923s3/sus5eaGfTo1of5WMZSLf0UJc9KDuKPilPH0UDJCjvNbDNCA==}
+
+  '@soundtouchjs/core@2.0.3':
+    resolution: {integrity: sha512-dNlV/HP7HERm8/FCYLiWivlb3V9rrkFEUMPhazznkPd8EhsRDhewfd3r3QCW2YopOgZygukkhD+vjnTMMpQvVw==}
+
+  '@soundtouchjs/interpolation-strategy-lanczos@2.0.3':
+    resolution: {integrity: sha512-o20uWwvlCiQ2gB6nE2i4Tl9KsAHOoZoo+0rrBKbervg7cb1SDWgmBOdoL3bsL2Dvm8d6xeE6ufIf6caYCsYWhw==}
+
+  '@soundtouchjs/stretch-phase-vocoder@2.0.3':
+    resolution: {integrity: sha512-ZtsZa6nypD0p0+r8ikzS5COUJPLbDNrkydXNVe5ylN/8LV0XhFpA/pRHuZrPxm0nLzMMWa4r6JQf8Hq0nRV3Fw==}
+    peerDependencies:
+      '@soundtouchjs/core': 2.0.3
 
   '@stagewise/toolbar@0.6.2':
     resolution: {integrity: sha512-WN7PWaOT6YQKjJYL4/85V5UU0eZEws+/UBT/J4wJOEbFxoluLuchqh7xVTmUZTtw0q0xpzlgX8Vb0kAZf/pjmw==}
@@ -8599,6 +8622,9 @@ packages:
   kolorist@1.8.0:
     resolution: {integrity: sha512-Y+60/zizpJ3HRH8DCss+q95yr6145JXZo46OTpFvDZWLfRCE4qChOyk1b26nMaNpfHHgxagk9dXT5OP0Tfe+dQ==}
 
+  lamejs@1.2.1:
+    resolution: {integrity: sha512-s7bxvjvYthw6oPLCm5pFxvA84wUROODB8jEO2+CE1adhKgrIvVOlmMgY8zyugxGrvRaDHNJanOiS21/emty6dQ==}
+
   latest-version@5.1.0:
     resolution: {integrity: sha512-weT+r0kTkRQdCdYCNtkMwWXQTMEswKrFBkm4ckQOMVhhqhIMI1UT2hMj+1iigIhgSZm5gTmrRXBNoGUgaTY1xA==}
     engines: {node: '>=8'}
@@ -13060,6 +13086,9 @@ packages:
     peerDependencies:
       react: '>= 16.x'
 
+  use-strict@1.0.1:
+    resolution: {integrity: sha512-IeiWvvEXfW5ltKVMkxq6FvNf2LojMKvB2OCeja6+ct24S1XOmQw2dGr2JyndwACWAGJva9B7yPHwAmeA9QCqAQ==}
+
   use-sync-external-store@1.0.0:
     resolution: {integrity: sha512-AFVsxg5GkFg8GDcxnl+Z0lMAz9rE8DGJCc28qnBuQF7lac57B5smLcT37aXpXIIPz75rW4g3eXHPjhHwdGskOw==}
     peerDependencies:
@@ -13238,6 +13267,9 @@ packages:
   web-streams-polyfill@3.0.3:
     resolution: {integrity: sha512-d2H/t0eqRNM4w2WvmTdoeIvzAUSpK7JmATB8Nr2lb7nQ9BTIJVjbQ/TRFVEh2gUH1HwclPdoPtfMoFfetXaZnA==}
     engines: {node: '>= 8'}
+
+  webfft@1.0.3:
+    resolution: {integrity: sha512-Xi9V1yiKuxJvfo9TysWs17C4++7c62KSr1uS9WKj6o3ZMVJdxkoT301qltym0hZxvSU0+8tWuGF1FHNdeP158g==}
 
   webidl-conversions@3.0.0:
     resolution: {integrity: sha512-GOK494qXZl0XBbr/YPRW2BL6oLfe+d0KDSWndKH7NdxJwJ0fCdhQG46Q2D7BmIS6cN/FJgtju8srRt/jlG9abA==}
@@ -17939,6 +17971,16 @@ snapshots:
     dependencies:
       '@sinonjs/commons': 3.0.1
 
+  '@soundtouchjs/core@2.0.3':
+    dependencies:
+      '@soundtouchjs/interpolation-strategy-lanczos': 2.0.3
+
+  '@soundtouchjs/interpolation-strategy-lanczos@2.0.3': {}
+
+  '@soundtouchjs/stretch-phase-vocoder@2.0.3(@soundtouchjs/core@2.0.3)':
+    dependencies:
+      '@soundtouchjs/core': 2.0.3
+
   '@stagewise/toolbar@0.6.2': {}
 
   '@stylelint/postcss-css-in-js@0.38.0(postcss-syntax@0.36.2(postcss@8.5.15))(postcss@8.5.15)':
@@ -18287,7 +18329,7 @@ snapshots:
 
   '@types/history@5.0.0':
     dependencies:
-      history: 4.10.1
+      history: 5.3.0
 
   '@types/hoist-non-react-statics@3.3.7(@types/react@19.2.16)':
     dependencies:
@@ -18407,7 +18449,7 @@ snapshots:
       '@types/history': 4.7.11
       '@types/react': 19.2.16
       '@types/react-router': 5.1.20
-      redux: 3.7.2
+      redux: 4.2.1
 
   '@types/react-router@5.1.20':
     dependencies:
@@ -25003,6 +25045,10 @@ snapshots:
 
   kolorist@1.8.0: {}
 
+  lamejs@1.2.1:
+    dependencies:
+      use-strict: 1.0.1
+
   latest-version@5.1.0:
     dependencies:
       package-json: 6.5.0
@@ -30746,6 +30792,8 @@ snapshots:
     dependencies:
       react: 19.2.7
 
+  use-strict@1.0.1: {}
+
   use-sync-external-store@1.0.0(react@19.2.7):
     dependencies:
       react: 19.2.7
@@ -30926,6 +30974,8 @@ snapshots:
       defaults: 1.0.4
 
   web-streams-polyfill@3.0.3: {}
+
+  webfft@1.0.3: {}
 
   webidl-conversions@3.0.0: {}
 

@@ -117,7 +117,7 @@ const AISettingPage: React.FC = () => {
                   },
                   {
                     value: 'gemini',
-                    label: 'Google Gemini 3（推荐，可白嫖）',
+                    label: 'Google Gemini-3.5-Flash（推荐，可白嫖）',
                   },
                   {
                     value: 'glm',
