@@ -17,6 +17,11 @@ const PRESET_OPTIONS: {
   description: string;
 }[] = [
   {
+    value: 'none',
+    label: '不处理',
+    description: '跳过频谱混淆，直接编码输出原始音频',
+  },
+  {
     value: 'light',
     label: 'Light',
     description: '轻度混淆，保持原始音质，推荐用于质量要求高的场景',

@@ -41,6 +41,7 @@ const PRESET_OPTIONS: {
   value: PresetLevel;
   label: string;
 }[] = [
+  { value: 'none', label: '不处理' },
   { value: 'light', label: '轻度' },
   { value: 'medium', label: '中度' },
   { value: 'heavy', label: '重度（推荐）' },
@@ -181,8 +182,8 @@ const CoverPreprocess: React.FC = () => {
                 {/* 音频上传（自定义 ProForm.Item 渲染） */}
                 <ProForm.Item
                   name="audioFile"
-                  label="上传音频"
-                  rules={[{ required: true, message: '请上传音频文件' }]}
+                  label="原始音频"
+                  rules={[{ required: true, message: '请上传原始音频文件' }]}
                   colProps={{ span: 24 }}
                 >
                   <AudioUploader disabled={processing} />
