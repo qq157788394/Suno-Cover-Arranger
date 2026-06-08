@@ -59,6 +59,9 @@ export async function processStage2(
   const channels = audioBuffer.numberOfChannels;
   const sigLen = audioBuffer.length;
   const cfg = PRESETS[preset];
+  if (!cfg) {
+    throw new Error(`processStage2: 不支持 preset=${preset}，请勿对 none 模式调用此函数`);
+  }
 
   console.log(`${LOG_PREFIX} 开始频谱混淆 | preset=${preset} sr=${sr}Hz channels=${channels} samples=${sigLen} duration=${(sigLen / sr).toFixed(2)}s`);
 

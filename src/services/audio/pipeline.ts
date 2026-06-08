@@ -26,21 +26,32 @@ export async function runCoverPreprocessPipeline(
   input.onProgress?.({ stage: "decode", progress: 10, label: "解码完成" });
 
   // Stage 2: 频谱指纹混淆（占总进度 10%~65%）
-  input.onProgress?.({ stage: "stage2", progress: 10, label: "频谱混淆中" });
-  const obfuscated = await processStage2(
-    audioBuffer,
-    input.preset,
-    (stage2Percent) => {
-      // 将 Stage 2 内部进度 0~100 映射到总进度 10~65
-      const totalProgress = 10 + Math.round(stage2Percent * 0.55);
-      input.onProgress?.({
-        stage: "stage2",
-        progress: totalProgress,
-        label: "频谱混淆中",
-      });
-    },
-  );
-  input.onProgress?.({ stage: "stage2", progress: 65, label: "频谱混淆完成" });
+  let obfuscated: Float32Array[];
+  if (input.preset === "none") {
+    // 不处理模式：跳过 Stage 2，直接提取原始声道数据
+    const channels = audioBuffer.numberOfChannels;
+    obfuscated = [];
+    for (let ch = 0; ch < channels; ch++) {
+      obfuscated.push(audioBuffer.getChannelData(ch).slice());
+    }
+    input.onProgress?.({ stage: "stage2", progress: 65, label: "跳过频谱混淆" });
+  } else {
+    input.onProgress?.({ stage: "stage2", progress: 10, label: "频谱混淆中" });
+    obfuscated = await processStage2(
+      audioBuffer,
+      input.preset,
+      (stage2Percent) => {
+        // 将 Stage 2 内部进度 0~100 映射到总进度 10~65
+        const totalProgress = 10 + Math.round(stage2Percent * 0.55);
+        input.onProgress?.({
+          stage: "stage2",
+          progress: totalProgress,
+          label: "频谱混淆中",
+        });
+      },
+    );
+    input.onProgress?.({ stage: "stage2", progress: 65, label: "频谱混淆完成" });
+  }
 
   // Stage 3: 保音调变速（根据 speedMode 决定）
   let processed = obfuscated;

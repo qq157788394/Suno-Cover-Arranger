@@ -12,7 +12,9 @@ import type { PresetConfig, PresetLevel } from "@/shared/types/types";
  *   - stereo_decorrelation: 立体声通道去相关（对抗双通道联合指纹检测）
  *   - rubberband_phase_jitter / rubberband_mag_jitter: 增强 rubberband 谱涂抹
  */
-export const PRESETS: Record<PresetLevel, PresetConfig> = {
+export const PRESETS: Record<PresetLevel, PresetConfig | null> = {
+  /** 不处理：跳过 Stage 2 频谱混淆，直接编码 */
+  none: null,
   light: {
     highpass_hz: 50,
     lowpass_hz: 16000,

@@ -171,7 +171,7 @@ export interface LyricsGenerateResponse {
 // ==================== 参考音频预处理类型 ====================
 
 /** 预设强度等级 */
-export type PresetLevel = 'light' | 'medium' | 'heavy';
+export type PresetLevel = 'none' | 'light' | 'medium' | 'heavy';
 
 /** EQ 频段定义 */
 export interface EqBand {
