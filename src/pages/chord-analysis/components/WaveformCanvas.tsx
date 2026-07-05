@@ -296,12 +296,12 @@ const WaveformCanvas: React.FC<WaveformCanvasProps> = ({
       ctx.lineTo(phX, height);
       ctx.stroke();
 
-      // 顶部三角形指示器
+      // 播放头三角形指示器（Canvas 内可见）
       ctx.fillStyle = PLAYHEAD_COLOR;
       ctx.beginPath();
       ctx.moveTo(phX, 0);
-      ctx.lineTo(phX - 5, -6);
-      ctx.lineTo(phX + 5, -6);
+      ctx.lineTo(phX - 5, 8);
+      ctx.lineTo(phX + 5, 8);
       ctx.closePath();
       ctx.fill();
     }

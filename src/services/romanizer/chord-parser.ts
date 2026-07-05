@@ -11,18 +11,20 @@
 export const NOTE_LETTERS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 
 /** 12 个半音名（使用升号） */
+// 使用降号拼写体系（Eb, Ab, Bb），与 Chordino 和弦模板保持一致。
+// https://en.wikipedia.org/wiki/Chord_notation
 export const NOTE_NAMES = [
   'C',
   'C#',
   'D',
-  'D#',
+  'Eb',
   'E',
   'F',
   'F#',
   'G',
-  'G#',
+  'Ab',
   'A',
-  'A#',
+  'Bb',
   'B',
 ];
 

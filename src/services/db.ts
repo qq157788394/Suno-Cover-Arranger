@@ -13,7 +13,6 @@ import type { User, Project, StyleConfig } from "@/shared/types";
 import type { ApiKey } from "@/shared/types/types";
 import type { PromptRecord } from "@/shared/types/types";
 import type { LyricsRecord } from "@/shared/types/types";
-import type { CachedAnalysis } from "@/shared/types/types";
 
 /**
  * 应用数据库类
@@ -31,7 +30,6 @@ class AppDatabase extends Dexie {
   >; // 提示词记录表
   apiKeys: Dexie.Table<ApiKey, number>; // API Key 表
   lyricsRecords: Dexie.Table<LyricsRecord, number>; // 歌词记录表
-  chordAnalysisCache: Dexie.Table<CachedAnalysis, string>; // 和弦分析缓存表
 
   /**
    * 数据库类构造函数
@@ -98,21 +96,6 @@ class AppDatabase extends Dexie {
         console.log("数据库升级到版本5，添加歌词记录表");
       });
 
-    // 版本6：添加和弦分析缓存表
-    this.version(6)
-      .stores({
-        users: "++id, name, email, created_at",
-        projects: "++id, title, user_id, created_at, updated_at",
-        styleConfigs: "++id, name, user_id, is_default, created_at, updated_at",
-        promptRecords: "++id, user_id, created_at",
-        apiKeys: "++id, user_id, api_key, model, is_current, created_at",
-        lyricsRecords: "++id, created_at",
-        chordAnalysisCache: "fileHash, createdAt",
-      })
-      .upgrade(async (tx) => {
-        console.log("数据库升级到版本6，添加和弦分析缓存表");
-      });
-
     // 初始化表
     this.users = this.table("users");
     this.projects = this.table("projects");
@@ -120,7 +103,6 @@ class AppDatabase extends Dexie {
     this.promptRecords = this.table("promptRecords");
     this.apiKeys = this.table("apiKeys");
     this.lyricsRecords = this.table("lyricsRecords");
-    this.chordAnalysisCache = this.table("chordAnalysisCache");
   }
 
   // 用户相关操作
@@ -480,4 +462,4 @@ export default AppDatabase;
 export const db = new AppDatabase();
 
 // 导出类型
-export type { User, Project, StyleConfig, PromptRecord, ApiKey, LyricsRecord, CachedAnalysis };
+export type { User, Project, StyleConfig, PromptRecord, ApiKey, LyricsRecord };

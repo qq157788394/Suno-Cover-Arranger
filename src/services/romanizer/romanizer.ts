@@ -806,12 +806,13 @@ export class Romanizer {
     preferSharps?: boolean | null,
   ): [string, number] {
     const prefer = preferSharps ?? false;
+    const ref = Romanizer.MAJOR_SCALE;
     let bestScore = 99;
     let bestIdx = 0;
     let bestAlt = 0;
 
     for (let i = 0; i < 7; i++) {
-      const delta = ((dist - Romanizer.MAJOR_SCALE[i]) % 12 + 12) % 12;
+      const delta = ((dist - ref[i]) % 12 + 12) % 12;
       const alt = delta <= 6 ? delta : delta - 12;
       const score = Math.abs(alt);
 

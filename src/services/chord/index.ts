@@ -1,8 +1,9 @@
 /**
  * 和弦检测服务 — 统一导出
  *
- * 翻写自 Chordino (C4DM) 的和弦匹配 + HMM/Viterbi 解码层。
- * 信号处理层（NNLS Chroma 提取）由 Essentia.js HPCP 替代。
+ * 和弦识别流水线：
+ *   帧级匹配 → 中值滤波 → Beat 聚合 → Romanizer（和弦→级数）
+ * 信号处理（HPCP 色度提取）由 Essentia.js 在 Worker 中完成。
  *
  * @module services/chord
  */
@@ -24,23 +25,3 @@ export type {
 // ── 帧级匹配 ──
 export { matchFrame, matchAllFrames } from './chord-matcher';
 export type { MatchedFrame } from './chord-matcher';
-
-// ── Viterbi 解码 ──
-export { viterbiDecode, decodeChordSequence } from './viterbi';
-
-// ── 段落合并 ──
-export { mergeSegments } from './segmenter';
-export type { RawSegment } from './segmenter';
-
-// ── 分析流水线 ──
-export { analyzePipeline } from './pipeline';
-export type { ProgressCallback } from './pipeline';
-
-// ── 缓存 ──
-export {
-  getCachedAnalysis,
-  cacheAnalysis,
-  cleanExpired,
-  getCacheStats,
-  clearAllCache,
-} from './cache';

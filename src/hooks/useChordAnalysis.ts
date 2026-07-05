@@ -10,25 +10,41 @@
 
 import { message } from 'antd';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { db } from '@/services/db';
 import type {
   AnalysisStatus,
   AnalysisStep,
   ChordSegment,
   PlaybackState,
-  ProgressStep,
   SongAnalysis,
-  WorkerResponse,
 } from '@/shared/types/types';
 
-/** 缓存 TTL：30 天 */
-const CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
-
-/** 缓存最大条目数 */
-const CACHE_MAX_ENTRIES = 50;
-
-/** Worker 超时：30s */
-const _WORKER_TIMEOUT_MS = 30000;
+/** 音名上行指定半音数（用于 Minor → 相对大调显示） */
+const NOTE_SEMITONES_MAP: Record<string, number> = {
+  C: 0,
+  D: 2,
+  E: 4,
+  F: 5,
+  G: 7,
+  A: 9,
+  B: 11,
+};
+const NOTE_LETTERS_ARR = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+function transposeSemitones(note: string, semitones: number): string {
+  const letter = note.charAt(0).toUpperCase();
+  const acc = (note.match(/#/g) || []).length - (note.match(/b/g) || []).length;
+  const basePc = NOTE_SEMITONES_MAP[letter] ?? 0;
+  const targetPc = (((basePc + acc + semitones) % 12) + 12) % 12;
+  const steps = Math.round((semitones * 7) / 12);
+  const idx = (NOTE_LETTERS_ARR.indexOf(letter) + steps) % 7;
+  const targetLetter = NOTE_LETTERS_ARR[idx >= 0 ? idx : idx + 7];
+  const naturalPc = NOTE_SEMITONES_MAP[targetLetter] ?? 0;
+  let diff = (((targetPc - naturalPc) % 12) + 12) % 12;
+  if (diff > 6) diff -= 12;
+  return (
+    targetLetter +
+    (diff === 0 ? '' : diff > 0 ? '#'.repeat(diff) : 'b'.repeat(-diff))
+  );
+}
 
 export interface UseChordAnalysisReturn {
   /** 当前分析状态 */
@@ -94,7 +110,6 @@ export function useChordAnalysis(): UseChordAnalysisReturn {
   const workerRef = useRef<Worker | null>(null);
   const lastFileRef = useRef<File | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const requestIdRef = useRef<string>('');
 
   const isLoading =
     analysisStatus === 'FILE_LOADING' ||
@@ -129,104 +144,6 @@ export function useChordAnalysis(): UseChordAnalysisReturn {
     setPlaybackState('STOPPED');
   }, [audioUrl]);
 
-  /** 检查 IndexedDB 缓存 */
-  const checkCache = useCallback(
-    async (fileHash: string): Promise<SongAnalysis | null> => {
-      try {
-        const cached = await db.chordAnalysisCache.get(fileHash);
-        if (!cached) return null;
-
-        // 检查 TTL
-        const age = Date.now() - cached.createdAt;
-        if (age > CACHE_TTL_MS) {
-          // 过期，删除
-          await db.chordAnalysisCache.delete(fileHash);
-          return null;
-        }
-
-        return cached.analysis;
-      } catch {
-        return null;
-      }
-    },
-    [],
-  );
-
-  /** 存入缓存 */
-  const saveToCache = useCallback(async (analysis: SongAnalysis) => {
-    try {
-      // 检查缓存数量，LRU 淘汰
-      const count = await db.chordAnalysisCache.count();
-      if (count >= CACHE_MAX_ENTRIES) {
-        const oldest = await db.chordAnalysisCache.orderBy('createdAt').first();
-        if (oldest) {
-          await db.chordAnalysisCache.delete(oldest.fileHash);
-        }
-      }
-
-      await db.chordAnalysisCache.put({
-        fileHash: analysis.fileHash,
-        vocabularyLevel: analysis.vocabularyLevel,
-        version: 1,
-        analysis,
-        createdAt: Date.now(),
-        fileSize: analysis.fileSize,
-      });
-    } catch {
-      // 缓存写入失败不影响主流程
-    }
-  }, []);
-
-  /** Worker 分析完成处理 */
-  const handleAnalysisResult = useCallback(
-    (analysis: SongAnalysis) => {
-      clearTimeout_();
-      setSongAnalysis(analysis);
-      setAnalysisStatus('READY');
-      setCurrentStep('done');
-      setProgressPercent(100);
-
-      // 更新峰值数据（这里使用模拟数据，实际由 Worker 提供）
-      // Worker 应通过 transfer 发回 peaks 数据
-
-      // 存入缓存
-      saveToCache(analysis);
-    },
-    [clearTimeout_, saveToCache],
-  );
-
-  /** Worker 进度回调 */
-  const handleProgress = useCallback((step: ProgressStep, percent: number) => {
-    // 'wasm_loading' 映射为 AnalysisStep 的初始状态
-    const mappedStep: AnalysisStep = step === 'wasm_loading' ? 'hpcp' : step;
-    setCurrentStep(mappedStep);
-    setProgressPercent(percent);
-    // WASM 加载中更新状态
-    if (step === 'wasm_loading') {
-      setAnalysisStatus('WASM_LOADING');
-    }
-  }, []);
-
-  /** Worker 错误回调 */
-  const handleWorkerError = useCallback(
-    (_errCode: string, errMsg: string, isRetryable: boolean) => {
-      clearTimeout_();
-      terminateWorker();
-      setAnalysisStatus('ERROR');
-      setError(errMsg);
-      setRetryable(isRetryable);
-    },
-    [clearTimeout_, terminateWorker],
-  );
-
-  /** 计算文件 SHA-256 */
-  const computeFileHash = useCallback(async (file: File): Promise<string> => {
-    const buffer = await file.arrayBuffer();
-    const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
-  }, []);
-
   /** 提取音频峰值数据（降采样波形） */
   const extractPeaks = useCallback(
     async (
@@ -234,82 +151,40 @@ export function useChordAnalysis(): UseChordAnalysisReturn {
     ): Promise<{ peaks: Float32Array; audioBuffer: AudioBuffer }> => {
       const arrayBuffer = await file.arrayBuffer();
       const audioContext = new AudioContext();
-      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+      try {
+        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
 
-      const channelData = audioBuffer.getChannelData(0);
-      const targetLength = 2000; // 降采样到 2000 个点
-      const step = Math.floor(channelData.length / targetLength);
-      const peaks = new Float32Array(targetLength);
+        const channelData = audioBuffer.getChannelData(0);
+        const targetLength = 2000; // 降采样到 2000 个点
+        const step = Math.floor(channelData.length / targetLength);
+        const peaks = new Float32Array(targetLength);
 
-      for (let i = 0; i < targetLength; i++) {
-        let max = 0;
-        const start = i * step;
-        const end = Math.min(start + step, channelData.length);
-        for (let j = start; j < end; j++) {
-          const abs = Math.abs(channelData[j]);
-          if (abs > max) max = abs;
+        for (let i = 0; i < targetLength; i++) {
+          let max = 0;
+          const start = i * step;
+          const end = Math.min(start + step, channelData.length);
+          for (let j = start; j < end; j++) {
+            const abs = Math.abs(channelData[j]);
+            if (abs > max) max = abs;
+          }
+          peaks[i] = max;
         }
-        peaks[i] = max;
-      }
 
-      // 归一化
-      const maxPeak = Math.max(...peaks, 0.01);
-      for (let i = 0; i < peaks.length; i++) {
-        peaks[i] = peaks[i] / maxPeak;
-      }
+        // 归一化
+        const maxPeak = Math.max(...peaks, 0.01);
+        for (let i = 0; i < peaks.length; i++) {
+          peaks[i] = peaks[i] / maxPeak;
+        }
 
-      await audioContext.close();
-      return { peaks, audioBuffer };
+        return { peaks, audioBuffer };
+      } finally {
+        await audioContext.close();
+      }
     },
     [],
   );
 
-  /** 创建 Worker 实例 */
-  const _createWorker = useCallback(() => {
-    terminateWorker();
-    const worker = new Worker(
-      new URL('@/services/chord/pipeline.worker.ts', import.meta.url),
-      { type: 'module' },
-    );
-
-    worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
-      const data = event.data;
-      if (data.requestId !== requestIdRef.current) return;
-
-      switch (data.type) {
-        case 'progress':
-          handleProgress(data.payload.step, data.payload.percent);
-          break;
-        case 'result':
-          handleAnalysisResult(data.payload);
-          break;
-        case 'error':
-          handleWorkerError(
-            data.payload.code,
-            data.payload.message,
-            data.payload.retryable,
-          );
-          break;
-        case 'cancelled':
-          // 分析被取消
-          break;
-      }
-    };
-
-    worker.onerror = (err) => {
-      handleWorkerError('WORKER_CRASH', err.message || 'Worker 异常崩溃', true);
-    };
-
-    workerRef.current = worker;
-    return worker;
-  }, [
-    terminateWorker,
-    handleProgress,
-    handleAnalysisResult,
-    handleWorkerError,
-  ]);
-
-  /** 启动分析流程（主线程直接调用，MVP 跳过 Worker）*/
+  /** 启动分析流程 */
   const startAnalysis = useCallback(
     async (file: File) => {
       setFileName(file.name);
@@ -319,36 +194,11 @@ export function useChordAnalysis(): UseChordAnalysisReturn {
       setCurrentStep(undefined);
 
       try {
-        // 1. 计算文件哈希
-        const fileHash = await computeFileHash(file);
-
-        // 2. 检查缓存
-        const cached = await checkCache(fileHash);
-        if (cached) {
-          message.success('从缓存加载');
-          setSongAnalysis(cached);
-          setAnalysisStatus('READY');
-          setCurrentStep('done');
-          setProgressPercent(100);
-          setCurrentChord(
-            cached.chordSegments.length > 0 ? cached.chordSegments[0] : null,
-          );
-          setAnalysisStatus('DECODING');
-          try {
-            const { peaks: extractedPeaks } = await extractPeaks(file);
-            setPeaks(extractedPeaks);
-          } catch {
-            /* 峰值提取失败不影响 */
-          }
-          setAnalysisStatus('READY');
-          return;
-        }
-
-        // 3. 创建音频 URL
+        // 1. 创建音频 URL
         if (audioUrl) URL.revokeObjectURL(audioUrl);
         setAudioUrl(URL.createObjectURL(file));
 
-        // 4. 解码音频 + 提取峰值
+        // 2. 解码音频 + 提取峰值
         setAnalysisStatus('DECODING');
         const { peaks: extractedPeaks, audioBuffer } = await extractPeaks(file);
         setPeaks(extractedPeaks);
@@ -361,8 +211,10 @@ export function useChordAnalysis(): UseChordAnalysisReturn {
             new URL('../services/chord/analysis.worker.ts', import.meta.url),
             { type: 'module' },
           );
+          workerRef.current = w;
           const timeout = setTimeout(() => {
             w.terminate();
+            workerRef.current = null;
             reject(new Error('分析超时'));
           }, 90000);
 
@@ -370,10 +222,12 @@ export function useChordAnalysis(): UseChordAnalysisReturn {
             if (e.data.type === 'error') {
               clearTimeout(timeout);
               w.terminate();
+              workerRef.current = null;
               reject(new Error(e.data.error));
             } else if (e.data.type === 'result') {
               clearTimeout(timeout);
               w.terminate();
+              workerRef.current = null;
               resolve(e.data.features);
             } else if (e.data.type === 'log') {
               console.log('[Worker]', e.data.msg);
@@ -420,16 +274,20 @@ export function useChordAnalysis(): UseChordAnalysisReturn {
                 },
               ];
 
-        const result = {
-          fileHash,
+        const result: SongAnalysis = {
+          fileHash: file.name + Date.now(), // 用于类型兼容，缓存逻辑已移除
           fileName: file.name,
           fileSize: file.size,
           duration: audioBuffer.duration,
           sampleRate: audioBuffer.sampleRate,
-          key: `${features.key} ${features.scale}`,
+          // Minor 键同步显示相对大调：A Minor / C Major
+          key:
+            features.scale === 'minor'
+              ? `${features.key} Minor / ${transposeSemitones(features.key, 3)} Major`
+              : `${features.key} ${features.scale.charAt(0).toUpperCase()}${features.scale.slice(1)}`,
           keyConfidence: features.keyStrength,
           bpm: features.bpm,
-          bpmConfidence: 0.8,
+          bpmConfidence: features.bpmConfidence || 0.6,
           chordSegments: chordSegs,
           beatList: features.beatList || [],
           vocabularyLevel: 'extended' as const,
@@ -439,10 +297,7 @@ export function useChordAnalysis(): UseChordAnalysisReturn {
         setSongAnalysis(result);
         setAnalysisStatus('READY');
         setCurrentChord(chordSegs[0]);
-        saveToCache(fileHash, result);
-        message.success(
-          `分析完成: ${features.key} ${features.scale}, ${features.bpm} BPM`,
-        );
+        message.success(`分析完成: ${result.key}, ${features.bpm} BPM`);
       } catch (err) {
         const errMsg = err instanceof Error ? err.message : '未知错误';
         setAnalysisStatus('ERROR');
@@ -450,7 +305,7 @@ export function useChordAnalysis(): UseChordAnalysisReturn {
         setRetryable(true);
       }
     },
-    [computeFileHash, checkCache, saveToCache, audioUrl, extractPeaks],
+    [audioUrl, extractPeaks],
   );
 
   /** 处理文件选择 */
