@@ -86,7 +86,7 @@ export const loadRecordData = async (
     extra_note: '',
     reference_songs: [] as Array<{ title: string; artist: string }>,
   };
-  
+
   // 定义结果数据
   let stylesResult = '';
   let lyricsResult = '';
@@ -123,7 +123,7 @@ export const loadRecordData = async (
           ? processedReferenceSongs
           : [{ title: '', artist: '' }],
     });
-    
+
     // 提取AI生成的结果数据
     if (record.ai_result) {
       stylesResult = record.ai_result.styles || '';

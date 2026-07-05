@@ -10,7 +10,7 @@ import type { GenerateRequest } from '../types/types';
  * @returns boolean - 验证通过返回true，失败返回false
  */
 export const validateApiKey = (apiKey: string): boolean => {
-  if (!apiKey || !apiKey.trim()) {
+  if (!apiKey?.trim()) {
     return false;
   }
   // 简单的格式验证，实际项目中可能需要更严格的验证
@@ -27,15 +27,15 @@ export const validateGenerateRequest = (values: GenerateRequest): void => {
     throw new Error('生成请求参数不能为空');
   }
 
-  if (!values.target_artist || !values.target_artist.trim()) {
+  if (!values.target_artist?.trim()) {
     throw new Error('目标艺术家不能为空');
   }
 
-  if (!values.lyrics_raw || !values.lyrics_raw.trim()) {
+  if (!values.lyrics_raw?.trim()) {
     throw new Error('歌词不能为空');
   }
 
-  if (!values.song_language || !values.song_language.trim()) {
+  if (!values.song_language?.trim()) {
     throw new Error('歌曲语言不能为空');
   }
 

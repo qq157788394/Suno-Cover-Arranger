@@ -3,46 +3,46 @@
  * 使用ProTable展示所有歌词生成记录
  */
 
-import { DeleteOutlined, EyeOutlined } from "@ant-design/icons";
-import type { ActionType, ProColumns } from "@ant-design/pro-components";
-import { PageContainer, ProTable } from "@ant-design/pro-components";
-import { useNavigate } from "@umijs/max";
-import { Alert, Button, message, Popconfirm } from "antd";
-import React, { useRef, useState } from "react";
-import { MASTER_STYLE_CARDS } from "@/config/masterStyleConfig";
+import { DeleteOutlined, EyeOutlined } from '@ant-design/icons';
+import type { ActionType, ProColumns } from '@ant-design/pro-components';
+import { PageContainer, ProTable } from '@ant-design/pro-components';
+import { useNavigate } from '@umijs/max';
+import { Alert, Button, message, Popconfirm } from 'antd';
+import React, { useRef, useState } from 'react';
 import {
   CLOSENESS_LEVEL_OPTIONS,
   SONG_LANGUAGE_OPTIONS,
   SONG_STYLE_OPTIONS,
-} from "@/config/lyricsEnums";
-import { useLyricsRecords } from "@/hooks/useLyricsRecords";
-import { db } from "@/services/db";
-import type { LyricsRecord } from "@/shared/types/types";
-import LyricsRecordDetail from "./detail"; // 导入详情组件
+} from '@/config/lyricsEnums';
+import { MASTER_STYLE_CARDS } from '@/config/masterStyleConfig';
+import { useLyricsRecords } from '@/hooks/useLyricsRecords';
+import { db } from '@/services/db';
+import type { LyricsRecord } from '@/shared/types/types';
+import LyricsRecordDetail from './detail'; // 导入详情组件
 
 const LyricsRecordsPage: React.FC = () => {
   const navigate = useNavigate();
   const { deleteRecord } = useLyricsRecords();
   const actionRef = useRef<ActionType>(null);
   const [loading, setLoading] = useState<boolean>(false);
-  const [open, setOpen] = useState<boolean>(false);
+  const [_open, setOpen] = useState<boolean>(false);
   const [selectedRecord, setSelectedRecord] = useState<LyricsRecord | null>(
-    null
+    null,
   );
 
   const handleDelete = async (id: number) => {
     try {
       const result = await deleteRecord(id);
       if (result.success) {
-        message.success("删除成功");
+        message.success('删除成功');
         actionRef.current?.reload();
         setOpen(false); // 删除后关闭Drawer
         setSelectedRecord(null);
       } else {
-        message.error("删除失败");
+        message.error('删除失败');
       }
     } catch (_error) {
-      message.error("删除失败");
+      message.error('删除失败');
     }
   };
 
@@ -56,7 +56,7 @@ const LyricsRecordsPage: React.FC = () => {
     setSelectedRecord(null);
   };
 
-  const handleDrawerDelete = () => {
+  const _handleDrawerDelete = () => {
     // 由于详情组件已移除删除功能，此函数不再需要
     // 但为了保持组件接口一致性，保留此函数
   };
@@ -87,7 +87,7 @@ const LyricsRecordsPage: React.FC = () => {
           if (aVal === undefined && bVal === undefined) return 0;
           if (aVal === undefined) return 1;
           if (bVal === undefined) return -1;
-          if (sortOrder === "ascend") {
+          if (sortOrder === 'ascend') {
             return aVal > bVal ? 1 : -1;
           } else {
             return aVal < bVal ? 1 : -1;
@@ -101,7 +101,7 @@ const LyricsRecordsPage: React.FC = () => {
         total: records.length,
       };
     } catch (_error) {
-      message.error("加载数据失败");
+      message.error('加载数据失败');
       return {
         data: [],
         success: false,
@@ -114,73 +114,73 @@ const LyricsRecordsPage: React.FC = () => {
 
   const columns: ProColumns<LyricsRecord>[] = [
     {
-      title: "歌曲名称",
-      dataIndex: ["form_data", "song_name"],
+      title: '歌曲名称',
+      dataIndex: ['form_data', 'song_name'],
       width: 150,
-      fixed: "left",
+      fixed: 'left',
       ellipsis: true,
     },
     {
-      title: "风格大师",
-      dataIndex: ["form_data", "master_id"],
+      title: '风格大师',
+      dataIndex: ['form_data', 'master_id'],
       width: 120,
       render: (_, record) => {
         const masterId = record.form_data.master_id;
         if (!masterId) {
-          return "无";
+          return '无';
         }
         const master = MASTER_STYLE_CARDS.find((m) => m.id === masterId);
         return master ? master.name : masterId;
       },
     },
     {
-      title: "语言",
-      dataIndex: ["form_data", "song_language"],
+      title: '语言',
+      dataIndex: ['form_data', 'song_language'],
       width: 100,
       render: (_, record) => {
         const language = SONG_LANGUAGE_OPTIONS.find(
           (item) =>
-            String(item.value) === String(record.form_data.song_language)
+            String(item.value) === String(record.form_data.song_language),
         );
         return language?.label || record.form_data.song_language;
       },
     },
     {
-      title: "风格",
-      dataIndex: ["form_data", "song_style"],
+      title: '风格',
+      dataIndex: ['form_data', 'song_style'],
       width: 100,
       render: (_, record) => {
         const style = SONG_STYLE_OPTIONS.find(
-          (item) => String(item.value) === String(record.form_data.song_style)
+          (item) => String(item.value) === String(record.form_data.song_style),
         );
         return style?.label || record.form_data.song_style;
       },
     },
     {
-      title: "贴近度",
-      dataIndex: ["form_data", "closeness"],
+      title: '贴近度',
+      dataIndex: ['form_data', 'closeness'],
       width: 100,
       render: (_, record) => {
         const closeness = record.form_data.closeness;
         const closenessOption = CLOSENESS_LEVEL_OPTIONS.find(
-          (item) => String(item.value) === String(closeness)
+          (item) => String(item.value) === String(closeness),
         );
         return closenessOption?.label || `${closeness}级`;
       },
     },
     {
-      title: "生成时间",
-      dataIndex: "created_at",
+      title: '生成时间',
+      dataIndex: 'created_at',
       width: 180,
-      valueType: "dateTime",
+      valueType: 'dateTime',
       sorter: true,
-      defaultSortOrder: "descend",
+      defaultSortOrder: 'descend',
     },
     {
-      title: "操作",
-      valueType: "option",
+      title: '操作',
+      valueType: 'option',
       width: 150,
-      fixed: "right",
+      fixed: 'right',
       render: (_, record) => [
         <Button
           key="view"
@@ -227,13 +227,13 @@ const LyricsRecordsPage: React.FC = () => {
           showQuickJumper: true,
           showTotal: (total) => `共 ${total} 条记录`,
         }}
-        scroll={{ x: "max-content" }}
+        scroll={{ x: 'max-content' }}
         loading={loading}
         toolBarRender={() => [
           <Button
             key="create"
             type="primary"
-            onClick={() => navigate("/lyrics-craft")}
+            onClick={() => navigate('/lyrics-craft')}
           >
             创建新歌词
           </Button>,

@@ -45,7 +45,7 @@ export const useLyricsRecords = () => {
   // 歌曲名称筛选
   const filterBySongName = useCallback(
     (records: LyricsRecord[], songName?: string) => {
-      if (!songName || !songName.trim()) {
+      if (!songName?.trim()) {
         return records;
       }
       const lowerCaseSongName = songName.toLowerCase();
@@ -98,7 +98,7 @@ export const useLyricsRecords = () => {
   // 关键词筛选
   const filterByKeyword = useCallback(
     (records: LyricsRecord[], keyword?: string) => {
-      if (!keyword || !keyword.trim()) {
+      if (!keyword?.trim()) {
         return records;
       }
       const lowerCaseKeyword = keyword.toLowerCase();

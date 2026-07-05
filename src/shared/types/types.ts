@@ -262,6 +262,174 @@ export interface FFTBackend {
   dispose(): void;
 }
 
+// ==================== 和弦分析 (ChordSync) 类型 ====================
+
+/**
+ * 和弦段落
+ * 表示音频中一段连续时间的和弦
+ */
+export interface ChordSegment {
+  /** 和弦名称，如 "Dm7" */
+  chord: string;
+  /** 功能级数，如 "IIm7" */
+  degree: string;
+  /** 段落起始时间（秒） */
+  startTime: number;
+  /** 段落结束时间（秒） */
+  endTime: number;
+  /** 匹配置信度 0-1 */
+  confidence: number;
+}
+
+/**
+ * 完整歌曲分析结果
+ */
+export interface SongAnalysis {
+  /** SHA-256 文件哈希 */
+  fileHash: string;
+  /** 原始文件名 */
+  fileName: string;
+  /** 文件大小（字节） */
+  fileSize: number;
+  /** 音频时长（秒） */
+  duration: number;
+  /** 采样率 */
+  sampleRate: number;
+  /** 调式，如 "C Major" */
+  key: string;
+  /** 调式置信度 0-1 */
+  keyConfidence: number;
+  /** BPM */
+  bpm: number;
+  /** BPM 置信度 0-1 */
+  bpmConfidence: number;
+  /** 和弦段落列表 */
+  chordSegments: ChordSegment[];
+  /** 节拍位置 + 强/弱标记 */
+  beatList?: { time: number; isDownbeat: boolean }[];
+  /** 和弦词汇级别 */
+  vocabularyLevel: 'extended';
+  /** 分析完成时间戳 */
+  analyzedAt: number;
+  /** 分析耗时（毫秒） */
+  analysisDurationMs: number;
+}
+
+/**
+ * 缓存的分析记录（IndexedDB 存储格式）
+ */
+export interface CachedAnalysis {
+  /** 主键：SHA-256 文件哈希 */
+  fileHash: string;
+  /** 复合键：和弦词汇级别 */
+  vocabularyLevel: string;
+  /** 数据格式版本 */
+  version: number;
+  /** 分析结果 */
+  analysis: SongAnalysis;
+  /** 创建时间 */
+  createdAt: number;
+  /** 文件大小（用于存储监控） */
+  fileSize: number;
+}
+
+/** 错误码枚举 */
+export type ErrorCode =
+  | 'WASM_LOAD_FAILED'
+  | 'DECODE_FAILED'
+  | 'TIMEOUT'
+  | 'ALGORITHM_ERROR'
+  | 'OUT_OF_MEMORY'
+  | 'BROWSER_INCOMPATIBLE'
+  | 'FILE_READ_FAILED'
+  | 'WORKER_CRASH';
+
+// ── Worker 消息协议 ──
+
+/** 主线程 → Worker */
+export type WorkerRequest =
+  | {
+      type: 'analyze';
+      payload: {
+        audioBuffer: ArrayBuffer;
+        sampleRate: number;
+        fileName: string;
+        fileHash: string;
+      };
+      requestId: string;
+    }
+  | {
+      type: 'hashFile';
+      payload: { file: File };
+      requestId: string;
+    }
+  | {
+      type: 'cancel';
+      requestId: string;
+    };
+
+/** Worker → 主线程：进度步骤 */
+export type ProgressStep =
+  | 'wasm_loading'
+  | 'hpcp'
+  | 'key_bpm'
+  | 'chord_match'
+  | 'viterbi'
+  | 'romanize'
+  | 'done';
+
+/** Worker → 主线程：进度消息 */
+export interface ProgressPayload {
+  step: ProgressStep;
+  percent: number;
+  message?: string;
+}
+
+/** Worker → 主线程 */
+export type WorkerResponse =
+  | {
+      type: 'progress';
+      payload: ProgressPayload;
+      requestId: string;
+    }
+  | {
+      type: 'result';
+      payload: SongAnalysis;
+      requestId: string;
+    }
+  | {
+      type: 'error';
+      payload: { code: ErrorCode; message: string; retryable: boolean };
+      requestId: string;
+    }
+  | {
+      type: 'hashResult';
+      payload: { fileHash: string };
+      requestId: string;
+    }
+  | {
+      type: 'cancelled';
+      requestId: string;
+    };
+
+/** Essentia.js 特征提取结果 */
+export interface ExtractedFeatures {
+  /** 原始 36-bin HPCP 帧 */
+  hpcp: Float32Array[];
+  /** 折叠后的 12-bin chroma 帧 */
+  chroma: Float32Array[];
+  /** 调式根音，如 "C" */
+  key: string;
+  /** 调式音阶，如 "major" */
+  scale: string;
+  /** 调式强度 0-1 */
+  keyStrength: number;
+  /** BPM */
+  bpm: number;
+  /** 节拍时间点列表（秒） */
+  beats: number[];
+}
+
 // ==================== 歌词记录数据模型 ====================
 
 // 歌词记录数据模型
@@ -279,3 +447,27 @@ export interface LyricsRecord {
   // 可选的标签或备注
   tags?: string[];
 }
+
+// ==================== 状态机类型 ====================
+
+/** 分析状态 */
+export type AnalysisStatus =
+  | 'IDLE'
+  | 'FILE_LOADING'
+  | 'WASM_LOADING'
+  | 'DECODING'
+  | 'ANALYZING'
+  | 'READY'
+  | 'ERROR';
+
+/** 播放状态 */
+export type PlaybackState = 'PLAYING' | 'PAUSED' | 'STOPPED';
+
+/** Worker 进度步骤（供前端 useChordAnalysis 使用） */
+export type AnalysisStep =
+  | 'hpcp'
+  | 'key_bpm'
+  | 'chord_match'
+  | 'viterbi'
+  | 'romanize'
+  | 'done';

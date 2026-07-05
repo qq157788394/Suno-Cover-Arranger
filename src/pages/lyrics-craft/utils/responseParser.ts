@@ -1,4 +1,4 @@
-import type { LyricsGenerateResponse } from "@/shared/types/types";
+import type { LyricsGenerateResponse } from '@/shared/types/types';
 
 /**
  * 大师写歌词 - 响应解析工具类
@@ -18,8 +18,8 @@ export class LyricsCraftResponseParser {
       if (!content) {
         return {
           success: false,
-          error: "AI 生成内容为空",
-          lyrics: "",
+          error: 'AI 生成内容为空',
+          lyrics: '',
           timestamp: new Date().toISOString(),
         };
       }
@@ -30,11 +30,11 @@ export class LyricsCraftResponseParser {
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
-      console.error("响应解析失败:", error);
+      console.error('响应解析失败:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : "响应解析失败",
-        lyrics: "",
+        error: error instanceof Error ? error.message : '响应解析失败',
+        lyrics: '',
         timestamp: new Date().toISOString(),
       };
     }

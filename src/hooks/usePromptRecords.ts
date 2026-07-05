@@ -61,7 +61,7 @@ export const usePromptRecords = (currentUserId: number) => {
   // 目标歌手筛选
   const filterByTargetSinger = useCallback(
     (records: PromptRecord[], targetSinger?: string) => {
-      if (!targetSinger || !targetSinger.trim()) {
+      if (!targetSinger?.trim()) {
         return records;
       }
       const lowerCaseTargetSinger = targetSinger.toLowerCase();
@@ -77,7 +77,7 @@ export const usePromptRecords = (currentUserId: number) => {
   // 风格描述筛选
   const filterByStyleDescription = useCallback(
     (records: PromptRecord[], styleDescription?: string) => {
-      if (!styleDescription || !styleDescription.trim()) {
+      if (!styleDescription?.trim()) {
         return records;
       }
       const lowerCaseStyleDescription = styleDescription.toLowerCase();
@@ -93,7 +93,7 @@ export const usePromptRecords = (currentUserId: number) => {
   // 歌曲名称筛选
   const filterBySongName = useCallback(
     (records: PromptRecord[], songName?: string) => {
-      if (!songName || !songName.trim()) {
+      if (!songName?.trim()) {
         return records;
       }
       const lowerCaseSongName = songName.toLowerCase();
@@ -107,7 +107,7 @@ export const usePromptRecords = (currentUserId: number) => {
   // 关键词筛选
   const filterByKeyword = useCallback(
     (records: PromptRecord[], keyword?: string) => {
-      if (!keyword || !keyword.trim()) {
+      if (!keyword?.trim()) {
         return records;
       }
       const lowerCaseKeyword = keyword.toLowerCase();

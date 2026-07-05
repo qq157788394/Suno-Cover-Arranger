@@ -63,7 +63,7 @@ import { LyricsCraftPromptBuilder } from './utils/promptBuilder';
 import { LyricsCraftResponseParser } from './utils/responseParser';
 
 const LyricsCraftPage: React.FC = () => {
-  const navigate = useNavigate();
+  const _navigate = useNavigate();
   const { apiKey, model, checkApiKey, shouldShowAlert, navigateToSettings } =
     useApiKey();
   const { createRecord } = useLyricsRecords();
@@ -141,12 +141,12 @@ const LyricsCraftPage: React.FC = () => {
       return;
     }
 
-    if (!values.song_name || !values.song_name.trim()) {
+    if (!values.song_name?.trim()) {
       messageApi.error('歌曲名称不能为空');
       return;
     }
 
-    if (!values.raw_material || !values.raw_material.trim()) {
+    if (!values.raw_material?.trim()) {
       messageApi.error('原始素材不能为空');
       return;
     }

@@ -14,19 +14,9 @@ import {
   ProFormTextArea,
 } from '@ant-design/pro-components';
 // Umi
-import { history, useSearchParams } from '@umijs/max';
+import { useSearchParams } from '@umijs/max';
 // Ant Design Base Components
-import {
-  Button,
-  Col,
-  Flex,
-  Form,
-  Modal,
-  message,
-  Row,
-  Space,
-  Spin,
-} from 'antd';
+import { Button, Col, Flex, Form, message, Row, Space, Spin } from 'antd';
 // React
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 // 可复用的结果卡片组件

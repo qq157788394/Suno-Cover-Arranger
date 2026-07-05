@@ -1,8 +1,8 @@
 import {
   getLyricsSystemPrompt,
   getLyricsUserPrompt,
-} from "@/services/lyricsPromptService";
-import type { LyricsFormData } from "@/shared/types/types";
+} from '@/services/lyricsPromptService';
+import type { LyricsFormData } from '@/shared/types/types';
 
 /**
  * 大师写歌词 - Prompt拼接工具类
@@ -14,7 +14,7 @@ export class LyricsCraftPromptBuilder {
    * @param request - 歌词生成请求参数
    * @returns 完整的系统提示词
    */
-  static buildSystemPrompt(request: LyricsFormData): string {
+  static buildSystemPrompt(_request: LyricsFormData): string {
     return getLyricsSystemPrompt();
   }
 

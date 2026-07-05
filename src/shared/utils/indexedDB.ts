@@ -183,10 +183,10 @@ const deleteApiKeyFromIndexedDB = async (): Promise<{
 };
 
 export {
-  storeData,
-  getData,
-  deleteData,
-  saveApiKeyToIndexedDB,
-  getApiKeyFromIndexedDB,
   deleteApiKeyFromIndexedDB,
+  deleteData,
+  getApiKeyFromIndexedDB,
+  getData,
+  saveApiKeyToIndexedDB,
+  storeData,
 };

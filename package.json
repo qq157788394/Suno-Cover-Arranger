@@ -59,6 +59,7 @@
     "dexie": "^4.4.2",
     "dexie-react-hooks": "^4.4.0",
     "esbuild": "^0.27.7",
+    "essentia.js": "^0.1.3",
     "inversify": "^7.11.0",
     "lamejs": "^1.2.1",
     "marked": "^17.0.6",

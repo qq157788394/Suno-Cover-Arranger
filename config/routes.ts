@@ -54,6 +54,12 @@ export default [
     component: './changelog',
   },
   {
+    name: '大师看和弦',
+    icon: 'ThunderboltOutlined',
+    path: '/chord-analysis',
+    component: './chord-analysis',
+  },
+  {
     name: '项目介绍',
     icon: 'InfoCircleOutlined',
     path: '/about',

@@ -1,4 +1,4 @@
-import type { GenerateResponse } from "@/shared/types/types";
+import type { GenerateResponse } from '@/shared/types/types';
 
 /**
  * 翻唱编曲大师 - 响应解析工具类
@@ -12,27 +12,27 @@ export class SunoCoverResponseParser {
    */
   static parseResponse(rawResponse: string): GenerateResponse {
     try {
-      let responseText = rawResponse.trim();
+      const responseText = rawResponse.trim();
 
       const stylesMatch = responseText.match(
-        /### Styles[\s\S]*?(?=### Lyrics|$)/
+        /### Styles[\s\S]*?(?=### Lyrics|$)/,
       );
       const lyricsMatch = responseText.match(/### Lyrics[\s\S]*/);
 
-      let stylesContent = "";
-      let lyricsContent = "";
+      let stylesContent = '';
+      let lyricsContent = '';
 
       if (stylesMatch) {
-        stylesContent = stylesMatch[0].replace(/### Styles/, "").trim();
+        stylesContent = stylesMatch[0].replace(/### Styles/, '').trim();
         stylesContent = stylesContent
-          .replace(/```text\s*([\s\S]*?)\s*```/, "$1")
+          .replace(/```text\s*([\s\S]*?)\s*```/, '$1')
           .trim();
       }
 
       if (lyricsMatch) {
-        lyricsContent = lyricsMatch[0].replace(/### Lyrics/, "").trim();
+        lyricsContent = lyricsMatch[0].replace(/### Lyrics/, '').trim();
         lyricsContent = lyricsContent
-          .replace(/```text\s*([\s\S]*?)\s*```/, "$1")
+          .replace(/```text\s*([\s\S]*?)\s*```/, '$1')
           .trim();
       }
 
@@ -42,10 +42,10 @@ export class SunoCoverResponseParser {
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
-      console.error("响应解析失败:", error);
+      console.error('响应解析失败:', error);
       return {
         styles: rawResponse.trim(),
-        lyrics: "",
+        lyrics: '',
         timestamp: new Date().toISOString(),
       };
     }
