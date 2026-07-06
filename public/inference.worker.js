@@ -19,13 +19,23 @@ console.log('[inference.worker] essentia-wasm.umd.js loaded');
 var EssentiaWASM = Module;
 console.log('[inference.worker] EssentiaWASM available:', !!EssentiaWASM);
 
+self.module = { exports: {} };
+self.exports = self.module.exports;
 console.log('[inference.worker] Loading essentia.js-model.umd.js...');
 importScripts(baseUrl + 'essentia-wasm/essentia.js-model.umd.js');
 console.log('[inference.worker] essentia.js-model.umd.js loaded');
 
+self.EssentiaModel = self.module.exports;
+console.log('[inference.worker] EssentiaModel:', !!self.EssentiaModel);
+
+self.module = { exports: {} };
+self.exports = self.module.exports;
 console.log('[inference.worker] Loading tf.min.js...');
 importScripts(baseUrl + 'libs/tf.min.js');
 console.log('[inference.worker] tf.min.js loaded');
+
+self.tf = self.module.exports;
+console.log('[inference.worker] tf:', !!self.tf);
 
 var extractor = null;
 var cachedFeatures = null;
