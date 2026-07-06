@@ -8,6 +8,8 @@ importScripts(PUBLIC_PATH + 'essentia-wasm/essentia-wasm.web.js');
 importScripts(PUBLIC_PATH + 'essentia-wasm/essentia.js-model.umd.js');
 importScripts(PUBLIC_PATH + 'libs/tf.min.js');
 
+const { EssentiaTFInputExtractor, TensorflowMusiCNN } = self.EssentiaModel || {};
+
 const MODEL_REGISTRY = {
   genre:              PUBLIC_PATH + 'models/musicnn/model.json',
   genre_tzanetakis:   PUBLIC_PATH + 'models/genre_tzanetakis-musicnn-msd-2/model.json',
