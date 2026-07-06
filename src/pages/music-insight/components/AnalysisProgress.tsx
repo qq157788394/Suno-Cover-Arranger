@@ -33,7 +33,7 @@ const AnalysisProgress: React.FC<Props> = ({ status, fileName, percent }) => (
     <Progress
       percent={percent}
       strokeColor="#FF9000"
-      strokeWidth={4}
+      size="medium"
       style={{ width: 300, marginTop: 16 }}
     />
   </div>

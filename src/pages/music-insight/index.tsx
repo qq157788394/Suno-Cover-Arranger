@@ -11,11 +11,12 @@ import {
   SoundOutlined,
 } from '@ant-design/icons';
 import { PageContainer, ProCard } from '@ant-design/pro-components';
-import { Alert, Button, message, Progress, Space, Typography } from 'antd';
+import { Alert, Button, message, Space, Typography } from 'antd';
 import React, { useCallback, useRef } from 'react';
 import { useMusicInsight } from '@/hooks/useMusicInsight';
 import type { ModelRawOutput } from '@/shared/types/types';
 import AnalysisProgress from './components/AnalysisProgress';
+import GroupResultCard from './components/GroupResultCard';
 import StructuredResultCard from './components/StructuredResultCard';
 
 const { Text } = Typography;
@@ -62,49 +63,6 @@ const BINARY_LABELS: Record<string, string> = {
 };
 
 // ==================== 子组件 ====================
-
-/** 二分类进度条行 */
-const BinaryRow: React.FC<{ label: string; data: ModelRawOutput }> = ({
-  label,
-  data,
-}) => {
-  if (!data?.raw || !Array.isArray(data.raw) || data.raw.length < 2)
-    return null;
-  const pct = Math.round(data.raw[1] * 100);
-  const color =
-    pct >= 75
-      ? '#52c41a'
-      : pct >= 50
-        ? '#faad14'
-        : pct >= 25
-          ? '#ff7a45'
-          : '#d9d9d9';
-  return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 12,
-        marginBottom: 12,
-      }}
-    >
-      <Text style={{ width: 42, fontSize: 13, color: '#6B7280' }}>{label}</Text>
-      <Text
-        strong
-        style={{ width: 38, fontSize: 16, color, textAlign: 'right' }}
-      >
-        {pct}%
-      </Text>
-      <Progress
-        percent={pct}
-        strokeColor={color}
-        strokeWidth={8}
-        size="small"
-        style={{ flex: 1 }}
-      />
-    </div>
-  );
-};
 
 /** 上传卡片 */
 const UploadCard: React.FC<{ onFileSelect: (file: File) => void }> = ({
@@ -298,7 +256,7 @@ const MusicInsightPage: React.FC = () => {
         {isProcessing && (
           <div style={{ maxWidth: 640, margin: '0 auto' }}>
             <AnalysisProgress
-              status={isDecoding ? '解码音频' : '提取特征（所有模型共用）'}
+              status={isDecoding ? '解码音频' : '提取特征'}
               fileName={fileName || undefined}
               percent={isExtracting ? 50 : 20}
             />
@@ -332,7 +290,7 @@ const MusicInsightPage: React.FC = () => {
 
             {/* 按钮区 */}
             <ProCard size="small" title="选择分析维度" bordered>
-              <Space direction="vertical" size={12} style={{ width: '100%' }}>
+              <Space orientation="vertical" size={12} style={{ width: '100%' }}>
                 {/* 独立模型 */}
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                   {SOLO_MODELS.map((m) => (
@@ -383,28 +341,24 @@ const MusicInsightPage: React.FC = () => {
 
                 {/* 情绪分组 */}
                 {MOOD_MODELS.some((m) => results[m]?.raw) && (
-                  <ProCard size="small" title="情绪分析" bordered>
-                    {MOOD_MODELS.map((m) => (
-                      <BinaryRow
-                        key={m}
-                        label={BINARY_LABELS[m]}
-                        data={results[m]}
-                      />
-                    ))}
-                  </ProCard>
+                  <GroupResultCard
+                    title="情绪分析"
+                    items={MOOD_MODELS.map((m) => ({
+                      label: BINARY_LABELS[m],
+                      data: results[m],
+                    }))}
+                  />
                 )}
 
                 {/* 能量分组 */}
                 {ENERGY_MODELS.some((m) => results[m]?.raw) && (
-                  <ProCard size="small" title="能量分析" bordered>
-                    {ENERGY_MODELS.map((m) => (
-                      <BinaryRow
-                        key={m}
-                        label={BINARY_LABELS[m]}
-                        data={results[m]}
-                      />
-                    ))}
-                  </ProCard>
+                  <GroupResultCard
+                    title="能量分析"
+                    items={ENERGY_MODELS.map((m) => ({
+                      label: BINARY_LABELS[m],
+                      data: results[m],
+                    }))}
+                  />
                 )}
               </div>
             )}
