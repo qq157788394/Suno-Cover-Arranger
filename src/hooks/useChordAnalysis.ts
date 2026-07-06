@@ -203,14 +203,13 @@ export function useChordAnalysis(): UseChordAnalysisReturn {
         const { peaks: extractedPeaks, audioBuffer } = await extractPeaks(file);
         setPeaks(extractedPeaks);
 
-        // 5. ES6 模块 Worker 提取 essentia 特征
+        // 5. Worker 提取 essentia 特征
         setAnalysisStatus('WASM_LOADING');
 
         const features = await new Promise<any>((resolve, reject) => {
-          const w = new Worker(
-            new URL('../services/chord/analysis.worker.ts', import.meta.url),
-            { type: 'module' },
-          );
+          const baseUrl = window.location.pathname.startsWith('/Suno-Cover-Arranger') ? '/Suno-Cover-Arranger/' : '/';
+          const workerUrl = baseUrl + 'chord-analysis.worker.js';
+          const w = new Worker(workerUrl);
           workerRef.current = w;
           const timeout = setTimeout(() => {
             w.terminate();
