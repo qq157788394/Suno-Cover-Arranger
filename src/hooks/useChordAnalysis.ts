@@ -30,6 +30,7 @@ const NOTE_SEMITONES_MAP: Record<string, number> = {
 };
 const NOTE_LETTERS_ARR = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 function transposeSemitones(note: string, semitones: number): string {
+  if (!note) return 'C';
   const letter = note.charAt(0).toUpperCase();
   const acc = (note.match(/#/g) || []).length - (note.match(/b/g) || []).length;
   const basePc = NOTE_SEMITONES_MAP[letter] ?? 0;
@@ -207,7 +208,11 @@ export function useChordAnalysis(): UseChordAnalysisReturn {
         setAnalysisStatus('WASM_LOADING');
 
         const features = await new Promise<any>((resolve, reject) => {
-          const baseUrl = window.location.pathname.startsWith('/Suno-Cover-Arranger') ? '/Suno-Cover-Arranger/' : '/';
+          const baseUrl = window.location.pathname.startsWith(
+            '/Suno-Cover-Arranger',
+          )
+            ? '/Suno-Cover-Arranger/'
+            : '/';
           const workerUrl = baseUrl + 'chord-analysis.worker.js';
           const w = new Worker(workerUrl);
           workerRef.current = w;

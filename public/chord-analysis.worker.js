@@ -372,39 +372,12 @@ self.onmessage = function(e) {
     var signalVec = essentia.arrayToVector(audioData);
 
     self.postMessage({type:'log',msg:'Key...'});
-    var keyParams = {
-      averageDetuningCorrection: true,
-      frameSize: 4096,
-      hopSize: 4096,
-      hpcpSize: 12,
-      maxFrequency: 3500,
-      maximumSpectralPeaks: 60,
-      minFrequency: 80,
-      pcpThreshold: 0.2,
-      profileType: 'temperley',
-      sampleRate: sr,
-      spectralPeaksThreshold: 0.0001,
-      tuningFrequency: 440,
-      weightType: 'cosine',
-      windowType: 'hann',
-    };
-    var keyResult = essentia.KeyExtractor(
-      signalVec,
-      keyParams.averageDetuningCorrection,
-      keyParams.frameSize,
-      keyParams.hopSize,
-      keyParams.hpcpSize,
-      keyParams.maxFrequency,
-      keyParams.maximumSpectralPeaks,
-      keyParams.minFrequency,
-      keyParams.pcpThreshold,
-      keyParams.profileType,
-      keyParams.sampleRate,
-      keyParams.spectralPeaksThreshold,
-      keyParams.tuningFrequency,
-      keyParams.weightType,
-      keyParams.windowType,
-    );
+    var keyResult = essentia.Key(signalVec, sr, { profileType: 'temperley' });
+
+    console.log('[chord-analysis.worker] keyResult:', keyResult);
+    console.log('[chord-analysis.worker] keyResult.key:', keyResult.key);
+    console.log('[chord-analysis.worker] keyResult.scale:', keyResult.scale);
+    console.log('[chord-analysis.worker] keyResult.strength:', keyResult.strength);
 
     self.postMessage({type:'log',msg:'Beat...'});
     var beatResult = essentia.BeatTrackerMultiFeature(signalVec,208,40);
