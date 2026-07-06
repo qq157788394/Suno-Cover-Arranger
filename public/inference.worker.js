@@ -9,6 +9,9 @@ self.Module = {
   }
 };
 
+self.module = { exports: {} };
+self.exports = self.module.exports;
+
 console.log('[inference.worker] Loading essentia-wasm.umd.js...');
 importScripts(baseUrl + 'essentia-wasm/essentia-wasm.umd.js');
 console.log('[inference.worker] essentia-wasm.umd.js loaded');
