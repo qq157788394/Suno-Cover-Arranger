@@ -49,14 +49,14 @@ export function useMusicInsight(): UseMusicInsightReturn {
     }
   }, []);
 
-  const createWorker = useCallback((): Worker => {
+  const createWorker = useCallback(async (): Promise<Worker> => {
     terminateWorker();
     console.log('[useMusicInsight] Creating worker...');
     try {
-      const w = new Worker(
-        new URL('../services/ml/inference.worker.ts', import.meta.url),
-        { type: 'module' },
-      );
+      const workerModule = await import('../services/ml/inference.worker.ts');
+      const workerUrl = new URL('../services/ml/inference.worker.ts', import.meta.url).href;
+      console.log('[useMusicInsight] Worker URL:', workerUrl);
+      const w = new Worker(workerUrl, { type: 'module' });
       workerRef.current = w;
       console.log('[useMusicInsight] Worker created successfully');
       w.onerror = (err) => {
@@ -121,7 +121,7 @@ export function useMusicInsight(): UseMusicInsightReturn {
         console.log('[useMusicInsight] Downsampled to 16kHz, length:', newLen);
 
         setStatus('EXTRACTING');
-        const w = createWorker();
+        const w = await createWorker();
         console.log('[useMusicInsight] Worker created, posting EXTRACT message...');
 
         await new Promise<void>((resolve, reject) => {
