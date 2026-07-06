@@ -233,9 +233,6 @@ function spellDegreeNote(degree, key) {
 
 function formatRoman(degree, quality) {
   var roman = degree;
-  if (quality === 'm' || quality.startsWith('m')) {
-    roman = roman.toLowerCase();
-  }
   if (quality.includes('7')) {
     roman += '7';
   }
@@ -253,7 +250,7 @@ function formatRoman(degree, quality) {
 
 function determineDegreeName(dist, key, chord) {
   var degrees = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
-  var degreeIdx = dist;
+  var degreeIdx = dist % 7;
   var baseDegree = degrees[degreeIdx];
   var alternates = [];
   return [baseDegree, alternates];
@@ -279,9 +276,6 @@ Romanizer.prototype.determineDegreeName = function(dist, key, chord, prevChord, 
 Romanizer.prototype.formatRoman = function(baseDegree, chord) {
   var roman = baseDegree;
   var quality = chord.quality || '';
-  if (quality === 'm' || quality.startsWith('m')) {
-    roman = roman.toLowerCase();
-  }
   if (quality.includes('7')) {
     roman += '7';
   }
