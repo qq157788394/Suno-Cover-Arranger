@@ -2,10 +2,7 @@
  * 音乐理解 ML 推理 Worker — 两阶段模式
  */
 
-console.log('[Worker] Start: Initializing...');
-
 const PUBLIC_PATH = '/Suno-Cover-Arranger/';
-console.log('[Worker] PUBLIC_PATH:', PUBLIC_PATH);
 
 (self as any).Module = {
   locateFile: (path: string) => {
@@ -15,17 +12,10 @@ console.log('[Worker] PUBLIC_PATH:', PUBLIC_PATH);
   },
 };
 
-console.log('[Worker] Loading essentia-wasm.es.js...');
-import { EssentiaWASM } from 'essentia.js/dist/essentia-wasm.es.js';
-console.log('[Worker] essentia-wasm loaded successfully');
-
-console.log('[Worker] Loading essentia.js-model.es.js...');
-import { EssentiaTFInputExtractor, TensorflowMusiCNN } from 'essentia.js/dist/essentia.js-model.es.js';
-console.log('[Worker] essentia.js-model loaded successfully');
-
-console.log('[Worker] Loading @tensorflow/tfjs...');
-import * as tf from '@tensorflow/tfjs';
-console.log('[Worker] TensorFlow.js loaded successfully, version:', tf.version.tfjs);
+let EssentiaWASM: any = null;
+let EssentiaTFInputExtractor: any = null;
+let TensorflowMusiCNN: any = null;
+let tf: any = null;
 
 const MODEL_REGISTRY: Record<string, string> = {
   genre:              PUBLIC_PATH + 'models/musicnn/model.json',
@@ -49,11 +39,33 @@ let cachedFeatures: any = null;
 let currentModel: any = null;
 let initialized = false;
 
+async function loadDependencies(): Promise<void> {
+  console.log('[Worker] loadDependencies: Starting...');
+  
+  console.log('[Worker] loadDependencies: Loading essentia-wasm.es.js...');
+  const essentiaWasmModule = await import('essentia.js/dist/essentia-wasm.es.js');
+  EssentiaWASM = essentiaWasmModule.EssentiaWASM;
+  console.log('[Worker] loadDependencies: essentia-wasm loaded successfully');
+  
+  console.log('[Worker] loadDependencies: Loading essentia.js-model.es.js...');
+  const essentiaModelModule = await import('essentia.js/dist/essentia.js-model.es.js');
+  EssentiaTFInputExtractor = essentiaModelModule.EssentiaTFInputExtractor;
+  TensorflowMusiCNN = essentiaModelModule.TensorflowMusiCNN;
+  console.log('[Worker] loadDependencies: essentia.js-model loaded successfully');
+  
+  console.log('[Worker] loadDependencies: Loading @tensorflow/tfjs...');
+  tf = await import('@tensorflow/tfjs');
+  console.log('[Worker] loadDependencies: TensorFlow.js loaded successfully, version:', tf.version.tfjs);
+}
+
 async function init(): Promise<void> {
   if (initialized) {
     console.log('[Worker] init: Already initialized, skipping');
     return;
   }
+  
+  await loadDependencies();
+  
   console.log('[Worker] init: Starting initialization...');
   (self as any).postMessage({ type: 'log', msg: '[init] Creating EssentiaTFInputExtractor...' });
   
