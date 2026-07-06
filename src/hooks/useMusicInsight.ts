@@ -51,16 +51,29 @@ export function useMusicInsight(): UseMusicInsightReturn {
 
   const createWorker = useCallback((): Worker => {
     terminateWorker();
-    const w = new Worker(
-      new URL('../services/ml/inference.worker.ts', import.meta.url),
-      { type: 'module' },
-    );
-    workerRef.current = w;
-    w.onerror = (err) => {
-      setError(err.message);
-      setStatus('ERROR');
-    };
-    return w;
+    console.log('[useMusicInsight] Creating worker...');
+    try {
+      const w = new Worker(
+        new URL('../services/ml/inference.worker.ts', import.meta.url),
+        { type: 'module' },
+      );
+      workerRef.current = w;
+      console.log('[useMusicInsight] Worker created successfully');
+      w.onerror = (err) => {
+        console.error('[useMusicInsight] Worker error:', err);
+        setError(err.message);
+        setStatus('ERROR');
+      };
+      w.onmessageerror = (err) => {
+        console.error('[useMusicInsight] Worker message error:', err);
+        setError('Worker message error');
+        setStatus('ERROR');
+      };
+      return w;
+    } catch (err) {
+      console.error('[useMusicInsight] Failed to create worker:', err);
+      throw err;
+    }
   }, [terminateWorker]);
 
   const reset = useCallback(() => {
@@ -78,14 +91,22 @@ export function useMusicInsight(): UseMusicInsightReturn {
   // ===== Phase 1: 上传 → 解码 → 降采样 → 特征提取 =====
   const handleFileSelect = useCallback(
     async (file: File) => {
+      console.log('[useMusicInsight] handleFileSelect started, file:', file.name, file.size);
       reset();
       setFileName(file.name);
       setStatus('DECODING');
 
       try {
+        console.log('[useMusicInsight] Decoding audio file...');
         const arrayBuffer = await file.arrayBuffer();
+        console.log('[useMusicInsight] ArrayBuffer obtained, size:', arrayBuffer.byteLength);
+        
         const audioCtx = new AudioContext();
+        console.log('[useMusicInsight] AudioContext created');
+        
         const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+        console.log('[useMusicInsight] Audio decoded, sampleRate:', audioBuffer.sampleRate, 'duration:', audioBuffer.duration);
+        
         await audioCtx.close();
         setDuration(audioBuffer.duration);
 
@@ -96,23 +117,38 @@ export function useMusicInsight(): UseMusicInsightReturn {
         for (let i = 0; i < newLen; i++)
           ds[i] =
             origData[Math.min(Math.round(i / ratio), origData.length - 1)];
+        
+        console.log('[useMusicInsight] Downsampled to 16kHz, length:', newLen);
 
         setStatus('EXTRACTING');
         const w = createWorker();
+        console.log('[useMusicInsight] Worker created, posting EXTRACT message...');
 
         await new Promise<void>((resolve, reject) => {
           w.onmessage = (e) => {
+            console.log('[useMusicInsight] Worker message received:', e.data.type);
             if (e.data.type === 'ready') {
+              console.log('[useMusicInsight] Worker ready, models:', e.data.models);
               setModels(e.data.models);
               setStatus('READY');
               resolve();
-            } else if (e.data.type === 'error')
+            } else if (e.data.type === 'error') {
+              console.error('[useMusicInsight] Worker error:', e.data.message);
               reject(new Error(e.data.message));
+            } else if (e.data.type === 'log') {
+              console.log('[useMusicInsight] Worker log:', e.data.msg);
+              setLogs((prev) => [...prev, e.data.msg]);
+            } else if (e.data.type === 'progress') {
+              console.log('[useMusicInsight] Worker progress:', e.data);
+            }
           };
           const copy = ds.buffer.slice(0);
+          console.log('[useMusicInsight] Posting message to worker...');
           w.postMessage({ type: 'EXTRACT', audioData: copy }, [copy]);
+          console.log('[useMusicInsight] Message posted successfully');
         });
       } catch (err) {
+        console.error('[useMusicInsight] Error in handleFileSelect:', err);
         setError(err instanceof Error ? err.message : '未知错误');
         setStatus('ERROR');
       }
