@@ -159,7 +159,7 @@ const ChordAnalysisPage: React.FC = () => {
               fileName={songAnalysis.fileName}
               duration={songAnalysis.duration}
               fileSize={songAnalysis.fileSize}
-              key={songAnalysis.key}
+              keyName={songAnalysis.key}
               keyConfidence={songAnalysis.keyConfidence}
               bpm={songAnalysis.bpm}
               bpmConfidence={songAnalysis.bpmConfidence}

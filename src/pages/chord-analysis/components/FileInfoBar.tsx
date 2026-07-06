@@ -17,7 +17,7 @@ export interface FileInfoBarProps {
   /** 文件大小（字节，可选） */
   fileSize?: number;
   /** 调式名，如 "E Major" */
-  key: string;
+  keyName: string;
   /** 调式置信度 0-1 */
   keyConfidence: number;
   /** BPM */
@@ -45,7 +45,7 @@ const FileInfoBar: React.FC<FileInfoBarProps> = ({
   fileName,
   duration,
   fileSize,
-  key,
+  keyName,
   keyConfidence,
   bpm,
   bpmConfidence,
@@ -90,7 +90,7 @@ const FileInfoBar: React.FC<FileInfoBarProps> = ({
 
       {/* 右侧：Key + BPM Pill */}
       <KeyBpmDisplay
-        keyName={key}
+        keyName={keyName}
         keyConfidence={keyConfidence}
         bpm={bpm}
         bpmConfidence={bpmConfidence}
