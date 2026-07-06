@@ -53,7 +53,8 @@ export function useMusicInsight(): UseMusicInsightReturn {
     terminateWorker();
     console.log('[useMusicInsight] Creating worker...');
     try {
-      const workerUrl = '/Suno-Cover-Arranger/inference.worker.js';
+      const baseUrl = window.location.pathname.startsWith('/Suno-Cover-Arranger') ? '/Suno-Cover-Arranger/' : '/';
+      const workerUrl = baseUrl + 'inference.worker.js';
       console.log('[useMusicInsight] Worker URL:', workerUrl);
       const w = new Worker(workerUrl);
       workerRef.current = w;

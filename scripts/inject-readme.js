@@ -48,33 +48,8 @@ function injectMarkdownContent() {
   }
 }
 
-function copyWorkerFile() {
-  const distPath = path.join(process.cwd(), 'dist');
-  
-  try {
-    const workerFiles = fs.readdirSync(distPath).filter(file => file.endsWith('-worker.js'));
-    
-    if (workerFiles.length === 0) {
-      console.warn('⚠️ 未找到Worker文件');
-      return;
-    }
-    
-    const workerFile = workerFiles[0];
-    const sourcePath = path.join(distPath, workerFile);
-    const destPath = path.join(distPath, 'inference.worker.js');
-    
-    fs.copyFileSync(sourcePath, destPath);
-    
-    console.log(`✅ Worker文件已复制: ${workerFile} -> inference.worker.js`);
-  } catch (error) {
-    console.error('❌ 复制Worker文件失败:', error);
-    process.exit(1);
-  }
-}
-
 if (require.main === module) {
   injectMarkdownContent();
-  copyWorkerFile();
 }
 
-module.exports = { injectMarkdownContent, copyWorkerFile };
+module.exports = { injectMarkdownContent };
