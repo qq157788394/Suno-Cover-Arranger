@@ -23,6 +23,8 @@ yarn.lock
 package-lock.json
 *bak
 .vscode
+.workbuddy
+.trae
 
 
 # visual studio code

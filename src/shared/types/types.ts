@@ -282,6 +282,18 @@ export interface ChordSegment {
 }
 
 /**
+ * 拍级和弦（一拍一个值，用于拍级网格展示）
+ */
+export interface BeatChord {
+  /** 拍的时间戳（秒） */
+  time: number;
+  /** 和弦名称 */
+  chord: string;
+  /** 功能级数 */
+  degree: string;
+}
+
+/**
  * 完整歌曲分析结果
  */
 export interface SongAnalysis {
@@ -303,8 +315,10 @@ export interface SongAnalysis {
   bpm: number;
   /** BPM 置信度 0-1 */
   bpmConfidence: number;
-  /** 和弦段落列表 */
+  /** 和弦段落列表（变长时间段，用于波形图） */
   chordSegments: ChordSegment[];
+  /** 拍级和弦列表（一拍一个值，用于拍级网格展示） */
+  beatChords?: BeatChord[];
   /** 节拍位置 + 强/弱标记 */
   beatList?: { time: number; isDownbeat: boolean }[];
   /** 和弦词汇级别 */

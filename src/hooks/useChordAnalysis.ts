@@ -289,6 +289,7 @@ export function useChordAnalysis(): UseChordAnalysisReturn {
           bpm: features.bpm,
           bpmConfidence: features.bpmConfidence || 0.6,
           chordSegments: chordSegs,
+          beatChords: features.beatChords || [],
           beatList: features.beatList || [],
           vocabularyLevel: 'extended' as const,
           analyzedAt: Date.now(),

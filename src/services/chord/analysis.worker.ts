@@ -149,6 +149,7 @@ self.onmessage = async (e: MessageEvent) => {
       msg:`HPCP done: ${chromaFrames.length} fr, err=${peakErr}, skip=${skipCount}`
     });
     let chordSegments:{startTime:number;endTime:number;chord:string;degree:string;confidence:number}[]=[];
+    let beatChords:{time:number;chord:string;degree:string}[]=[];
     if (chromaFrames.length>0) {
       const matched = matchAllFrames(chromaFrames);
       const fd = hop/sr;
@@ -172,28 +173,61 @@ self.onmessage = async (e: MessageEvent) => {
         if(best&&best[0]!=='N'){bc.push(best[0]);bt.push({s:ts,e:te});}
       }
       // Merge + Romanize
+      // Minor → 相对大调转调：功能级数始终以大调为参照
+      const romanizerKey = keyResult.scale === 'minor'
+        ? transposeSemitones(keyResult.key, 3)
+        : keyResult.key;
+      const rom=new Romanizer(romanizerKey,false);
       if(bc.length>0){
         const rs:{c:string;s:number;e:number}[]=[];
         let seg={c:bc[0],s:bt[0].s,e:bt[0].e};
         for(let i=1;i<bc.length;i++){if(bc[i]===seg.c)seg.e=bt[i].e;else{rs.push(seg);seg={c:bc[i],s:bt[i].s,e:bt[i].e};}}
         rs.push(seg);
         const parsed=rs.map(s=>parseChord(s.c)).filter(Boolean);
-        // Minor → 相对大调转调：功能级数始终以大调为参照
-        // F minor(3个b) 的相对大调是 Ab major(4个b)，用 Ab 推算
-        const romanizerKey = keyResult.scale === 'minor'
-          ? transposeSemitones(keyResult.key, 3)  // minor → 上行小三度 = 相对大调
-          : keyResult.key;
-        const rom=new Romanizer(romanizerKey,false);
         const ann=rom.annotateProgression(parsed);
         chordSegments=rs.map((s,i)=>({startTime:s.s,endTime:s.e,chord:s.c,degree:ann[i]?.roman||s.c,confidence:0.7}));
       }
+
+      // ── 拍级和弦（每拍一个值）──────────────────────────────
+      beatChords=[];
+      const beatChordLabels:string[]=[];
+      if (tickArr.length>0) {
+        // 逐拍投票
+        for (let i=0;i<tickArr.length;i++) {
+          const f0=Math.floor(tickArr[i]/fd);
+          const f1=i+1<tickArr.length?Math.floor(tickArr[i+1]/fd):fc.length;
+          const cnt:Record<string,number>={};
+          for (let fi=f0;fi<f1;fi++){const c=fc[fi]||'N';cnt[c]=(cnt[c]||0)+1;}
+          const best=Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0];
+          const chord=best&&best[0]!=='N'?best[0]:'';
+          beatChords.push({time:tickArr[i],chord,degree:''});
+          if (i===0||chord!==beatChords[i-1].chord||!chord) {
+            beatChordLabels.push(chord||'N');
+          }
+        }
+        // Romanize
+        if (beatChordLabels.length>0) {
+          const parsed=beatChordLabels.map(c=>parseChord(c)).filter(Boolean);
+          const annRom=rom.annotateProgression(parsed);
+          let annIdx=0,lastChord='';
+          for (let i=0;i<beatChords.length;i++) {
+            const cur=beatChords[i].chord;
+            if (!cur) {beatChords[i].degree='';continue;}
+            if (cur!==lastChord&&annIdx<annRom.length) {
+              lastChord=cur;beatChords[i].degree=annRom[annIdx]?.roman||cur;annIdx++;
+            } else if (cur===lastChord) {
+              beatChords[i].degree=annRom[Math.max(0,annIdx-1)]?.roman||cur;
+            } else {beatChords[i].degree=cur;}
+          }
+        }
+      }
     }
 
-    self.postMessage({type:'log',msg:`Done: ${chordSegments.length} chords`});
+    self.postMessage({type:'log',msg:`Done: ${chordSegments.length} chords, ${beatChords.length} beats`});
     self.postMessage({type:'result',features:{
       key:keyResult.key||'C',scale:keyResult.scale||'major',
       keyStrength:keyResult.strength||0,bpm,bpmConfidence,ticks:tickArr,
-      beatList,chordSegments,hopSize:hop,
+      beatList,chordSegments,beatChords,hopSize:hop,
     }});
   } catch(err:any) {
     self.postMessage({type:'error',error:err.message||String(err)});
