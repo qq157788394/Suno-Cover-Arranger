@@ -270,7 +270,7 @@ function Romanizer(key, preferSharps) {
 
 Romanizer.prototype.determineDegreeName = function(dist, key, chord, prevChord, nextChord, preferSharps) {
   var degrees = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
-  var degreeIdx = dist;
+  var degreeIdx = dist % 7;
   var baseDegree = degrees[degreeIdx];
   var alternates = [];
   return [baseDegree, alternates];
