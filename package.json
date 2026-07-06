@@ -52,6 +52,7 @@
     "@google/genai": "^1.50.1",
     "@soundtouchjs/core": "^2.0.3",
     "@soundtouchjs/stretch-phase-vocoder": "^2.0.3",
+    "@tensorflow/tfjs": "4.22.0",
     "antd": "^6.3.6",
     "antd-style": "^4.1.0",
     "classnames": "^2.5.1",

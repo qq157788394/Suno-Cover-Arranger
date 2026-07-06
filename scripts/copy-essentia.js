@@ -18,11 +18,15 @@ const DEST = path.join(__dirname, '..', 'public', 'essentia-wasm');
 const FILES_TO_COPY = [
   { src: 'essentia-wasm.web.js', dest: 'essentia-wasm.web.js' },
   { src: 'essentia-wasm.web.wasm', dest: 'essentia-wasm.web.wasm' },
-  { src: 'essentia-wasm.web.wasm', dest: 'essentia-wasm.wasm' }, // 别名
-  { src: 'essentia-wasm.web.wasm', dest: 'essentia-wasm.es.wasm' }, // es.js 也会用
+  { src: 'essentia-wasm.web.wasm', dest: 'essentia-wasm.wasm' },
+  { src: 'essentia-wasm.web.wasm', dest: 'essentia-wasm.es.wasm' },
+  { src: 'essentia-wasm.umd.js', dest: 'essentia-wasm.umd.js' },
   { src: 'essentia.js-core.es.js', dest: 'essentia.js-core.es.js' },
   { src: 'essentia.js-core.umd.js', dest: 'essentia.js-core.umd.js' },
   { src: 'essentia.js-core.umd.min.js', dest: 'essentia.js-core.umd.min.js' },
+  // ML 推理支持（使 Worker 中 importScripts 加载）
+  { src: 'essentia.js-model.umd.js', dest: 'essentia.js-model.umd.js' },
+  { src: 'essentia.js-model.umd.min.js', dest: 'essentia.js-model.umd.min.js' },
 ];
 
 function copy() {

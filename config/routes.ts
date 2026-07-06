@@ -60,6 +60,12 @@ export default [
     component: './chord-analysis',
   },
   {
+    name: '音乐理解',
+    icon: 'BulbOutlined',
+    path: '/music-insight',
+    component: './music-insight',
+  },
+  {
     name: '项目介绍',
     icon: 'InfoCircleOutlined',
     path: '/about',

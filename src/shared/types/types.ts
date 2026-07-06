@@ -388,3 +388,24 @@ export type AnalysisStep =
   | 'viterbi'
   | 'romanize'
   | 'done';
+
+// ==================== 音乐理解 (Music Insight) 类型 ====================
+
+/** 单个模型的原始输出 */
+export interface ModelRawOutput {
+  /** 模型返回的原始数据（直接透传，不做任何加工） */
+  raw?: any;
+  /** 如果出错，存放错误信息 */
+  error?: string;
+}
+
+/** 音乐理解完整分析结果 */
+export interface MusicInsightResult {
+  fileName: string;
+  fileSize: number;
+  duration: number;
+  /** 分析耗时（毫秒） */
+  analysisDurationMs: number;
+  /** 各模型原始输出，key 为模型名 */
+  models: Record<string, ModelRawOutput>;
+}
