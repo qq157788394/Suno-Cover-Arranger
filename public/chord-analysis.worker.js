@@ -49,6 +49,7 @@ var SHARP_TO_FLAT_MAP = {
 };
 
 function transposeSemitones(note, semitones) {
+  if (!note) return 'C';
   var letter = note.charAt(0).toUpperCase();
   var acc = (note.match(/#/g)||[]).length - (note.match(/b/g)||[]).length;
   var basePc = NOTE_SEMITONES_MAP[letter] || 0;
@@ -170,6 +171,7 @@ function normalizeNotePc(note) {
 }
 
 function normalizeSpelling(token) {
+  if (!token) return token;
   var t = token.trim();
   if (!t) return t;
   return t[0].toUpperCase() + t.substring(1);
