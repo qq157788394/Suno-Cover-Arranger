@@ -35,7 +35,8 @@
     "prod": "pnpm build && max preview --port 8080",
     "tauri:dev": "npx @tauri-apps/cli@2 dev",
     "tauri:build": "npx @tauri-apps/cli@2 build",
-    "tauri:icon": "npx @tauri-apps/cli@2 icon"
+    "tauri:icon": "npx @tauri-apps/cli@2 icon",
+    "release:mac": "bash scripts/release-mac.sh"
   },
   "browserslist": [
     "defaults"
