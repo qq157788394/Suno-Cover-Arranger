@@ -46,9 +46,11 @@ fn find_uv() -> Option<PathBuf> {
 }
 
 /// 解析 local-engine 目录（按优先级）：
-/// 1. DASHI_ENGINE_DIR 环境变量（.app 分发时由用户/启动器设置绝对路径）
-/// 2. 当前工作目录下的 local-engine
+/// 1. DASHI_ENGINE_DIR 环境变量（高级用户/启动器设置绝对路径）
+/// 2. 当前工作目录下的 local-engine（tauri:dev 时 CWD=项目根）
 /// 3. 从可执行文件位置向上查找 local-engine（dev 时二进制在 src-tauri/target/debug）
+/// 4. .app 同级目录的 local-engine（生产分发：用户把 .app 和 local-engine 放同一文件夹）
+/// 5. 常见用户目录下的项目副本（~/Documents, ~/Desktop）
 fn resolve_engine_dir() -> PathBuf {
     if let Ok(dir) = std::env::var("DASHI_ENGINE_DIR") {
         let p = PathBuf::from(&dir);
@@ -57,12 +59,14 @@ fn resolve_engine_dir() -> PathBuf {
         }
         log(&format!("DASHI_ENGINE_DIR={} 不存在，回退其他位置", dir));
     }
+    // ── 策略 2：CWD ──
     if let Ok(cwd) = std::env::current_dir() {
         let cand = cwd.join("local-engine");
         if cand.exists() {
             return cand;
         }
     }
+    // ── 策略 3：从 exe 向上遍历 ──
     if let Ok(exe) = std::env::current_exe() {
         let mut p = exe.parent();
         while let Some(dir) = p {
@@ -73,6 +77,36 @@ fn resolve_engine_dir() -> PathBuf {
             p = dir.parent();
         }
     }
+    // ── 策略 4：.app 同级目录（生产分发场景）──
+    // exe 通常在 XXX.app/Contents/MacOS/binary；取 .app 所在目录的父级
+    if let Ok(exe) = std::env::current_exe() {
+        if let Some(mac_os_dir) = exe.parent() {
+            // Contents/MacOS → Contents → XXX.app → <app所在目录>
+            if let Some(contents_dir) = mac_os_dir.parent() {
+                if let Some(app_bundle) = contents_dir.parent() {
+                    if let Some(app_location) = app_bundle.parent() {
+                        let cand = app_location.join("local-engine");
+                        if cand.exists() {
+                            return cand;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    // ── 策略 5：常见用户目录 ──
+    let home = std::env::var("HOME").unwrap_or_default();
+    for suffix in &[
+        "Documents/Suno-Cover-Arranger/local-engine",
+        "Desktop/Suno-Cover-Arranger/local-engine",
+    ] {
+        let cand = PathBuf::from(&home).join(suffix);
+        if cand.exists() {
+            return cand;
+        }
+    }
+
+    log("所有引擎目录探测策略均未命中，使用 fallback 路径（大概率不存在）");
     PathBuf::from("local-engine")
 }
 
