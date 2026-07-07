@@ -4,9 +4,9 @@
   "version": "0.1.0",
   "identifier": "com.dashi.app",
   "build": {
+    "beforeBuildCommand": "echo 'remote-loaded: no local frontend build'",
     "beforeDevCommand": "echo 'remote-loaded: no local frontend build'",
     "devUrl": "http://localhost:8000/chord-transcription",
-    "beforeBuildCommand": "echo 'remote-loaded: no local frontend build'",
     "frontendDist": "frontend-dist"
   },
   "app": {
@@ -26,6 +26,10 @@
   "bundle": {
     "active": true,
     "targets": ["dmg"],
+    "resources": {
+      "Resources/local-engine": "local-engine",
+      "Resources/uv": "uv"
+    },
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

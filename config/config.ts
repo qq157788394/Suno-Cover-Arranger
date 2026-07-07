@@ -14,7 +14,7 @@ const { REACT_APP_ENV = 'dev' } = process.env;
  * @description 部署时的路径，如果部署在非根目录下，需要配置这个变量
  * @doc https://umijs.org/docs/api/config#publicpath
  */
-// 配置GitHub Pages的公共路径，仓库名称为Suno-Cover-Arranger
+// 前端始终部署到 GitHub Pages 子路径（Tauri 壳远程加载，不再打包进 .app）
 const PUBLIC_PATH: string = '/Suno-Cover-Arranger/';
 
 const config: any = defineConfig({

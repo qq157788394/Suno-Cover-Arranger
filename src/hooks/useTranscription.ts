@@ -10,7 +10,6 @@
 import { useCallback, useRef, useState } from 'react';
 import {
   analyzeWithLocalEngine,
-  discoverEngine,
   TranscriptionEngineOfflineError,
 } from '@/services/transcription/client';
 import type {
@@ -27,13 +26,13 @@ export function useTranscription() {
 
   const fileRef = useRef<File | null>(null);
 
-  const handleFileSelect = useCallback(async (file: File) => {
+  const handleFileSelect = useCallback(async (file: File, baseUrl?: string) => {
     fileRef.current = file;
     setFileName(file.name);
     setStatus('ANALYZING');
     setError(null);
     try {
-      const res = await analyzeWithLocalEngine(file);
+      const res = await analyzeWithLocalEngine(file, undefined, baseUrl);
       setResult(res);
       setAnalyzedAt(Date.now());
       setStatus('READY');
@@ -55,26 +54,6 @@ export function useTranscription() {
     setAnalyzedAt(null);
   }, []);
 
-  /** 重新探测引擎：用于「未检测到本地引擎」冷启动竞态下用户手动重试。
-   *  引擎就绪且有已选文件时自动重跑分析；无文件则回到 IDLE。 */
-  const recheckEngine = useCallback(async () => {
-    setStatus('ANALYZING');
-    const base = await discoverEngine();
-    if (!base) {
-      setStatus('ENGINE_OFFLINE');
-      setError(
-        '仍未检测到本地引擎。请确认引擎已在后台启动，或检查 ~/.dashi_engine_spawn.log。',
-      );
-      return;
-    }
-    if (fileRef.current) {
-      await handleFileSelect(fileRef.current);
-    } else {
-      setStatus('IDLE');
-      setError(null);
-    }
-  }, [handleFileSelect]);
-
   return {
     status,
     result,
@@ -82,7 +61,6 @@ export function useTranscription() {
     fileName,
     analyzedAt,
     handleFileSelect,
-    recheckEngine,
     reset,
   };
 }

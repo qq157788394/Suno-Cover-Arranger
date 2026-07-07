@@ -1,13 +1,13 @@
 /**
- * 大师扒谱 — 页面主入口（Phase A2）
+ * 大师扒谱 — 页面主入口
  *
- * 形态：上传音频 → 调用本机 Python 引擎（localhost）→ 展示和弦时间轴。
+ * 形态：Tauri 薄壳远程加载本页（gh-pages）→ 调用本机 Python 引擎（localhost）→ 展示和弦时间轴。
  * 与「大师看和弦」并列、互不影响：大师看和弦走浏览器内 essentia，本页走本地引擎。
  *
- * 本阶段范围（对齐 spec Phase A2）：
- * - 上传 / 分析 / 结果展示；不做进度条与引擎切换（留 Phase B）。
- * - 引擎未启动 → 明确引导安装，不静默降级浏览器。
- * - 复用 FileDropZone；不触碰 WaveformCanvas（卡顿、未使用）。
+ * 本页交互要求（对齐用户反馈）：
+ * 1. 音频上传前就展示「依赖安装情况」清单（uv / 源码 / .venv / 服务）。
+ * 2. 一键安装时，用终端式实时日志展示进度与报错，让用户知道程序在跑。
+ * 3. 引擎完全就绪后才能上传；上传后若服务抛错，把异常原文直接显示在界面上。
  */
 
 import { ReloadOutlined } from '@ant-design/icons';
@@ -15,30 +15,26 @@ import { PageContainer, ProCard } from '@ant-design/pro-components';
 import { invoke } from '@tauri-apps/api/core';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { Alert, Button, message, Space, Spin, Tag, Typography } from 'antd';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useTranscription } from '@/hooks/useTranscription';
 import FileDropZone from '@/pages/chord-analysis/components/FileDropZone';
+import { LOCAL_ENGINE_BASE } from '@/services/transcription/client';
 import BeatGrid from './components/BeatGrid';
 
 const { Paragraph, Text } = Typography;
 
-const INSTALL_COMMANDS = `cd local-engine
-uv sync                 # 按 pyproject.toml 装全部依赖（含 madmom / chord-romanizer）
-uv run python main.py   # 启动服务（默认 http://127.0.0.1:18741）`;
-
 // 客户端环境切换（dev 工具）：仅在 Tauri 壳内显示。
-// 检测到 Tauri v2 注入的全局对象即视为客户端（纯浏览器无此全局，按钮不渲染）。
-// 作用：在「线上（GitHub Pages）」与「本地开发（localhost:8000）」之间一键切换；
-// 切换后通过 URL 参数回传，页面重载后弹出提示告知当前所处环境。
-//
-// —— 以下两处按你的实际部署填写 / 调整 ——
 const GH_PAGES_ORIGIN = 'https://qq157788394.github.io';
-const GH_PAGES_REPO = 'Suno-Cover-Arranger'; // gh-pages 仓库子路径前缀（PUBLIC_PATH 未设置时为仓库名）
+const GH_PAGES_REPO = 'Suno-Cover-Arranger';
 const LOCAL_ORIGIN = 'http://localhost:8000';
 
-// 跨域导航后用 URL 参数回传切换结果（sessionStorage 按 origin 隔离，跨域会丢失，故用 URL 参数）
 const ENV_SWITCH_PARAM = '__env';
-
 type EnvKind = 'local' | 'ghpages';
 
 function isRunningInTauri(): boolean {
@@ -48,7 +44,6 @@ function isRunningInTauri(): boolean {
   );
 }
 
-// 依据当前加载的 origin 判断环境：localhost / 127.0.0.1 → 本地；*.github.io → 线上
 function currentEnv(): EnvKind {
   const { origin } = window.location;
   if (
@@ -60,7 +55,6 @@ function currentEnv(): EnvKind {
   return 'ghpages';
 }
 
-// 计算切换到目标环境后的完整 URL，保留当前路径（兼容 gh-pages 的 /Suno-Cover-Arranger 前缀）
 function buildEnvUrl(target: EnvKind): string {
   const path = window.location.pathname;
   if (target === 'local') {
@@ -73,35 +67,146 @@ function buildEnvUrl(target: EnvKind): string {
   return GH_PAGES_ORIGIN + withPrefix;
 }
 
+/** 引擎依赖清单状态（来自 Rust get_engine_status；浏览器模式下 uv/源码/.venv 为 null） */
+type EngineStatusDetail = {
+  uv_present: boolean | null;
+  source_present: boolean | null;
+  venv_present: boolean | null;
+  running: boolean;
+  port: number | null;
+};
+
+/** 单行依赖状态展示 */
+function StatusRow({
+  label,
+  ok,
+  port,
+  hint,
+}: {
+  label: string;
+  ok: boolean | null;
+  port?: number | null;
+  hint?: string;
+}) {
+  const mark = ok === null ? '—' : ok ? '✅' : '❌';
+  return (
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '8px 0',
+        borderBottom: '1px solid #F3F4F6',
+      }}
+    >
+      <span style={{ fontSize: 14 }}>
+        {label}
+        {hint && (
+          <Text type="secondary" style={{ fontSize: 12, marginLeft: 8 }}>
+            {hint}
+          </Text>
+        )}
+      </span>
+      <span style={{ fontFamily: 'monospace', fontSize: 13 }}>
+        {mark}
+        {ok && port ? ` (localhost:${port})` : ''}
+      </span>
+    </div>
+  );
+}
+
+/** 把安装日志渲染成终端式面板，报错行标红 */
+function TerminalLog({ lines }: { lines: string[] }) {
+  const ref = useRef<HTMLPreElement>(null);
+  useEffect(() => {
+    if (ref.current) ref.current.scrollTop = ref.current.scrollHeight;
+  }, [lines]);
+  return (
+    <pre
+      ref={ref}
+      style={{
+        marginTop: 16,
+        maxHeight: 280,
+        overflow: 'auto',
+        background: '#0F1419',
+        color: '#E5E7EB',
+        padding: 16,
+        borderRadius: 12,
+        fontFamily: 'monospace',
+        fontSize: 12,
+        lineHeight: 1.6,
+        whiteSpace: 'pre-wrap',
+        wordBreak: 'break-all',
+      }}
+    >
+      {lines.map((l) => {
+        const isErr = /失败|error|Error|✗|traceback|Exception/i.test(l);
+        return (
+          <div key={l} style={isErr ? { color: '#F87171' } : undefined}>
+            {l}
+          </div>
+        );
+      })}
+    </pre>
+  );
+}
+
+/** 浏览器模式面板：本功能需桌面客户端，引导下载后永远结束（不再进入引擎逻辑） */
+function ClientRequiredPanel() {
+  return (
+    <ProCard>
+      <div
+        style={{
+          maxWidth: 680,
+          margin: '0 auto',
+          textAlign: 'center',
+          padding: '40px 0',
+        }}
+      >
+        <Alert
+          type="info"
+          showIcon
+          message="本功能需要「大师来了」桌面客户端"
+          description="大师扒谱调用本机 Python 引擎做离线高精度识别，音频不出本机；浏览器无法运行该引擎。请在桌面客户端中打开本功能。"
+        />
+        <Paragraph style={{ marginTop: 16 }}>
+          客户端随安装包分发 Python 引擎与 uv 运行时，首次安装后即可离线使用。
+        </Paragraph>
+        <Paragraph>
+          <a
+            href="https://github.com/qq157788394/Suno-Cover-Arranger"
+            target="_blank"
+            rel="noreferrer"
+          >
+            前往项目主页下载客户端 →
+          </a>
+        </Paragraph>
+      </div>
+    </ProCard>
+  );
+}
+
 const ChordTranscriptionPage: React.FC = () => {
-  const {
-    status,
-    result,
-    error,
-    fileName,
-    handleFileSelect,
-    recheckEngine,
-    reset,
-  } = useTranscription();
+  const { status, result, error, fileName, handleFileSelect, reset } =
+    useTranscription();
 
-  // 隐藏文件选择器用于重新上传
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // 音频 blob URL：从上传的 File 创建，用于内置播放器
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const fileRef = useRef<File | null>(null);
   const audioUrlRef = useRef<string | null>(null);
 
-  // 当文件被选中时保存引用（在分析前）
   const handleFileSelectWithRef = useCallback(
     (file: File) => {
       fileRef.current = file;
-      handleFileSelect(file);
+      // 客户端已确认引擎在跑：直接打固定地址，跳过 discoverEngine 端口扫描
+      handleFileSelect(
+        file,
+        isRunningInTauri() ? LOCAL_ENGINE_BASE : undefined,
+      );
     },
     [handleFileSelect],
   );
 
-  // 分析完成后创建 blob URL
   useEffect(() => {
     if (status === 'READY' && fileRef.current) {
       const url = URL.createObjectURL(fileRef.current);
@@ -111,7 +216,6 @@ const ChordTranscriptionPage: React.FC = () => {
     return () => {};
   }, [status]);
 
-  // 重置或卸载时清理 blob URL
   useEffect(() => {
     return () => {
       if (audioUrlRef.current) {
@@ -121,13 +225,10 @@ const ChordTranscriptionPage: React.FC = () => {
     };
   }, []);
 
-  // 客户端探测（壳内为 true，浏览器为 false）；Tauri 注入全局在 React 挂载前已就绪
-  const [isClient, setIsClient] = useState(false);
-  useEffect(() => {
-    setIsClient(isRunningInTauri());
-  }, []);
+  // 环境判定：只在最顶层判一次。浏览器 → 面板A（引导下载客户端，永远结束）；客户端 → 全部走本地引擎逻辑。
+  const isClient = useMemo(() => isRunningInTauri(), []);
 
-  // 当前环境（线上 / 本地），随页面实际加载的 origin 变化
+  // 环境（线上 / 本地）
   const [env, setEnv] = useState<EnvKind>(() =>
     typeof window !== 'undefined' ? currentEnv() : 'ghpages',
   );
@@ -135,7 +236,6 @@ const ChordTranscriptionPage: React.FC = () => {
     setEnv(currentEnv());
   }, []);
 
-  // 切换环境：在目标 URL 上带 __env 参数跳转，重载后由下方 effect 弹提示并清理参数
   const handleEnvSwitch = useCallback(() => {
     if (!isClient) return;
     const target: EnvKind = env === 'local' ? 'ghpages' : 'local';
@@ -144,7 +244,6 @@ const ChordTranscriptionPage: React.FC = () => {
     window.location.href = `${url}${sep}${ENV_SWITCH_PARAM}=${target}`;
   }, [isClient, env]);
 
-  // 重载后：若带有 __env 参数，说明刚完成切换，弹提示告知当前环境并清理 URL
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const switched = params.get(ENV_SWITCH_PARAM) as EnvKind | null;
@@ -172,15 +271,60 @@ const ChordTranscriptionPage: React.FC = () => {
     reset();
   }, [reset]);
 
-  // —— 一键安装本地引擎（仅客户端壳内）——
-  // 后端 install_local_engine 命令会把随包引擎源码部署到软件目录并 uv sync，
-  // 期间通过事件流式回报进度。这里监听进度/完成事件并展示。
+  // ───────── 引擎检测与安装 ─────────
+
+  /** 引擎检测错误信息（仅 Tauri 模式：invoke 调用失败时设置） */
+  const [detectError, setDetectError] = useState<string | null>(null);
+  const [checking, setChecking] = useState(true);
+  const [engineReady, setEngineReady] = useState(false);
+  const [engineDetail, setEngineDetail] = useState<EngineStatusDetail | null>(
+    null,
+  );
+
+  /**
+   * 引擎状态检测 — 仅客户端路径（浏览器在渲染层直接走面板A，永不调用本函数）。
+   *
+   * 调用 Rust get_engine_status 获取 uv / 源码 / .venv / 服务 四项布尔状态；
+   * 网关 = 四项全部通过（用户决策）才允许上传。invoke 失败时设置 detectError，UI 明确报错。
+   */
+  const detectEngine = useCallback(async () => {
+    if (!isClient) return;
+    setChecking(true);
+    setDetectError(null);
+    try {
+      const detail = (await invoke('get_engine_status')) as EngineStatusDetail;
+      setEngineDetail(detail);
+      setEngineReady(
+        !!detail.uv_present &&
+          !!detail.source_present &&
+          !!detail.venv_present &&
+          !!detail.running,
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setDetectError(`查询引擎状态失败: ${msg}`);
+      setEngineDetail(null);
+      setEngineReady(false);
+    } finally {
+      setChecking(false);
+    }
+  }, [isClient]);
+
+  useEffect(() => {
+    if (isClient) detectEngine();
+  }, [isClient, detectEngine]);
+
+  // 分析过程中引擎掉线（ENGINE_OFFLINE）→ 回到检测流程：重新查询，若已恢复则清空过期离线状态
+  useEffect(() => {
+    if (status === 'ENGINE_OFFLINE') {
+      detectEngine().then(() => reset());
+    }
+  }, [status, detectEngine, reset]);
+
+  // 安装流程状态
   const [installing, setInstalling] = useState(false);
   const [installLog, setInstallLog] = useState<string[]>([]);
-  const recheckEngineRef = useRef(recheckEngine);
-  useEffect(() => {
-    recheckEngineRef.current = recheckEngine;
-  }, [recheckEngine]);
+  const [installError, setInstallError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isClient) return;
@@ -199,14 +343,25 @@ const ChordTranscriptionPage: React.FC = () => {
           if (!active) return;
           setInstalling(false);
           if (e.payload.ok) {
+            setInstallError(null);
             message.success('本地引擎安装完成，正在检测…');
-            recheckEngineRef.current();
+            detectEngine();
           } else {
+            setInstallError(e.payload.msg);
             message.error(`安装失败：${e.payload.msg}`);
           }
         },
       );
-      unlisten.push(offProgress, offDone);
+      // 壳层上报引擎真实端口（自动启动或安装后）
+      const offReady = await listen<{ port: number; msg: string }>(
+        'engine-ready',
+        () => {
+          if (!active) return;
+          setInstallError(null);
+          detectEngine();
+        },
+      );
+      unlisten.push(offProgress, offDone, offReady);
     })();
     return () => {
       active = false;
@@ -214,12 +369,13 @@ const ChordTranscriptionPage: React.FC = () => {
         u();
       });
     };
-  }, [isClient]);
+  }, [isClient, detectEngine]);
 
   const handleInstallEngine = useCallback(async () => {
     if (!isClient) return;
     setInstalling(true);
     setInstallLog([]);
+    setInstallError(null);
     try {
       await invoke('install_local_engine');
     } catch (err) {
@@ -232,7 +388,6 @@ const ChordTranscriptionPage: React.FC = () => {
   const isAnalyzing = status === 'ANALYZING';
   const isReady = status === 'READY';
   const isError = status === 'ERROR';
-  const isOffline = status === 'ENGINE_OFFLINE';
 
   const handleReupload = useCallback(() => {
     fileInputRef.current?.click();
@@ -241,7 +396,12 @@ const ChordTranscriptionPage: React.FC = () => {
   const handleReuploadFileChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
-      if (file) handleFileSelect(file);
+      // 客户端已确认引擎在跑：直接打固定地址，跳过 discoverEngine 端口扫描
+      if (file)
+        handleFileSelect(
+          file,
+          isRunningInTauri() ? LOCAL_ENGINE_BASE : undefined,
+        );
       e.target.value = '';
     },
     [handleFileSelect],
@@ -250,6 +410,7 @@ const ChordTranscriptionPage: React.FC = () => {
   const hasFullEngine =
     result?.key != null || result?.bpm != null || result?.rhythm != null;
 
+  // ───────── 渲染：检测中 / 引擎未就绪 / 上传流程 ─────────
   return (
     <PageContainer
       header={{
@@ -259,57 +420,99 @@ const ChordTranscriptionPage: React.FC = () => {
         ghost: true,
       }}
     >
-      <ProCard>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="audio/*"
-          style={{ display: 'none' }}
-          onChange={handleReuploadFileChange}
-        />
-
-        {/* ========== 状态：未上传 ========== */}
-        {isIdle && (
-          <div style={{ maxWidth: 640, margin: '0 auto' }}>
-            <FileDropZone
-              disabled={false}
-              onFileSelect={handleFileSelectWithRef}
+      {!isClient ? (
+        <ClientRequiredPanel />
+      ) : (
+        <>
+          <ProCard>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="audio/*"
+              style={{ display: 'none' }}
+              onChange={handleReuploadFileChange}
             />
-          </div>
-        )}
 
-        {/* ========== 状态：分析中 ========== */}
-        {isAnalyzing && (
-          <div
-            style={{
-              maxWidth: 640,
-              margin: '0 auto',
-              padding: '48px 0',
-              textAlign: 'center',
-            }}
-          >
-            <Spin tip="正在调用本地高精度引擎分析…" size="large">
-              <div style={{ height: 1 }} />
-            </Spin>
-            {fileName && (
-              <div style={{ marginTop: 16, color: '#6B7280', fontSize: 13 }}>
-                {fileName}
+            {/* 1) 检测中 */}
+            {checking && (
+              <div style={{ padding: '64px 0', textAlign: 'center' }}>
+                <Spin tip="正在检测本地引擎…" size="large">
+                  <div style={{ height: 1 }} />
+                </Spin>
               </div>
             )}
-          </div>
-        )}
 
-        {/* ========== 状态：引擎未启动 ========== */}
-        {isOffline && (
-          <div style={{ maxWidth: 640, margin: '0 auto' }}>
-            <Alert
-              type="warning"
-              showIcon
-              message="未检测到本地引擎"
-              description="大师扒谱依赖本机运行的 Python 引擎（音频不出本机）。"
-            />
-            {isClient ? (
-              <>
+            {/* 2) 引擎未就绪：上传前即展示依赖清单 + 安装入口 + 终端日志 */}
+            {!checking && !engineReady && (
+              <div style={{ maxWidth: 680, margin: '0 auto' }}>
+                <Alert
+                  type="warning"
+                  showIcon
+                  message="本地高精度引擎未就绪"
+                  description="大师扒谱依赖本机运行的 Python 引擎（音频不出本机）。请先安装并启动，或点击下方一键安装。"
+                />
+
+                {/* invoke 失败时的明确报错 */}
+                {detectError && (
+                  <Alert
+                    type="error"
+                    showIcon
+                    style={{ marginTop: 12 }}
+                    message="状态查询异常"
+                    description={detectError}
+                  />
+                )}
+
+                <div
+                  style={{
+                    marginTop: 16,
+                    background: '#FFFFFF',
+                    borderRadius: 12,
+                    border: '1px solid #F3F4F6',
+                    padding: '16px 20px',
+                  }}
+                >
+                  <Text strong style={{ display: 'block', marginBottom: 4 }}>
+                    {'依赖安装情况（哪项通过一目了然）'}
+                  </Text>
+
+                  {engineDetail ? (
+                    <>
+                      <StatusRow
+                        label="uv 运行时"
+                        ok={engineDetail.uv_present}
+                        hint="用于创建隔离 Python 环境"
+                      />
+                      <StatusRow
+                        label="引擎源码（随安装包分发）"
+                        ok={engineDetail.source_present}
+                        hint="local-engine/main.py"
+                      />
+                      <StatusRow
+                        label="依赖环境 (.venv)"
+                        ok={engineDetail.venv_present}
+                        hint="已建则无需重新下载"
+                      />
+                      <StatusRow
+                        label="引擎服务"
+                        ok={engineDetail.running}
+                        port={engineDetail.port}
+                        hint="127.0.0.1"
+                      />
+                    </>
+                  ) : (
+                    <div
+                      style={{
+                        padding: '12px 0',
+                        color: '#6B7280',
+                        fontSize: 13,
+                      }}
+                    >
+                      状态查询失败，请点击「重试检测」。
+                    </div>
+                  )}
+                </div>
+
                 <div
                   style={{
                     marginTop: 16,
@@ -324,236 +527,242 @@ const ChordTranscriptionPage: React.FC = () => {
                     onClick={handleInstallEngine}
                     style={{ borderRadius: 8 }}
                   >
-                    {installing ? '正在安装…' : '一键安装本地引擎'}
+                    {installing ? '正在安装并启动…' : '一键安装 & 启动'}
                   </Button>
                   <Button
-                    onClick={recheckEngine}
+                    onClick={detectEngine}
                     disabled={installing}
                     style={{ borderRadius: 8 }}
                   >
                     重试检测
                   </Button>
-                  <Button
-                    onClick={handleReset}
-                    disabled={installing}
-                    style={{ borderRadius: 8 }}
-                  >
-                    返回上传
-                  </Button>
                 </div>
-                {installLog.length > 0 && (
-                  <pre
+                <Text
+                  type="secondary"
+                  style={{ fontSize: 12, marginTop: 8, display: 'block' }}
+                >
+                  引擎将安装到软件目录（~/Library/Application
+                  Support/大师来了），首次需联网下载依赖（约数十 MB）。
+                </Text>
+                {installError && (
+                  <Alert
+                    type="error"
+                    showIcon
+                    style={{ marginTop: 12 }}
+                    message="安装失败"
+                    description={installError}
+                  />
+                )}
+                {(installing || installLog.length > 0) && (
+                  <TerminalLog lines={installLog} />
+                )}
+              </div>
+            )}
+
+            {/* 3) 引擎就绪：上传 / 分析 / 结果 / 异常 */}
+            {!checking && engineReady && (
+              <div>
+                <Alert
+                  type="success"
+                  showIcon
+                  style={{ marginBottom: 16 }}
+                  message={`本地高精度引擎已连接 · localhost:${engineDetail?.port ?? 18741}`}
+                  description="音频仅在本机处理，不离开你的电脑。"
+                />
+
+                {isIdle && (
+                  <div style={{ maxWidth: 640, margin: '0 auto' }}>
+                    <FileDropZone
+                      disabled={false}
+                      onFileSelect={handleFileSelectWithRef}
+                    />
+                  </div>
+                )}
+
+                {isAnalyzing && (
+                  <div
                     style={{
-                      marginTop: 16,
-                      maxHeight: 260,
-                      overflow: 'auto',
-                      background: '#0F1419',
-                      color: '#E5E7EB',
-                      padding: 16,
-                      borderRadius: 12,
-                      fontFamily: 'monospace',
-                      fontSize: 12,
-                      whiteSpace: 'pre-wrap',
-                      marginBottom: 0,
+                      maxWidth: 640,
+                      margin: '0 auto',
+                      padding: '48px 0',
+                      textAlign: 'center',
                     }}
                   >
-                    {installLog.join('\n')}
-                  </pre>
+                    <Spin tip="正在调用本地高精度引擎分析…" size="large">
+                      <div style={{ height: 1 }} />
+                    </Spin>
+                    {fileName && (
+                      <div
+                        style={{
+                          marginTop: 16,
+                          color: '#6B7280',
+                          fontSize: 13,
+                        }}
+                      >
+                        {fileName}
+                      </div>
+                    )}
+                  </div>
                 )}
-                {!installing && installLog.length === 0 && (
-                  <Text
-                    type="secondary"
-                    style={{ fontSize: 12, marginTop: 8, display: 'block' }}
-                  >
-                    引擎将安装到软件目录（~/Library/Application
-                    Support/大师来了），首次需联网下载依赖（约数十 MB）。
-                  </Text>
+
+                {isError && (
+                  <div style={{ maxWidth: 720, margin: '0 auto' }}>
+                    <Alert
+                      type="error"
+                      showIcon
+                      message="分析失败（引擎返回异常）"
+                      description={
+                        <div>
+                          <p style={{ margin: '0 0 8px' }}>{error}</p>
+                          <Text type="secondary" style={{ fontSize: 12 }}>
+                            若为引擎内部报错，可查看软件目录
+                            <Text code>engine.log</Text>
+                            获取完整堆栈。
+                          </Text>
+                        </div>
+                      }
+                    />
+                    <div style={{ marginTop: 16 }}>
+                      <Button onClick={handleReset} style={{ borderRadius: 8 }}>
+                        重新上传
+                      </Button>
+                    </div>
+                  </div>
                 )}
-              </>
-            ) : (
-              <>
-                <Paragraph
-                  style={{
-                    marginTop: 16,
-                    background: '#0F1419',
-                    color: '#E5E7EB',
-                    padding: 16,
-                    borderRadius: 12,
-                    fontFamily: 'monospace',
-                    fontSize: 13,
-                    whiteSpace: 'pre-wrap',
-                  }}
-                >
-                  {INSTALL_COMMANDS}
-                </Paragraph>
-                <Text type="secondary" style={{ fontSize: 12 }}>
-                  需 Python ≥ 3.10 与 uv；Windows 用户还需自行安装 ffmpeg 并加入
-                  PATH。仅绑定 127.0.0.1，仅本机可调用。
-                </Text>
-                <div style={{ marginTop: 16, display: 'flex', gap: 12 }}>
-                  <Button
-                    type="primary"
-                    loading={isAnalyzing}
-                    onClick={recheckEngine}
-                    style={{ borderRadius: 8 }}
+
+                {isReady && result && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 16,
+                    }}
                   >
-                    重试检测引擎
-                  </Button>
-                  <Button onClick={handleReset} style={{ borderRadius: 8 }}>
-                    返回上传
-                  </Button>
-                </div>
-              </>
+                    {!hasFullEngine && (
+                      <Alert
+                        type="info"
+                        showIcon
+                        message="当前为精简模式（仅和弦）"
+                        description="安装完整引擎（含 madmom / chord-romanizer）可获取调性、BPM、节奏网格与功能级数。"
+                      />
+                    )}
+
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        alignItems: 'center',
+                        gap: 12,
+                      }}
+                    >
+                      <Text strong style={{ fontSize: 15 }}>
+                        {result.fileName || fileName}
+                      </Text>
+                      {result.key != null && (
+                        <Tag color="orange" style={{ borderRadius: 8 }}>
+                          Key: {result.key}
+                        </Tag>
+                      )}
+                      {result.bpm != null && (
+                        <Tag color="green" style={{ borderRadius: 8 }}>
+                          {result.bpm} BPM
+                        </Tag>
+                      )}
+                      {result.rhythm && (
+                        <Tag style={{ borderRadius: 8 }}>
+                          {result.rhythm.bars} 小节 /{' '}
+                          {result.rhythm.beats_per_bar ?? '?'} 拍每小节
+                        </Tag>
+                      )}
+                    </div>
+
+                    <Space size={12}>
+                      <Button
+                        type="text"
+                        icon={<ReloadOutlined />}
+                        onClick={handleReupload}
+                        style={{ borderRadius: 8, color: '#6B7280' }}
+                      >
+                        重新上传
+                      </Button>
+                    </Space>
+
+                    <div
+                      style={{
+                        background: '#FFFFFF',
+                        borderRadius: 12,
+                        border: '1px solid #F3F4F6',
+                        padding: '20px 16px',
+                      }}
+                    >
+                      <Text
+                        strong
+                        style={{ display: 'block', marginBottom: 12 }}
+                      >
+                        和弦网格
+                      </Text>
+                      <BeatGrid
+                        chords={result.chords}
+                        rhythm={result.rhythm}
+                        roman={result.roman}
+                        audioUrl={audioUrl}
+                      />
+                    </div>
+
+                    {result.warnings.length > 0 && (
+                      <Alert
+                        type="info"
+                        showIcon
+                        message="分析提示"
+                        description={
+                          <ul style={{ margin: 0, paddingLeft: 18 }}>
+                            {result.warnings.map((w) => (
+                              <li key={w} style={{ fontSize: 13 }}>
+                                {w}
+                              </li>
+                            ))}
+                          </ul>
+                        }
+                      />
+                    )}
+                  </div>
+                )}
+              </div>
             )}
-          </div>
-        )}
+          </ProCard>
 
-        {/* ========== 状态：错误 ========== */}
-        {isError && (
-          <div style={{ maxWidth: 640, margin: '0 auto' }}>
-            <Alert
-              type="error"
-              showIcon
-              message="分析失败"
-              description={error}
-            />
-            <div style={{ marginTop: 16 }}>
-              <Button onClick={handleReset} style={{ borderRadius: 8 }}>
-                重新上传
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* ========== 状态：完成 ========== */}
-        {isReady && result && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {/* 精简模式提示 */}
-            {!hasFullEngine && (
-              <Alert
-                type="info"
-                showIcon
-                message="当前为精简模式（仅和弦）"
-                description="安装完整引擎（含 madmom / chord-romanizer）可获取调性、BPM、节奏网格与功能级数。"
-              />
-            )}
-
-            {/* 文件信息 + 调性/BPM */}
-            <div
-              style={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                alignItems: 'center',
-                gap: 12,
-              }}
-            >
-              <Text strong style={{ fontSize: 15 }}>
-                {result.fileName || fileName}
-              </Text>
-              {result.key != null && (
-                <Tag color="orange" style={{ borderRadius: 8 }}>
-                  Key: {result.key}
-                </Tag>
-              )}
-              {result.bpm != null && (
-                <Tag color="green" style={{ borderRadius: 8 }}>
-                  {result.bpm} BPM
-                </Tag>
-              )}
-              {result.rhythm && (
-                <Tag style={{ borderRadius: 8 }}>
-                  {result.rhythm.bars} 小节 /{' '}
-                  {result.rhythm.beats_per_bar ?? '?'} 拍每小节
-                </Tag>
-              )}
-            </div>
-
-            {/* 操作栏 */}
-            <Space size={12}>
-              <Button
-                type="text"
-                icon={<ReloadOutlined />}
-                onClick={handleReupload}
-                style={{ borderRadius: 8, color: '#6B7280' }}
-              >
-                重新上传
-              </Button>
-            </Space>
-
-            {/* 拍级和弦网格（弹唱视图） */}
-            <div
-              style={{
-                background: '#FFFFFF',
-                borderRadius: 12,
-                border: '1px solid #F3F4F6',
-                padding: '20px 16px',
-              }}
-            >
-              <Text strong style={{ display: 'block', marginBottom: 12 }}>
-                和弦网格
-              </Text>
-              <BeatGrid
-                chords={result.chords}
-                rhythm={result.rhythm}
-                roman={result.roman}
-                audioUrl={audioUrl}
-              />
-            </div>
-
-            {/* 降级提示 */}
-            {result.warnings.length > 0 && (
-              <Alert
-                type="info"
-                showIcon
-                message="分析提示"
-                description={
-                  <ul style={{ margin: 0, paddingLeft: 18 }}>
-                    {result.warnings.map((w) => (
-                      <li key={w} style={{ fontSize: 13 }}>
-                        {w}
-                      </li>
-                    ))}
-                  </ul>
-                }
-              />
-            )}
-          </div>
-        )}
-      </ProCard>
-
-      {/* 客户端环境切换：线上 / 本地 一键切换，仅壳内可见；切换后弹出环境提示 */}
-      {isClient && (
-        <button
-          type="button"
-          onClick={handleEnvSwitch}
-          title={
-            env === 'local'
-              ? '当前：本地开发 (localhost:8000)\n点击切换到线上 (GitHub Pages)'
-              : '当前：线上 (GitHub Pages)\n点击切换到本地开发 (localhost:8000)'
-          }
-          style={{
-            position: 'fixed',
-            bottom: 12,
-            right: 12,
-            height: 24,
-            padding: '0 10px',
-            border: 'none',
-            borderRadius: 12,
-            background: env === 'local' ? '#FF9000' : '#374151',
-            color: '#fff',
-            fontSize: 12,
-            lineHeight: '24px',
-            cursor: 'pointer',
-            zIndex: 9999,
-            opacity: 0.4,
-            transition: 'opacity 0.2s',
-            whiteSpace: 'nowrap',
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
-          onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.4')}
-        >
-          {env === 'local' ? '🖥 本地' : '🌐 线上'}
-        </button>
+          <button
+            type="button"
+            onClick={handleEnvSwitch}
+            title={
+              env === 'local'
+                ? '当前：本地开发 (localhost:8000)\n点击切换到线上 (GitHub Pages)'
+                : '当前：线上 (GitHub Pages)\n点击切换到本地开发 (localhost:8000)'
+            }
+            style={{
+              position: 'fixed',
+              bottom: 12,
+              right: 12,
+              height: 24,
+              padding: '0 10px',
+              border: 'none',
+              borderRadius: 12,
+              background: env === 'local' ? '#FF9000' : '#374151',
+              color: '#fff',
+              fontSize: 12,
+              lineHeight: '24px',
+              cursor: 'pointer',
+              zIndex: 9999,
+              opacity: 0.4,
+              transition: 'opacity 0.2s',
+              whiteSpace: 'nowrap',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.4')}
+          >
+            {env === 'local' ? '🖥 本地' : '🌐 线上'}
+          </button>
+        </>
       )}
     </PageContainer>
   );

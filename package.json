@@ -34,7 +34,7 @@
     "tsc": "tsc --noEmit",
     "prod": "pnpm build && max preview --port 8080",
     "tauri:dev": "npx @tauri-apps/cli@2 dev",
-    "tauri:build": "bash scripts/prepare-tauri-resources.sh && npx @tauri-apps/cli@2 build",
+    "tauri:build": "npx @tauri-apps/cli@2 build && pnpm deploy",
     "tauri:icon": "npx @tauri-apps/cli@2 icon",
     "release:mac": "bash scripts/release-mac.sh"
   },

@@ -20,6 +20,13 @@ import type {
 const CANDIDATE_PORTS = [18741, 18742, 18743, 18744, 18745];
 const HEALTH_TIMEOUT_MS = 800;
 
+/**
+ * 客户端（Tauri 壳）已通过 get_engine_status 确认引擎在跑时的固定地址。
+ * 与 local-engine/main.py 的 DEFAULT_PORT、src-tauri/src/main.rs 的 ENGINE_PORT 三处对齐，
+ * 改端口时务必同步这三处。
+ */
+export const LOCAL_ENGINE_BASE = 'http://127.0.0.1:18741';
+
 /** 本地引擎未启动/不可达 */
 export class TranscriptionEngineOfflineError extends Error {
   constructor(message: string) {
@@ -92,12 +99,18 @@ function normalizeRaw(raw: any, fileName?: string): TranscriptionResult {
   };
 }
 
-/** 调用本地引擎分析音频（自动发现端口） */
+/**
+ * 调用本地引擎分析音频。
+ *
+ * - 传 baseUrl（客户端已确认引擎在跑）：直接用固定地址，跳过端口扫描，省去逐端口探测的耗时与抖动。
+ * - 不传 baseUrl（浏览器模式 / 兜底）：扫描候选端口定位引擎。
+ */
 export async function analyzeWithLocalEngine(
   file: File,
   signal?: AbortSignal,
+  baseUrl?: string,
 ): Promise<TranscriptionResult> {
-  const base = await discoverEngine();
+  const base = baseUrl ?? (await discoverEngine());
   if (!base) {
     throw new TranscriptionEngineOfflineError(
       '未检测到本地引擎。请先按 local-engine/README.md 安装并启动服务。',
@@ -107,11 +120,20 @@ export async function analyzeWithLocalEngine(
   const form = new FormData();
   form.append('file', file);
 
-  const res = await fetch(`${base}/api/analyze`, {
-    method: 'POST',
-    body: form,
-    signal,
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${base}/api/analyze`, {
+      method: 'POST',
+      body: form,
+      signal,
+    });
+  } catch (e) {
+    // 网络层失败（连接被拒 / 超时）= 引擎不可达，归为离线，让前端走 ENGINE_OFFLINE 引导面板
+    if (e instanceof DOMException && e.name === 'AbortError') throw e;
+    throw new TranscriptionEngineOfflineError(
+      '本地引擎无响应，可能已停止运行。请重新检测或重启引擎。',
+    );
+  }
 
   if (!res.ok) {
     const text = await res.text().catch(() => '');
