@@ -12,6 +12,8 @@
 
 import { ReloadOutlined } from '@ant-design/icons';
 import { PageContainer, ProCard } from '@ant-design/pro-components';
+import { invoke } from '@tauri-apps/api/core';
+import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { Alert, Button, message, Space, Spin, Tag, Typography } from 'antd';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranscription } from '@/hooks/useTranscription';
@@ -170,6 +172,62 @@ const ChordTranscriptionPage: React.FC = () => {
     reset();
   }, [reset]);
 
+  // —— 一键安装本地引擎（仅客户端壳内）——
+  // 后端 install_local_engine 命令会把随包引擎源码部署到软件目录并 uv sync，
+  // 期间通过事件流式回报进度。这里监听进度/完成事件并展示。
+  const [installing, setInstalling] = useState(false);
+  const [installLog, setInstallLog] = useState<string[]>([]);
+  const recheckEngineRef = useRef(recheckEngine);
+  useEffect(() => {
+    recheckEngineRef.current = recheckEngine;
+  }, [recheckEngine]);
+
+  useEffect(() => {
+    if (!isClient) return;
+    let active = true;
+    const unlisten: UnlistenFn[] = [];
+    (async () => {
+      const offProgress = await listen<string>(
+        'engine-install-progress',
+        (e) => {
+          if (active) setInstallLog((prev) => [...prev, e.payload]);
+        },
+      );
+      const offDone = await listen<{ ok: boolean; msg: string }>(
+        'engine-install-done',
+        (e) => {
+          if (!active) return;
+          setInstalling(false);
+          if (e.payload.ok) {
+            message.success('本地引擎安装完成，正在检测…');
+            recheckEngineRef.current();
+          } else {
+            message.error(`安装失败：${e.payload.msg}`);
+          }
+        },
+      );
+      unlisten.push(offProgress, offDone);
+    })();
+    return () => {
+      active = false;
+      unlisten.forEach((u) => {
+        u();
+      });
+    };
+  }, [isClient]);
+
+  const handleInstallEngine = useCallback(async () => {
+    if (!isClient) return;
+    setInstalling(true);
+    setInstallLog([]);
+    try {
+      await invoke('install_local_engine');
+    } catch (err) {
+      setInstalling(false);
+      message.error(`调用安装命令失败：${String(err)}`);
+    }
+  }, [isClient]);
+
   const isIdle = status === 'IDLE';
   const isAnalyzing = status === 'ANALYZING';
   const isReady = status === 'READY';
@@ -248,39 +306,105 @@ const ChordTranscriptionPage: React.FC = () => {
               type="warning"
               showIcon
               message="未检测到本地引擎"
-              description="大师扒谱依赖你本机运行的 Python 引擎（音频不出本机）。请在本机按以下步骤安装并启动："
+              description="大师扒谱依赖本机运行的 Python 引擎（音频不出本机）。"
             />
-            <Paragraph
-              style={{
-                marginTop: 16,
-                background: '#0F1419',
-                color: '#E5E7EB',
-                padding: 16,
-                borderRadius: 12,
-                fontFamily: 'monospace',
-                fontSize: 13,
-                whiteSpace: 'pre-wrap',
-              }}
-            >
-              {INSTALL_COMMANDS}
-            </Paragraph>
-            <Text type="secondary" style={{ fontSize: 12 }}>
-              需 Python ≥ 3.10 与 uv；Windows 用户还需自行安装 ffmpeg 并加入
-              PATH。仅绑定 127.0.0.1，仅本机可调用。
-            </Text>
-            <div style={{ marginTop: 16, display: 'flex', gap: 12 }}>
-              <Button
-                type="primary"
-                loading={isAnalyzing}
-                onClick={recheckEngine}
-                style={{ borderRadius: 8 }}
-              >
-                重试检测引擎
-              </Button>
-              <Button onClick={handleReset} style={{ borderRadius: 8 }}>
-                返回上传
-              </Button>
-            </div>
+            {isClient ? (
+              <>
+                <div
+                  style={{
+                    marginTop: 16,
+                    display: 'flex',
+                    gap: 12,
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  <Button
+                    type="primary"
+                    loading={installing}
+                    onClick={handleInstallEngine}
+                    style={{ borderRadius: 8 }}
+                  >
+                    {installing ? '正在安装…' : '一键安装本地引擎'}
+                  </Button>
+                  <Button
+                    onClick={recheckEngine}
+                    disabled={installing}
+                    style={{ borderRadius: 8 }}
+                  >
+                    重试检测
+                  </Button>
+                  <Button
+                    onClick={handleReset}
+                    disabled={installing}
+                    style={{ borderRadius: 8 }}
+                  >
+                    返回上传
+                  </Button>
+                </div>
+                {installLog.length > 0 && (
+                  <pre
+                    style={{
+                      marginTop: 16,
+                      maxHeight: 260,
+                      overflow: 'auto',
+                      background: '#0F1419',
+                      color: '#E5E7EB',
+                      padding: 16,
+                      borderRadius: 12,
+                      fontFamily: 'monospace',
+                      fontSize: 12,
+                      whiteSpace: 'pre-wrap',
+                      marginBottom: 0,
+                    }}
+                  >
+                    {installLog.join('\n')}
+                  </pre>
+                )}
+                {!installing && installLog.length === 0 && (
+                  <Text
+                    type="secondary"
+                    style={{ fontSize: 12, marginTop: 8, display: 'block' }}
+                  >
+                    引擎将安装到软件目录（~/Library/Application
+                    Support/大师来了），首次需联网下载依赖（约数十 MB）。
+                  </Text>
+                )}
+              </>
+            ) : (
+              <>
+                <Paragraph
+                  style={{
+                    marginTop: 16,
+                    background: '#0F1419',
+                    color: '#E5E7EB',
+                    padding: 16,
+                    borderRadius: 12,
+                    fontFamily: 'monospace',
+                    fontSize: 13,
+                    whiteSpace: 'pre-wrap',
+                  }}
+                >
+                  {INSTALL_COMMANDS}
+                </Paragraph>
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  需 Python ≥ 3.10 与 uv；Windows 用户还需自行安装 ffmpeg 并加入
+                  PATH。仅绑定 127.0.0.1，仅本机可调用。
+                </Text>
+                <div style={{ marginTop: 16, display: 'flex', gap: 12 }}>
+                  <Button
+                    type="primary"
+                    loading={isAnalyzing}
+                    onClick={recheckEngine}
+                    style={{ borderRadius: 8 }}
+                  >
+                    重试检测引擎
+                  </Button>
+                  <Button onClick={handleReset} style={{ borderRadius: 8 }}>
+                    返回上传
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         )}
 
