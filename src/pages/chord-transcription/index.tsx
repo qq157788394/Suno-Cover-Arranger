@@ -72,8 +72,15 @@ function buildEnvUrl(target: EnvKind): string {
 }
 
 const ChordTranscriptionPage: React.FC = () => {
-  const { status, result, error, fileName, handleFileSelect, reset } =
-    useTranscription();
+  const {
+    status,
+    result,
+    error,
+    fileName,
+    handleFileSelect,
+    recheckEngine,
+    reset,
+  } = useTranscription();
 
   // 隐藏文件选择器用于重新上传
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -261,7 +268,15 @@ const ChordTranscriptionPage: React.FC = () => {
               需 Python ≥ 3.10 与 uv；Windows 用户还需自行安装 ffmpeg 并加入
               PATH。仅绑定 127.0.0.1，仅本机可调用。
             </Text>
-            <div style={{ marginTop: 16 }}>
+            <div style={{ marginTop: 16, display: 'flex', gap: 12 }}>
+              <Button
+                type="primary"
+                loading={isAnalyzing}
+                onClick={recheckEngine}
+                style={{ borderRadius: 8 }}
+              >
+                重试检测引擎
+              </Button>
               <Button onClick={handleReset} style={{ borderRadius: 8 }}>
                 返回上传
               </Button>
