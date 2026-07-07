@@ -43,3 +43,13 @@ screenshot
 .firebase
 
 build
+
+# Tauri (Rust 编译产物 + 生成的 schema，每次 build 重生成，体积巨大)
+src-tauri/target/
+src-tauri/gen/
+
+# Python (local-engine 虚拟环境 + 缓存 + 运行时端口；源码 *.py / pyproject.toml / uv.lock 仍提交)
+local-engine/.venv/
+__pycache__/
+*.pyc
+local-engine/.local-engine.port

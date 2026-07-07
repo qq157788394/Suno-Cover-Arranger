@@ -1,0 +1,38 @@
+[project]
+name = "suno-local-engine"
+version = "0.1.0"
+description = "大师扒谱本地 Python 引擎：lv-chordia 和弦 + madmom 调性/BPM/节奏 + chord-romanizer 级数"
+# madmom 需源码编译（Cython），且 Python 3.13 上其依赖链/编译有风险，故上限锁 3.12。
+# madmom 自带 numpy/Cython 实现的神经网络，**不依赖 TensorFlow**（此前误记，已纠正）。
+# uv 会据此自动配兼容解释器；不要用系统 3.13 直接 pip 装。
+requires-python = ">=3.10,<3.13"
+dependencies = [
+    "lv-chordia",
+    "madmom",
+    "chord-romanizer",
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.27",
+    "python-multipart>=0.0.9",
+    "librosa>=0.10",
+    # 不锁 numpy<1.24：1.23.5 在 Python 3.12 上无可用 wheel，无法安装。
+    # ragged 数组兼容性问题改由 local-engine/numpy_ragged_shim.py 在运行时还原 1.23 行为解决。
+    # 锁 <2 以兼容 torch 2.x（torch 官方亦建议 numpy<2）。
+    "numpy>=1.26,<2",
+]
+
+[tool.uv]
+# 本项目本身不是要发布的包，只当作依赖清单用 uv 管理 venv
+package = false
+# 强制覆盖传递依赖 pandas 的版本：jams 0.3.5 对 Python>=3.12 硬钉 pandas==2.1.0，
+# 而 2.1.0 无 cp312 预编译 wheel，uv 只能源码编译且需要 Cython>=3.0（构建环境为 0.29.37）而失败。
+# 用 override-dependencies 拉到有 3.12 wheel 的 2.2/2.3（jams 运行时用到的 pandas API 向后兼容），绕开该硬钉。
+override-dependencies = ["pandas>=2.2.0,<3"]
+
+[tool.uv.sources]
+# 预留：如需用预编译 wheel 加速可在 CI/Releases 托管
+
+[tool.uv.extra-build-dependencies]
+# madmom 0.16.1 的 setup.py 在构建时需要 Cython（编译 .pyx 扩展）与 numpy（cimport numpy），
+# 但它未把它们声明为 build 依赖；uv 的 build-isolation 环境缺这两样就报 No module named 'Cython'。
+# 显式补上后 `uv sync` 才能一键编译通过，无需手动顺序安装。
+madmom = ["Cython", "numpy"]

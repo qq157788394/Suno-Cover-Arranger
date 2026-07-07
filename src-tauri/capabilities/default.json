@@ -1,0 +1,10 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "main-capability",
+  "description": "Capability for the main window (remote gh-pages page + local dev toggle)",
+  "windows": ["main"],
+  "remote": {
+    "urls": ["https://*.github.io"]
+  },
+  "permissions": ["core:default"]
+}
