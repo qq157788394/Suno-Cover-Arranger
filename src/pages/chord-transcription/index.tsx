@@ -314,13 +314,6 @@ const ChordTranscriptionPage: React.FC = () => {
     if (isClient) detectEngine();
   }, [isClient, detectEngine]);
 
-  // 分析过程中引擎掉线（ENGINE_OFFLINE）→ 回到检测流程：重新查询，若已恢复则清空过期离线状态
-  useEffect(() => {
-    if (status === 'ENGINE_OFFLINE') {
-      detectEngine().then(() => reset());
-    }
-  }, [status, detectEngine, reset]);
-
   // 安装流程状态
   const [installing, setInstalling] = useState(false);
   const [installLog, setInstallLog] = useState<string[]>([]);
@@ -388,6 +381,7 @@ const ChordTranscriptionPage: React.FC = () => {
   const isAnalyzing = status === 'ANALYZING';
   const isReady = status === 'READY';
   const isError = status === 'ERROR';
+  const isEngineOffline = status === 'ENGINE_OFFLINE';
 
   const handleReupload = useCallback(() => {
     fileInputRef.current?.click();
@@ -623,6 +617,40 @@ const ChordTranscriptionPage: React.FC = () => {
                       }
                     />
                     <div style={{ marginTop: 16 }}>
+                      <Button onClick={handleReset} style={{ borderRadius: 8 }}>
+                        重新上传
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {isEngineOffline && (
+                  <div style={{ maxWidth: 720, margin: '0 auto' }}>
+                    <Alert
+                      type="warning"
+                      showIcon
+                      message="引擎连接中断"
+                      description={
+                        <div>
+                          <p style={{ margin: '0 0 8px' }}>
+                            {error ||
+                              '无法连接到本地引擎（127.0.0.1:18741）。引擎可能已停止运行。'}
+                          </p>
+                          <Text type="secondary" style={{ fontSize: 12 }}>
+                            可点击"重新检测引擎"重新探测，或"一键安装 &
+                            启动"重启。
+                          </Text>
+                        </div>
+                      }
+                    />
+                    <div style={{ marginTop: 16, display: 'flex', gap: 12 }}>
+                      <Button
+                        type="primary"
+                        onClick={() => detectEngine().then(() => reset())}
+                        style={{ borderRadius: 8 }}
+                      >
+                        重新检测引擎
+                      </Button>
                       <Button onClick={handleReset} style={{ borderRadius: 8 }}>
                         重新上传
                       </Button>
