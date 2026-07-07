@@ -60,6 +60,12 @@ export default [
     component: './chord-analysis',
   },
   {
+    name: '大师扒谱',
+    icon: 'AudioOutlined',
+    path: '/chord-transcription',
+    component: './chord-transcription',
+  },
+  {
     name: '音乐理解',
     icon: 'BulbOutlined',
     path: '/music-insight',

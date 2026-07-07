@@ -409,3 +409,60 @@ export interface MusicInsightResult {
   /** 各模型原始输出，key 为模型名 */
   models: Record<string, ModelRawOutput>;
 }
+
+// ==================== 大师扒谱 (本地引擎) 类型 ====================
+
+/** 单个和弦段落（本地引擎 JAMS 输出 + 规范化展示标签） */
+export interface TranscriptionChordSegment {
+  /** 段落起始时间（秒） */
+  start_time: number;
+  /** 段落结束时间（秒） */
+  end_time: number;
+  /** JAMS 原始标签，如 "Bb:min" / "N" */
+  chord: string;
+  /** 规范化后展示标签，如 "Bbmin" / "N" */
+  chordLabel: string;
+}
+
+/** 节奏网格 */
+export interface TranscriptionRhythm {
+  /** 每拍时间戳（秒） */
+  beats: number[];
+  /** 每小节强拍时间戳（秒） */
+  downbeats: number[];
+  /** 每小节拍数 */
+  beats_per_bar: number | null;
+  /** 小节数 */
+  bars: number;
+}
+
+/** 罗马级数段落 */
+export interface TranscriptionRomanSegment {
+  start_time: number;
+  end_time: number;
+  /** 功能级数，如 "I" / "V7" */
+  roman: string;
+}
+
+/** 本地引擎完整返回（已规整） */
+export interface TranscriptionResult {
+  chords: TranscriptionChordSegment[];
+  /** 调性，如 "C"（无则 null） */
+  key: string | null;
+  /** BPM（无则 null） */
+  bpm: number | null;
+  rhythm: TranscriptionRhythm | null;
+  roman: TranscriptionRomanSegment[] | null;
+  /** 降级/缺失提示 */
+  warnings: string[];
+  /** 原文件名 */
+  fileName?: string;
+}
+
+/** 扒谱分析状态 */
+export type TranscriptionStatus =
+  | 'IDLE'
+  | 'ANALYZING'
+  | 'READY'
+  | 'ERROR'
+  | 'ENGINE_OFFLINE';

@@ -32,7 +32,10 @@
     "test:e2e": "npx playwright test",
     "test:update": "pnpm jest -- -u",
     "tsc": "tsc --noEmit",
-    "prod": "pnpm build && max preview --port 8080"
+    "prod": "pnpm build && max preview --port 8080",
+    "tauri:dev": "npx @tauri-apps/cli@2 dev",
+    "tauri:build": "npx @tauri-apps/cli@2 build",
+    "tauri:icon": "npx @tauri-apps/cli@2 icon"
   },
   "browserslist": [
     "defaults"
