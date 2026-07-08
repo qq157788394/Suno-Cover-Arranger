@@ -74,11 +74,15 @@ jobs:
       - name: Build nsis installer
         run: pnpm exec tauri build --bundles nsis
 
+      - name: List nsis outputs (debug)
+        shell: pwsh
+        run: Get-ChildItem -Path src-tauri/target -Recurse -Filter *.exe | Select-Object -ExpandProperty FullName
+
       - name: Upload windows artifacts
         uses: actions/upload-artifact@v4
         with:
           name: windows
-          path: src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*.exe
+          path: src-tauri/target/**/bundle/nsis
           if-no-files-found: error
 
   release:
