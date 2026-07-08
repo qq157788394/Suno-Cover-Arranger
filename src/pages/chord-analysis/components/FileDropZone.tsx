@@ -10,25 +10,10 @@ import { SoundOutlined } from '@ant-design/icons';
 import { message, Typography, Upload } from 'antd';
 import type { UploadFile } from 'antd/es/upload/interface';
 import React, { useCallback } from 'react';
+import { validateAudioFile } from '@/services/transcription/client';
 
 const { Dragger } = Upload;
 const { Text } = Typography;
-
-/** 支持的音频格式 */
-const SUPPORTED_AUDIO_MIME_TYPES = [
-  'audio/mpeg',
-  'audio/wav',
-  'audio/flac',
-  'audio/ogg',
-  'audio/aac',
-  'audio/x-m4a',
-  'audio/mp4',
-];
-
-const SUPPORTED_EXTENSIONS = ['.mp3', '.wav', '.flac', '.ogg', '.aac', '.m4a'];
-
-/** 文件大小上限：50MB */
-const MAX_FILE_SIZE = 50 * 1024 * 1024;
 
 export interface FileDropZoneProps {
   /** 是否禁用（分析进行中时禁用） */
@@ -43,20 +28,9 @@ const FileDropZone: React.FC<FileDropZoneProps> = ({
 }) => {
   const beforeUpload = useCallback(
     (file: File) => {
-      // 文件大小校验
-      if (file.size > MAX_FILE_SIZE) {
-        const sizeMB = (file.size / (1024 * 1024)).toFixed(0);
-        message.error(`文件过大（${sizeMB}MB），请选择 50MB 以内的文件`);
-        return Upload.LIST_IGNORE;
-      }
-
-      // 文件格式校验
-      const ext = `.${file.name.split('.').pop()?.toLowerCase()}`;
-      const isSupportedExt = SUPPORTED_EXTENSIONS.includes(ext);
-      const isSupportedMime = SUPPORTED_AUDIO_MIME_TYPES.includes(file.type);
-
-      if (!isSupportedExt && !isSupportedMime) {
-        message.error('不支持的文件格式。支持：MP3、WAV、FLAC、OGG、AAC');
+      const check = validateAudioFile(file);
+      if (!check.ok) {
+        message.error(check.error);
         return Upload.LIST_IGNORE;
       }
 

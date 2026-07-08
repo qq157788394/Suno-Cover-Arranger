@@ -36,14 +36,16 @@ Windows 用户需额外安装 [ffmpeg](https://ffmpeg.org/) 并加入 PATH（lib
 
 ## 端口
 
-- 默认绑定生僻高位端口 `18741`（仅避撞，非安全手段）。
-- 若被占用，自动向上扫描首个空闲端口，并写入 `.local-engine.port`。
-- 前端启动前先读该文件，或直接探测默认端口 `/api/health`。
+- 固定绑定生僻高位端口 `18741`（仅避撞，非安全手段），**不再做端口扫描**。
+- 端口由 Tauri 壳通过 `LOCAL_ENGINE_PORT` 环境变量传入，Rust 侧（`ENGINE_PORT`）、
+  前端（`LOCAL_ENGINE_PORT`）与本文档三处保持一致；改端口须同步这三处。
+- **占用即失败**：`18741` 被占用时引擎直接起不来，不会自动上扫空闲端口，也不会写入 `.local-engine.port`。
+  排查：先释放该端口（或统一改三处端口常量）再启动。
 
 ## 接口
 
-- `GET /api/health` → `{"status":"ok"}`
-- `POST /api/analyze`（multipart 文件字段 `file`）→ result JSON：
+- `GET /api/health` → `{"status":"ok","model_ready":true,"layers":{...}}`
+- `POST /api/analyze`（multipart 文件字段 `file`，**请求体上限 50MB**，超限返回 413）→ result JSON：
 
 ```json
 {
@@ -57,3 +59,10 @@ Windows 用户需额外安装 [ffmpeg](https://ffmpeg.org/) 并加入 PATH（lib
 ```
 
 `chord` 为 JAMS 格式（如 `C:maj7`、`Am7`）；前端展示时做轻量规范化（去 `:`、`min`→`m`）。
+
+## 安全边界
+
+- 引擎仅绑定 `127.0.0.1`，音频不出本机。
+- CORS / Origin 仅放行：本项目 gh-pages 固定子域 `https://qq157788394.github.io` 与本地开发端口
+  `http://localhost:8000` / `http://127.0.0.1:8000`；其余源一律拒绝（403）。
+- 真正的隔离边界是本机回环绑定；Rust 代理（curl）调用时固定带 gh-pages Origin 头。

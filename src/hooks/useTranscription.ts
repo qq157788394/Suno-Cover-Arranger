@@ -8,10 +8,10 @@
  */
 
 import { invoke } from '@tauri-apps/api/core';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   analyzeWithLocalEngine,
-  fileToBase64,
+  ENGINE_OFFLINE_MARKER,
   normalizeRaw,
 } from '@/services/transcription/client';
 import type {
@@ -27,8 +27,20 @@ export function useTranscription() {
   const [analyzedAt, setAnalyzedAt] = useState<number | null>(null);
 
   const fileRef = useRef<File | null>(null);
+  // 单调递增请求序号：每次发起分析 +1。用于丢弃已过期（被重传 / 重置取代）的响应，
+  // 解决多次上传 / 重传 / 分析中点「重置」时，更早的请求后到并覆盖最新结果、
+  // 导致界面显示错误和弦的竞态（审查 #1）。
+  const requestSeqRef = useRef(0);
+  // 当前在途请求的可取消控制器；新上传 / 重置时 abort 掉旧请求（审查 gap A）。
+  const abortRef = useRef<AbortController | null>(null);
 
-  const handleFileSelect = useCallback(async (file: File, baseUrl?: string) => {
+  const analyze = useCallback(async (file: File, baseUrl?: string) => {
+    // 作废在途的旧请求，避免旧响应后到覆盖新结果
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const seq = ++requestSeqRef.current;
+
     fileRef.current = file;
     setFileName(file.name);
     setStatus('ANALYZING');
@@ -38,24 +50,33 @@ export function useTranscription() {
       if (baseUrl) {
         // 客户端模式：经 Rust 代理调用本地引擎。
         // 网页直连 127.0.0.1 会被 WKWebView 当作混合内容/私有网络拦截，
-        // 所以文件经 Tauri 二进制通道送 Rust，由 Rust 用 curl 转发（可靠）。
-        // 文件以 base64 字符串传入（规避 tauri-build 对 Vec<u8> 参数的权限代码生成缺陷）。
-        const b64 = await fileToBase64(file);
+        // 所以文件以 Uint8Array 经 Tauri IPC 二进制通道送 Rust，
+        // 由 Rust 用原生 reqwest 转发——免 base64 中转，去掉 33% 体积与主线程编码（ADR-6 / #5/#7）。
+        const buf = await file.arrayBuffer();
         const raw = await invoke<string>('analyze_local_engine', {
           fileName: file.name,
-          fileBytes: b64,
+          fileBytes: new Uint8Array(buf),
         });
         res = normalizeRaw(JSON.parse(raw), file.name);
       } else {
-        res = await analyzeWithLocalEngine(file);
+        res = await analyzeWithLocalEngine(file, controller.signal);
       }
+      // 守卫：若本次响应已过期（期间发生了重传 / 重置），直接丢弃，不污染状态
+      if (seq !== requestSeqRef.current) return;
       setResult(res);
       setAnalyzedAt(Date.now());
       setStatus('READY');
     } catch (e) {
+      // 过期响应（被重置 / 新上传取代）一律忽略，不再 setState
+      if (seq !== requestSeqRef.current) return;
       const msg = e instanceof Error ? e.message : String(e);
-      if (baseUrl && msg.includes('调用本地引擎失败')) {
-        // curl 连不上 = 引擎确实没在跑（与浏览器内引擎离线同语义）
+      // 结构化分流：Rust 侧在「引擎连不上」时返回带 [ENGINE_OFFLINE] 前缀的错误；
+      // 旧版 Rust 仍用「调用本地引擎失败」文案，这里保留兼容（审查 #8）。
+      if (
+        baseUrl &&
+        (msg.includes(ENGINE_OFFLINE_MARKER) ||
+          msg.includes('调用本地引擎失败'))
+      ) {
         setStatus('ENGINE_OFFLINE');
       } else {
         // 其余（含「引擎返回错误 HTTP xxx」）一律展示真实原因，不再笼统报离线
@@ -65,13 +86,25 @@ export function useTranscription() {
     }
   }, []);
 
+  const handleFileSelect = useCallback(
+    (file: File, baseUrl?: string) => analyze(file, baseUrl),
+    [analyze],
+  );
+
   const reset = useCallback(() => {
+    // 失效在途请求：序号 +1 使任何未完成的响应被丢弃，并 abort 当前控制器
+    requestSeqRef.current += 1;
+    abortRef.current?.abort();
+    abortRef.current = null;
     setStatus('IDLE');
     setResult(null);
     setError(null);
     setFileName(null);
     setAnalyzedAt(null);
   }, []);
+
+  // 卸载时取消在途请求，避免对已卸载组件 setState
+  useEffect(() => () => abortRef.current?.abort(), []);
 
   return {
     status,

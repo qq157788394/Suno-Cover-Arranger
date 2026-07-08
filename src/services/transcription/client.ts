@@ -8,6 +8,9 @@
  * - 离线：连不上引擎抛 TranscriptionEngineOfflineError，前端据此引导安装
  *
  * 安全：引擎仅绑定 127.0.0.1 且 CORS 仅放行本机 Origin，这里不做额外校验。
+ *
+ * 单一真相源：端口 / 大小上限 / 格式白名单 / gh-pages Origin 集中在此，
+ * 避免在多处硬编码导致漂移（审查 #10）。
  */
 
 import type {
@@ -16,16 +19,76 @@ import type {
   TranscriptionRomanSegment,
 } from '@/shared/types/types';
 
-/** 默认生僻端口 + 小范围候选（起服务时若被占会上扫，前端同样小范围探测） */
-const CANDIDATE_PORTS = [18741, 18742, 18743, 18744, 18745];
+/** 默认生僻端口 + 小范围候选（起服务时若被占会上扫，前端同样小范围探测）。
+ *  与 local-engine/main.py 的 DEFAULT_PORT、src-tauri/src/main.rs 的 ENGINE_PORT 三处对齐，
+ *  改端口时务必同步这三处（或通过 LOCAL_ENGINE_PORT 环境变量统一注入）。 */
+export const LOCAL_ENGINE_PORT = 18741;
+const CANDIDATE_PORTS = [
+  LOCAL_ENGINE_PORT,
+  LOCAL_ENGINE_PORT + 1,
+  LOCAL_ENGINE_PORT + 2,
+  LOCAL_ENGINE_PORT + 3,
+  LOCAL_ENGINE_PORT + 4,
+];
 const HEALTH_TIMEOUT_MS = 800;
 
-/**
- * 客户端（Tauri 壳）已通过 get_engine_status 确认引擎在跑时的固定地址。
- * 与 local-engine/main.py 的 DEFAULT_PORT、src-tauri/src/main.rs 的 ENGINE_PORT 三处对齐，
- * 改端口时务必同步这三处。
- */
-export const LOCAL_ENGINE_BASE = 'http://127.0.0.1:18741';
+/** 客户端（Tauri 壳）已通过 get_engine_status 确认引擎在跑时的固定地址。 */
+export const LOCAL_ENGINE_BASE = `http://127.0.0.1:${LOCAL_ENGINE_PORT}`;
+
+/** 项目 gh-pages 固定子域（CORS / Origin 唯一放行的外部源）。
+ *  与 src-tauri/tauri.conf.json、src-tauri/src/main.rs 的 curl Origin 头保持一致。 */
+export const GH_PAGES_ORIGIN = 'https://qq157788394.github.io';
+
+/** 本地开发服务器地址（仅 DEV 模式用于环境切换）。 */
+export const LOCAL_DEV_ORIGIN = 'http://localhost:8000';
+
+/** 文件大小上限：50MB（与引擎 /api/analyze 服务端上限一致，审查 #3）。 */
+export const MAX_AUDIO_FILE_SIZE = 50 * 1024 * 1024;
+
+/** 支持的音频格式（扩展名 + MIME，二者取一即可）。 */
+export const SUPPORTED_AUDIO_EXTENSIONS = [
+  '.mp3',
+  '.wav',
+  '.flac',
+  '.ogg',
+  '.aac',
+  '.m4a',
+];
+export const SUPPORTED_AUDIO_MIME_TYPES = [
+  'audio/mpeg',
+  'audio/wav',
+  'audio/flac',
+  'audio/ogg',
+  'audio/aac',
+  'audio/x-m4a',
+  'audio/mp4',
+];
+
+/** Rust 侧在「引擎连不上」时返回的错误前缀标记。
+ *  前端据此（而非脆弱的字符串包含）把错误分流到 ENGINE_OFFLINE 引导面板（审查 #8）。 */
+export const ENGINE_OFFLINE_MARKER = '[ENGINE_OFFLINE]';
+
+/** 校验音频文件大小与格式，返回是否通过及原因。
+ *  首次上传（FileDropZone）与重上传（隐藏 input）共用，杜绝重上传绕过校验（审查 #2）。 */
+export function validateAudioFile(file: File): { ok: boolean; error?: string } {
+  if (file.size > MAX_AUDIO_FILE_SIZE) {
+    const sizeMB = (file.size / (1024 * 1024)).toFixed(0);
+    return {
+      ok: false,
+      error: `文件过大（${sizeMB}MB），请选择 50MB 以内的文件`,
+    };
+  }
+  const ext = `.${file.name.split('.').pop()?.toLowerCase()}`;
+  const isSupportedExt = SUPPORTED_AUDIO_EXTENSIONS.includes(ext);
+  const isSupportedMime = SUPPORTED_AUDIO_MIME_TYPES.includes(file.type);
+  if (!isSupportedExt && !isSupportedMime) {
+    return {
+      ok: false,
+      error: '不支持的文件格式。支持：MP3、WAV、FLAC、OGG、AAC',
+    };
+  }
+  return { ok: true };
+}
 
 /** 本地引擎未启动/不可达 */
 export class TranscriptionEngineOfflineError extends Error {
@@ -41,6 +104,8 @@ export class TranscriptionEngineOfflineError extends Error {
  * - 裸 maj 省略   F:maj     -> F      （maj7 之后有数字，保留 -> Fmaj7）
  * - min -> m      A:min7    -> Am7
  * - N 表示无和弦，原样返回
+ *
+ * 注意：与 local-engine/analyze.py 的 normalize_chord_label 保持逐字符一致（审查 #10）。
  */
 export function normalizeChordLabel(jams: string): string {
   if (!jams || jams.toUpperCase() === 'N') return 'N';
@@ -50,25 +115,6 @@ export function normalizeChordLabel(jams: string): string {
     .replace(/min/g, 'm');
 }
 
-/** 将音频文件读为 base64 字符串，供 Tauri 命令 analyze_local_engine 接收。
- *  用 base64 而非 Uint8Array，是因为当前 tauri-build 的命令权限代码生成
- *  会跳过含 Vec<u8> 参数的命令，导致该命令的 allow-* 权限无法生成。 */
-export function fileToBase64(file: File): Promise<string> {
-  return file.arrayBuffer().then((buf) => {
-    const bytes = new Uint8Array(buf);
-    let binary = '';
-    const chunk = 0x8000;
-    for (let i = 0; i < bytes.length; i += chunk) {
-      binary += String.fromCharCode.apply(
-        null,
-        Array.from(bytes.subarray(i, i + chunk)),
-      );
-    }
-    return btoa(binary);
-  });
-}
-
-/** 探测本机引擎：扫候选端口 /api/health，返回可用 base URL 或 null */
 export async function discoverEngine(): Promise<string | null> {
   for (const port of CANDIDATE_PORTS) {
     const base = `http://127.0.0.1:${port}`;
@@ -86,16 +132,26 @@ export async function discoverEngine(): Promise<string | null> {
 }
 
 export function normalizeRaw(raw: any, fileName?: string): TranscriptionResult {
+  let dropped = 0;
   const chords: TranscriptionChordSegment[] = Array.isArray(raw?.chords)
-    ? raw.chords.map((c: any) => {
-        const rawChord = String(c?.chord ?? '');
-        return {
-          start_time: Number(c?.start_time),
-          end_time: Number(c?.end_time),
-          chord: rawChord,
-          chordLabel: normalizeChordLabel(rawChord),
-        };
-      })
+    ? raw.chords
+        .map((c: any) => {
+          const rawChord = String(c?.chord ?? '');
+          return {
+            start_time: Number(c?.start_time),
+            end_time: Number(c?.end_time),
+            chord: rawChord,
+            chordLabel: normalizeChordLabel(rawChord),
+          };
+        })
+        // 丢弃时间非法（NaN / ±Infinity）的段：否则 buildBeatCells 中
+        // c.start_time <= t 恒为 false，会导致所有拍沦为 N（审查 #15）。
+        .filter((c: TranscriptionChordSegment) => {
+          const finite =
+            Number.isFinite(c.start_time) && Number.isFinite(c.end_time);
+          if (!finite) dropped += 1;
+          return finite;
+        })
     : [];
 
   const roman: TranscriptionRomanSegment[] | null = Array.isArray(raw?.roman)
@@ -106,13 +162,20 @@ export function normalizeRaw(raw: any, fileName?: string): TranscriptionResult {
       }))
     : null;
 
+  const warnings: string[] = Array.isArray(raw?.warnings)
+    ? [...raw.warnings]
+    : [];
+  if (dropped > 0) {
+    warnings.push(`已忽略 ${dropped} 段时间戳非法的和弦`);
+  }
+
   return {
     chords,
     key: raw?.key ?? null,
     bpm: raw?.bpm ?? null,
     rhythm: raw?.rhythm ?? null,
     roman,
-    warnings: Array.isArray(raw?.warnings) ? raw.warnings : [],
+    warnings,
     fileName,
   };
 }
@@ -122,6 +185,7 @@ export function normalizeRaw(raw: any, fileName?: string): TranscriptionResult {
  *
  * - 传 baseUrl（客户端已确认引擎在跑）：直接用固定地址，跳过端口扫描，省去逐端口探测的耗时与抖动。
  * - 不传 baseUrl（浏览器模式 / 兜底）：扫描候选端口定位引擎。
+ * - signal：用于取消在途请求（审查 gap A），取消时抛出 AbortError，由调用方决定如何处置。
  */
 export async function analyzeWithLocalEngine(
   file: File,

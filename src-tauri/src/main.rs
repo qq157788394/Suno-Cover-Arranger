@@ -11,10 +11,9 @@ use std::io::{BufRead, BufReader, Write};
 use std::net::TcpStream;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, OnceLock};
 use std::time::{Duration, Instant};
 
-use base64::{engine::general_purpose::STANDARD as B64, Engine as _};
 use tauri::{Emitter, Manager};
 
 /// 全局持有引擎子进程句柄，供退出时回收、安装线程回填。
@@ -90,6 +89,8 @@ fn find_uv(app: &tauri::AppHandle) -> Option<PathBuf> {
 /// 极小 HTTP GET 探测引擎健康检查是否就绪（仅本机 127.0.0.1）。
 fn engine_health_ok(port: u16) -> bool {
     if let Ok(mut stream) = TcpStream::connect((ENGINE_HOST, port)) {
+        // 读超时：引擎异常不关连接时不至于永久阻塞本线程（审查 #7）。
+        let _ = stream.set_read_timeout(Some(Duration::from_secs(5)));
         let req = format!(
             "GET /api/health HTTP/1.1\r\nHost: {ENGINE_HOST}:{port}\r\nConnection: close\r\n\r\n"
         );
@@ -110,6 +111,8 @@ fn engine_health_ok(port: u16) -> bool {
 /// 不可达或解析失败返回 None。
 fn engine_get_json(port: u16, path: &str) -> Option<serde_json::Value> {
     let mut stream = TcpStream::connect((ENGINE_HOST, port)).ok()?;
+    // 读超时：自检可能跑数十秒，给足 60s 上限，但引擎异常时不至于永久阻塞（审查 #7）。
+    let _ = stream.set_read_timeout(Some(Duration::from_secs(60)));
     let req = format!(
         "GET {path} HTTP/1.1\r\nHost: {ENGINE_HOST}:{port}\r\nConnection: close\r\n\r\n"
     );
@@ -151,6 +154,28 @@ fn engine_selfcheck_json(port: u16) -> Option<serde_json::Value> {
 /// 读取 /api/assets：逐条资产就绪状态，供检测面板列出缺失项并触发下载。
 fn engine_assets_json(port: u16) -> Option<serde_json::Value> {
     engine_get_json(port, "/api/assets")
+}
+
+/// 端到端自检结果进程内缓存（审查 #6）。
+/// 自检会真实跑整条 ML 管线（含首次权重下载），耗时可观；但同一引擎进程生命周期内结果稳定，
+/// 故按端口缓存，避免每次检测/重检测/预拉取都重跑全量自检、拖慢就绪。
+/// 引擎停掉后 `running` 为 false，get_engine_status 不会走到这里取缓存，故端口不变时安全复用。
+static SELFCHECK_CACHE: OnceLock<Mutex<Option<(u16, serde_json::Value)>>> = OnceLock::new();
+
+fn cached_selfcheck(port: u16) -> Option<serde_json::Value> {
+    let cache = SELFCHECK_CACHE.get_or_init(|| Mutex::new(None));
+    let guard = cache.lock().ok()?;
+    match guard.as_ref() {
+        Some((p, v)) if *p == port => Some(v.clone()),
+        _ => None,
+    }
+}
+
+fn store_selfcheck(port: u16, val: serde_json::Value) {
+    let cache = SELFCHECK_CACHE.get_or_init(|| Mutex::new(None));
+    if let Ok(mut guard) = cache.lock() {
+        *guard = Some((port, val));
+    }
 }
 
 /// 轮询引擎健康检查，直到就绪或超时。
@@ -671,26 +696,6 @@ fn run_prefetch(app: &tauri::AppHandle, asset_id: &str) -> Result<String, String
                 ))
             }
         }
-        "python_pkgs" => {
-            let out = Command::new(&uv)
-                .arg("sync")
-                .current_dir(&dir)
-                .output()
-                .map_err(|e| format!("uv sync 启动失败：{e}"))?;
-            if out.status.success() {
-                Ok("已重新安装全部依赖，缺失项已补齐".into())
-            } else {
-                Err(format!(
-                    "依赖修复失败（需联网）：{}",
-                    String::from_utf8_lossy(&out.stderr)
-                        .lines()
-                        .rev()
-                        .take(5)
-                        .collect::<Vec<_>>()
-                        .join(" ")
-                ))
-            }
-        }
         id if asset_pkg_name(id).is_some() => {
             let pkg = asset_pkg_name(id).unwrap();
             let out = Command::new(&uv)
@@ -732,69 +737,77 @@ async fn prefetch_asset(app: tauri::AppHandle, asset_id: String) -> Result<Strin
 ///
 /// 网页直连 127.0.0.1 会被 WKWebView 当作混合内容 / 私有网络拦截
 /// （这正是「检测面板绿了但一上传就 ENGINE_OFFLINE」的根因），
-/// 因此由 Rust 用 curl 子进程转发（与 get_engine_status 同路，可靠）。
+/// 因此由 Rust 用原生 reqwest 转发（与 get_engine_status 同路，可靠）。
 ///
-/// 返回引擎原始 JSON 字符串；失败返回含真实原因的 Err（前端直接展示，无需 DevTools）。
-#[tauri::command]
-fn analyze_local_engine(file_name: String, file_bytes: String) -> Result<String, String> {
+/// 入参 file_bytes 为原始音频字节（Vec<u8>），由前端以 Uint8Array 经 Tauri IPC 二进制通道传入，
+/// 不再经 base64 中转（去掉 33% 体积开销与主线程编码，ADR-6 / 审查 #5/#7）。
+/// 用 reqwest multipart 直接以内存字节构造表单，无需落临时文件。
+///
+/// 全程异步（ADR-1 + ADR-6 合并）：reqwest 让出运行时，不再 spawn_blocking，亦不依赖 curl 子进程。
+async fn run_analyze(file_name: &str, file_bytes: Vec<u8>) -> Result<String, String> {
     let port = ENGINE_PORT;
-    let base = format!("http://{ENGINE_HOST}:{port}");
+    let url = format!("http://{ENGINE_HOST}:{port}/api/analyze");
 
-    // 网页经 Tauri 二进制通道传来的音频，这里为兼容 tauri-build 命令权限代码生成，
-    // 改用 base64 字符串（Vec<u8> 参数会导致该版本代码生成跳过本命令的权限）。
-    let bytes = B64
-        .decode(&file_bytes)
-        .map_err(|e| format!("音频数据 base64 解码失败：{e}"))?;
-
-    let nanos = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map(|d| d.as_nanos())
-        .unwrap_or(0);
-    let tmp = std::env::temp_dir().join(format!(
-        "dashi_analyze_{}_{}.tmp",
-        std::process::id(),
-        nanos
-    ));
-    std::fs::write(&tmp, &bytes).map_err(|e| format!("写入临时文件失败：{e}"))?;
-
-    let tmp_display = tmp.display().to_string();
     // 把原始文件名带给引擎：/api/analyze 靠 file.filename 决定临时文件后缀，
-    // 否则 .tmp 后缀会让非 mp3 格式（wav/flac/ogg/aac）识别失败。
-    // 过滤会破坏 curl -F "name=@path;filename=..." 语法的字符。
+    // 否则缺后缀会让非 mp3 格式（wav/flac/ogg/aac）识别失败。
+    // 仅保留安全白名单字符，杜绝路径/表单注入（审查 #14）。
     let safe_name: String = file_name
         .chars()
-        .filter(|c| !matches!(c, ';' | '"' | '\n' | '\r'))
+        .filter(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-'))
         .collect();
-    let form_arg = format!("file=@{tmp_display};filename={safe_name}");
-    let out = Command::new("curl")
-        .args([
-            "-s",
-            "--max-time",
-            "300",
-            "-w",
-            "\n__HTTP__%{http_code}",
-            "-X",
-            "POST",
-            &format!("{base}/api/analyze"),
-            "-H",
-            "Origin: https://qq157788394.github.io",
-            "-F",
-            &form_arg,
-        ])
-        .output()
-        .map_err(|e| format!("调用本地引擎失败（curl 无法启动）：{e}"))?;
-    let _ = std::fs::remove_file(&tmp);
 
-    let stdout = String::from_utf8_lossy(&out.stdout);
-    let (body, code) = match stdout.rsplit_once("__HTTP__") {
-        Some((b, c)) => (b.trim_end().to_string(), c.trim().to_string()),
-        None => (stdout.to_string(), String::new()),
-    };
-    if code == "200" {
-        Ok(body)
-    } else {
-        Err(format!("本地引擎返回错误（HTTP {code}）：{body}"))
+    let part = reqwest::multipart::Part::bytes(file_bytes)
+        .file_name(safe_name)
+        .mime_str("application/octet-stream")
+        .map_err(|e| format!("构造上传表单失败：{e}"))?;
+    let form = reqwest::multipart::Form::new().part("file", part);
+
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(300))
+        .build()
+        .map_err(|e| format!("创建 HTTP 客户端失败：{e}"))?;
+
+    let resp = client
+        .post(&url)
+        // 不显式带 Origin：本机 Rust->引擎属服务端调用，引擎 _origin_ok(None) 直接放行，
+        // 且规避收紧后的跨域头误判（审查 ADR-2）。
+        .multipart(form)
+        .send()
+        .await;
+
+    match resp {
+        Ok(r) => {
+            let status = r.status();
+            let body = r
+                .text()
+                .await
+                .map_err(|e| format!("读取引擎响应失败：{e}"))?;
+            if status == reqwest::StatusCode::OK {
+                Ok(body)
+            } else {
+                Err(format!(
+                    "本地引擎返回错误（HTTP {}）：{}",
+                    status.as_u16(),
+                    body
+                ))
+            }
+        }
+        Err(e) => {
+            // 连接被拒 / 超时 = 引擎确实没在跑 → 离线语义。
+            // 前端按 [ENGINE_OFFLINE] 前缀分流到「引擎连接中断」面板（审查 #8）。
+            Err(format!(
+                "[ENGINE_OFFLINE]: 无法连接到本地引擎（{}:{}），引擎可能已停止运行：{}",
+                ENGINE_HOST, port, e
+            ))
+        }
     }
+}
+
+/// Tauri 命令：代理网页调用本地引擎（ADR-1 + ADR-6 合并）。
+/// 入参 file_bytes 为原始字节（Vec<u8>），前端以 Uint8Array 经 IPC 传入，免 base64 中转。
+#[tauri::command]
+async fn analyze_local_engine(file_name: String, file_bytes: Vec<u8>) -> Result<String, String> {
+    run_analyze(&file_name, file_bytes).await
 }
 
 /// 查询引擎安装/运行状态，供前端在上传前展示依赖清单。
@@ -828,7 +841,14 @@ fn get_engine_status(app: tauri::AppHandle) -> serde_json::Value {
             .unwrap_or(serde_json::Value::Null);
         // 端到端自检：旧引擎无 /api/selfcheck -> None（保守拦截，不误放行）。
         // 同一次响应里顺带取出 ffmpeg_available / compress_ok，避免重复 HTTP 探测。
-        let sc = engine_selfcheck_json(port);
+        // 进程内缓存：同一引擎端口只跑一次全量自检（审查 #6）。
+        let sc = cached_selfcheck(port).or_else(|| {
+            let v = engine_selfcheck_json(port);
+            if let Some(ref val) = v {
+                store_selfcheck(port, val.clone());
+            }
+            v
+        });
         let ao = sc
             .as_ref()
             .and_then(|j| j.get("analysis_ok").and_then(|b| b.as_bool()));

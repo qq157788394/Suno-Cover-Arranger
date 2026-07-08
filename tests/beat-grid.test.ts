@@ -213,3 +213,51 @@ describe('网格全局拍索引不变量', () => {
     expect(inBarIdx[0]).toEqual([0, 1, 2, 3]);
   });
 });
+
+// ── buildBeatCells 二分查找等价性（审查 #19） ─────────────
+// 二分版本须与朴素的「线性逐拍扫描」结果完全一致，只是复杂度从 O(beats×chords) 降为 O(beats×log chords)。
+
+describe('buildBeatCells 二分查找等价性', () => {
+  // 朴素线性参考实现（与修复前行为一致）
+  const linearBuild = (
+    chords: { start_time: number; end_time: number; chordLabel: string }[],
+    beatTimes: number[],
+  ): string[] =>
+    beatTimes.map((t, i) => {
+      const isLast = i === beatTimes.length - 1;
+      const m = chords.find(
+        (c) => c.start_time <= t && (isLast ? t <= c.end_time : t < c.end_time),
+      );
+      return m ? m.chordLabel : 'N';
+    });
+
+  it('大量非重叠和弦段与线性参考完全一致', () => {
+    const N = 500;
+    const chords = Array.from({ length: N }, (_, i) => ({
+      start_time: i * 2,
+      end_time: i * 2 + 2,
+      chord: `C${i % 7}`,
+      chordLabel: `C${i % 7}`,
+    }));
+    const beats = Array.from({ length: N * 2 }, (_, i) => i * 1); // 0..999 每 1s
+    const got = buildBeatCells(chords, beats).map((c) => c.chordLabel);
+    const ref = linearBuild(chords, beats);
+    expect(got).toEqual(ref);
+  });
+
+  it('乱序输入（防御性排序后）仍与排序后的线性参考一致', () => {
+    const chords = [
+      { start_time: 6, end_time: 8, chord: 'F', chordLabel: 'F' },
+      { start_time: 0, end_time: 2, chord: 'C', chordLabel: 'C' },
+      { start_time: 4, end_time: 6, chord: 'A', chordLabel: 'A' },
+      { start_time: 2, end_time: 4, chord: 'G', chordLabel: 'G' },
+    ];
+    const beats = [0, 1, 2, 3, 4, 5, 6, 7];
+    const got = buildBeatCells(chords, beats).map((c) => c.chordLabel);
+    const ref = linearBuild(
+      [...chords].sort((a, b) => a.start_time - b.start_time),
+      beats,
+    );
+    expect(got).toEqual(ref);
+  });
+});

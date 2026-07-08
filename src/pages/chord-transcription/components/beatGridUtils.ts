@@ -51,6 +51,42 @@ export interface GridRow {
 // ── 核心：时间段 → 拍级映射 ────────────────────────────
 
 /**
+ * 在按 start_time 排序、互不重叠的段落中，二分查找包含时间 t 的段
+ * （start_time <= t < end_time；最后一拍用 <= 包含结束边界，避免末尾拍丢失）。
+ * 返回 undefined 表示 t 落在任何段之外（无和弦）。
+ *
+ * 复杂度 O(log n)，避免对每拍线性扫描全部段落导致的 O(beats×chords)（审查 #19）。
+ */
+function findSegmentAtTime<T extends { start_time: number; end_time: number }>(
+  segments: T[],
+  t: number,
+  isLast: boolean,
+): T | undefined {
+  if (segments.length === 0) return undefined;
+  let lo = 0;
+  let hi = segments.length - 1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    const s = segments[mid];
+    if (t < s.start_time) {
+      hi = mid - 1;
+    } else if (t >= s.end_time) {
+      lo = mid + 1;
+    } else {
+      return s;
+    }
+  }
+  // 二分未命中（落在段间隙或恰好压在结束边界）：线性兜底，优先取 start_time <= t 且含 t 的段。
+  for (let i = segments.length - 1; i >= 0; i--) {
+    const s = segments[i];
+    if (s.start_time <= t && (isLast ? t <= s.end_time : t < s.end_time)) {
+      return s;
+    }
+  }
+  return undefined;
+}
+
+/**
  * 把变长和弦段落映射到每一拍上。
  * 对每个 beat 时间戳 t，找到包含它的和弦段（start_time <= t < end_time）。
  * 最后一拍用 <= 包含结束边界（避免末尾拍丢失）。
@@ -60,29 +96,22 @@ export function buildBeatCells(
   beatTimes: number[],
   romanSegments?: TranscriptionRomanSegment[],
 ): BeatCell[] {
-  const cells: BeatCell[] = [];
+  // 防御性排序（按 start_time 升序），保证二分查找前提；原数组不被修改。
+  const sortedChords = [...chords].sort((a, b) => a.start_time - b.start_time);
+  const sortedRoman = romanSegments
+    ? [...romanSegments].sort((a, b) => a.start_time - b.start_time)
+    : undefined;
 
+  const cells: BeatCell[] = [];
   for (let i = 0; i < beatTimes.length; i++) {
     const t = beatTimes[i];
     const isLast = i === beatTimes.length - 1;
 
-    let matched: TranscriptionChordSegment | undefined;
-    for (const c of chords) {
-      if (c.start_time <= t && (isLast ? t <= c.end_time : t < c.end_time)) {
-        matched = c;
-        break;
-      }
-    }
-
-    let romanLabel = '';
-    if (romanSegments) {
-      for (const r of romanSegments) {
-        if (r.start_time <= t && (isLast ? t <= r.end_time : t < r.end_time)) {
-          romanLabel = r.roman;
-          break;
-        }
-      }
-    }
+    const matched = findSegmentAtTime(sortedChords, t, isLast);
+    const romanSeg = sortedRoman
+      ? findSegmentAtTime(sortedRoman, t, isLast)
+      : undefined;
+    const romanLabel = romanSeg ? romanSeg.roman : '';
 
     cells.push({
       chordLabel: matched?.chordLabel ?? 'N',
