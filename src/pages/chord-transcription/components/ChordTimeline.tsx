@@ -38,9 +38,12 @@ const ChordTimeline: React.FC<{ segments: TranscriptionChordSegment[] }> = ({
     >
       {segments.map((seg) => {
         const isNoChord = seg.chordLabel === 'N';
+        // key 用 (start,end,label) 组合字符串：同数据跨渲染恒定唯一，
+        // 避免使用浮点 start_time 作 key 导致的重渲染错配（审查 #16），且规避 noArrayIndexKey。
+        const segKey = `${seg.start_time}-${seg.end_time}-${seg.chordLabel}`;
         return (
           <div
-            key={seg.start_time}
+            key={segKey}
             title={`${formatTime(seg.start_time)} - ${formatTime(seg.end_time)}`}
             style={{
               minWidth: 76,

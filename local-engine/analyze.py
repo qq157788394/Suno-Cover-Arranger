@@ -11,11 +11,13 @@ from __future__ import annotations
 
 import logging
 import os
-import re
 import tempfile
 from typing import Any
 
 import numpy as np
+
+# 和弦标签规范化（JAMS -> 展示标签）抽为独立模块，单一来源、无重型依赖、可单测。
+from normalize_chord import normalize_chord_label
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("local-engine")
@@ -82,22 +84,6 @@ def _init_ffmpeg() -> None:
 
 
 _init_ffmpeg()
-
-
-def normalize_chord_label(jams: str) -> str:
-    """JAMS 和弦标签 -> 标准展示/解析标签，与前端 normalizeChordLabel 保持一致。
-
-    - 去 `:`      Bb:maj7 -> Bbmaj7
-    - 裸 maj 省略 F:maj   -> F   （maj 后跟数字则保留，如 maj7）
-    - min -> m    A:min7  -> Am7
-    - N 原样返回
-    """
-    if not jams or jams.upper() == "N":
-        return "N"
-    s = jams.replace(":", "")
-    s = re.sub(r"maj(?![0-9])", "", s)
-    s = s.replace("min", "m")
-    return s
 
 
 def _ffmpeg_exe() -> str | None:

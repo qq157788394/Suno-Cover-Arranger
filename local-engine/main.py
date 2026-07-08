@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import os
 import sys
+import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -20,29 +21,33 @@ from analyze import analyze_all, FFMPEG_AVAILABLE
 HOST = "127.0.0.1"
 DEFAULT_PORT = int(os.getenv("LOCAL_ENGINE_PORT", "18741"))
 
+# 唯一放行的外部源：本项目 gh-pages 固定子域。本地开发仅放行 dev server 端口（localhost:8000）。
+# 收紧自原先过宽的 `*.github.io` 通配 + 任意 localhost 端口（审查 #4）。
+ALLOWED_ORIGIN = "https://qq157788394.github.io"
+ALLOWED_DEV_ORIGINS = {"http://localhost:8000", "http://127.0.0.1:8000"}
+
 app = FastAPI(title="Suno Local Engine")
 
-# 跨域：放行本机 Origin（localhost / 127.0.0.1，任意端口）与本项目 gh-pages（*.github.io）。
-# 既是 CORS 头（让浏览器跨端口/跨域调用可读到响应），也是安全边界（其他源不回 CORS 头）。
-# 注：生产应把 *.github.io 收紧为具体子域（如 your-user.github.io）。
+# 跨域：仅放行上述具体源。既是 CORS 头（让浏览器跨端口/跨域调用可读到响应），
+# 也是安全边界（其他源不回 CORS 头）。方法/头收窄，避免 `*` 过度暴露。
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"^https?://((localhost|127\.0\.0\.1)(:\d+)?|[\w-]+\.github\.io)$",
-    allow_methods=["*"],
-    allow_headers=["*"],
-    expose_headers=["*"],
+    allow_origin_regex=(
+        r"^https://qq157788394\.github\.io$|^http://(localhost|127\.0\.0\.1):8000$"
+    ),
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type", "Origin"],
+    expose_headers=["Content-Type"],
 )
 
 
 def _origin_ok(origin: str | None) -> bool:
-    # 非浏览器调用（无 Origin）放行；浏览器调用须来自本机或本项目 gh-pages
+    # 非浏览器调用（无 Origin）放行：Rust curl 代理、本地自检等本机调用。
     if not origin:
         return True
-    return (
-        origin.startswith("http://localhost:")
-        or origin.startswith("http://127.0.0.1:")
-        or (origin.startswith("https://") and ".github.io" in origin)
-    )
+    if origin == ALLOWED_ORIGIN:
+        return True
+    return origin in ALLOWED_DEV_ORIGINS
 
 
 def _probe_import(module: str) -> bool:
@@ -372,11 +377,21 @@ async def analyze(request: Request, file: UploadFile = File(...)) -> JSONRespons
     if not _origin_ok(request.headers.get("origin")):
         return JSONResponse(status_code=403, content={"error": "origin not allowed"})
 
-    import tempfile
+    # 限制请求体大小，避免超大文件全量读入内存触发 OOM（审查 #3）。
+    # 与前端 50MB 上限一致；超限直接 413，不进入分析管线。
+    MAX_UPLOAD_BYTES = 50 * 1024 * 1024
+    content = b""
+    async for chunk in file.stream():
+        content += chunk
+        if len(content) > MAX_UPLOAD_BYTES:
+            return JSONResponse(
+                status_code=413,
+                content={"error": "文件过大，请上传 50MB 以内的音频"},
+            )
 
     suffix = Path(file.filename or "audio.mp3").suffix or ".mp3"
     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
-        tmp.write(await file.read())
+        tmp.write(content)
         tmp_path = tmp.name
     try:
         result = analyze_all(tmp_path)

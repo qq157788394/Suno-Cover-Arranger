@@ -24,15 +24,18 @@ import React, {
 } from 'react';
 import { useTranscription } from '@/hooks/useTranscription';
 import FileDropZone from '@/pages/chord-analysis/components/FileDropZone';
-import { LOCAL_ENGINE_BASE } from '@/services/transcription/client';
+import {
+  GH_PAGES_ORIGIN,
+  LOCAL_DEV_ORIGIN,
+  LOCAL_ENGINE_BASE,
+  validateAudioFile,
+} from '@/services/transcription/client';
 import BeatGrid from './components/BeatGrid';
 
 const { Paragraph, Text } = Typography;
 
-// 客户端环境切换（dev 工具）：仅在 Tauri 壳内显示。
-const GH_PAGES_ORIGIN = 'https://qq157788394.github.io';
+// 仅本仓库前缀（用于环境切换 URL 重组，与 GH_PAGES_ORIGIN 配套）。
 const GH_PAGES_REPO = 'Suno-Cover-Arranger';
-const LOCAL_ORIGIN = 'http://localhost:8000';
 
 const ENV_SWITCH_PARAM = '__env';
 type EnvKind = 'local' | 'ghpages';
@@ -59,7 +62,7 @@ function buildEnvUrl(target: EnvKind): string {
   const path = window.location.pathname;
   if (target === 'local') {
     const stripped = path.replace(new RegExp(`^/${GH_PAGES_REPO}`), '');
-    return LOCAL_ORIGIN + (stripped || '/');
+    return LOCAL_DEV_ORIGIN + (stripped || '/');
   }
   const withPrefix = path.startsWith(`/${GH_PAGES_REPO}`)
     ? path
@@ -222,10 +225,13 @@ function TerminalLog({ lines }: { lines: string[] }) {
         wordBreak: 'break-all',
       }}
     >
-      {lines.map((l) => {
+      {lines.map((l, i) => {
         const isErr = /失败|error|Error|✗|traceback|Exception/i.test(l);
         return (
-          <div key={l} style={isErr ? { color: '#F87171' } : undefined}>
+          // 日志行 append-only 且内容会重复，无更稳定的 key；
+          // 原用内容作 key 导致相同行渲染错配（审查 #18）。
+          // biome-ignore lint/suspicious/noArrayIndexKey: 此处 index 是唯一稳定且正确的 key
+          <div key={i} style={isErr ? { color: '#F87171' } : undefined}>
             {l}
           </div>
         );
@@ -292,11 +298,14 @@ const ChordTranscriptionPage: React.FC = () => {
 
   useEffect(() => {
     if (status === 'READY' && fileRef.current) {
+      // 重上传会再次进入 READY：先回收上一次的 object URL，避免 blob 逐步泄漏（审查 #9）。
+      if (audioUrlRef.current) {
+        URL.revokeObjectURL(audioUrlRef.current);
+      }
       const url = URL.createObjectURL(fileRef.current);
-      setAudioUrl(url);
       audioUrlRef.current = url;
+      setAudioUrl(url);
     }
-    return () => {};
   }, [status]);
 
   useEffect(() => {
@@ -442,9 +451,12 @@ const ChordTranscriptionPage: React.FC = () => {
     }
   }, [isClient]);
 
-  // 解耦互相引用：把最新回调挂到 ref 上，供对方在闭包内调用
-  detectEngineRef.current = detectEngine;
-  prefetchAssetRef.current = prefetchAsset;
+  // 解耦 detectEngine ↔ prefetchAsset 的互相引用：把最新回调写入 ref，
+  // 供对方在异步闭包内调用，避免 useCallback 初始化器循环推导报错与闭包陈旧（审查 #11）。
+  useEffect(() => {
+    detectEngineRef.current = detectEngine;
+    prefetchAssetRef.current = prefetchAsset;
+  });
 
   useEffect(() => {
     if (isClient) detectEngine();
@@ -518,13 +530,19 @@ const ChordTranscriptionPage: React.FC = () => {
   const handleReuploadFileChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
-      // 客户端已确认引擎在跑：直接打固定地址，跳过 discoverEngine 端口扫描
-      if (file)
-        handleFileSelect(
-          file,
-          isRunningInTauri() ? LOCAL_ENGINE_BASE : undefined,
-        );
       e.target.value = '';
+      if (!file) return;
+      // 复用与首次上传一致的校验（大小 / 格式），杜绝重上传绕过校验传入超大或非法文件（审查 #2）。
+      const check = validateAudioFile(file);
+      if (!check.ok) {
+        message.error(check.error);
+        return;
+      }
+      // 客户端已确认引擎在跑：直接打固定地址，跳过 discoverEngine 端口扫描
+      handleFileSelect(
+        file,
+        isRunningInTauri() ? LOCAL_ENGINE_BASE : undefined,
+      );
     },
     [handleFileSelect],
   );
@@ -921,37 +939,42 @@ const ChordTranscriptionPage: React.FC = () => {
             )}
           </ProCard>
 
-          <button
-            type="button"
-            onClick={handleEnvSwitch}
-            title={
-              env === 'local'
-                ? '当前：本地开发 (localhost:8000)\n点击切换到线上 (GitHub Pages)'
-                : '当前：线上 (GitHub Pages)\n点击切换到本地开发 (localhost:8000)'
-            }
-            style={{
-              position: 'fixed',
-              bottom: 12,
-              right: 12,
-              height: 24,
-              padding: '0 10px',
-              border: 'none',
-              borderRadius: 12,
-              background: env === 'local' ? '#FF9000' : '#374151',
-              color: '#fff',
-              fontSize: 12,
-              lineHeight: '24px',
-              cursor: 'pointer',
-              zIndex: 9999,
-              opacity: 0.4,
-              transition: 'opacity 0.2s',
-              whiteSpace: 'nowrap',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
-            onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.4')}
-          >
-            {env === 'local' ? '🖥 本地' : '🌐 线上'}
-          </button>
+          {/* 环境切换按钮仅在本地开发源（localhost:8000）显示。
+              生产 Tauri 壳加载的是 gh-pages 源，origin 非 localhost，按钮自动隐藏，
+              避免误点跳到 localhost:8000（无 dev server）导致白屏（审查 #12）。 */}
+          {env === 'local' && (
+            <button
+              type="button"
+              onClick={handleEnvSwitch}
+              title={
+                env === 'local'
+                  ? '当前：本地开发 (localhost:8000)\n点击切换到线上 (GitHub Pages)'
+                  : '当前：线上 (GitHub Pages)\n点击切换到本地开发 (localhost:8000)'
+              }
+              style={{
+                position: 'fixed',
+                bottom: 12,
+                right: 12,
+                height: 24,
+                padding: '0 10px',
+                border: 'none',
+                borderRadius: 12,
+                background: env === 'local' ? '#FF9000' : '#374151',
+                color: '#fff',
+                fontSize: 12,
+                lineHeight: '24px',
+                cursor: 'pointer',
+                zIndex: 9999,
+                opacity: 0.4,
+                transition: 'opacity 0.2s',
+                whiteSpace: 'nowrap',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
+              onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.4')}
+            >
+              {env === 'local' ? '🖥 本地' : '🌐 线上'}
+            </button>
+          )}
         </>
       )}
     </PageContainer>
