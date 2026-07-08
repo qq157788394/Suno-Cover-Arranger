@@ -275,7 +275,7 @@ function ClientRequiredPanel() {
 }
 
 const ChordTranscriptionPage: React.FC = () => {
-  const { status, result, error, fileName, handleFileSelect, reset } =
+  const { status, result, fileName, handleFileSelect, reset } =
     useTranscription();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -564,7 +564,7 @@ const ChordTranscriptionPage: React.FC = () => {
     [handleFileSelect],
   );
 
-  const hasFullEngine =
+  const _hasFullEngine =
     result?.key != null || result?.bpm != null || result?.rhythm != null;
 
   // ───────── 渲染：检测中 / 引擎未就绪 / 上传流程 ─────────
@@ -710,41 +710,41 @@ const ChordTranscriptionPage: React.FC = () => {
                 )}
 
                 {isError && (
-                  <div style={{ maxWidth: 720, margin: '0 auto' }}>
-                    <Alert
-                      type="error"
-                      showIcon
-                      title="分析失败（引擎返回异常）"
-                      description="若为引擎内部报错，可查看软件目录engine.log获取完整堆栈。"
-                    />
-                    <div style={{ marginTop: 16 }}>
-                      <Button onClick={handleReset}>重新上传</Button>
-                    </div>
-                  </div>
+                  <Result
+                    status="500"
+                    title="分析失败（引擎返回异常）"
+                    subTitle="若为引擎内部报错，可查看软件目录engine.log获取完整堆栈。"
+                    extra={[
+                      <Button key="retry" onClick={handleReset}>
+                        重新上传
+                      </Button>,
+                    ]}
+                  />
                 )}
 
                 {isEngineOffline && (
-                  <div style={{ maxWidth: 720, margin: '0 auto' }}>
-                    <Alert
-                      type="warning"
-                      showIcon
-                      title="引擎连接中断"
-                      description="无法连接到本地引擎。引擎可能已停止运行。可点击重新检测引擎重新探测，或一键安装 &
-                            启动重启。"
-                    />
-                    <div style={{ marginTop: 16, display: 'flex', gap: 12 }}>
-                      <Button
-                        type="primary"
-                        onClick={() => detectEngine().then(() => reset())}
-                        style={{ borderRadius: 8 }}
-                      >
-                        重新检测引擎
-                      </Button>
-                      <Button onClick={handleReset} style={{ borderRadius: 8 }}>
-                        重新上传
-                      </Button>
-                    </div>
-                  </div>
+                  <Result
+                    status="500"
+                    title="引擎连接中断"
+                    subTitle="无法连接到本地引擎。引擎可能已停止运行。可点击重新检测引擎重新探测，或一键安装 &nbsp; 启动重启。"
+                    extra={[
+                      <Flex key="engine-offline" gap="medium">
+                        <Button
+                          type="primary"
+                          onClick={() => detectEngine().then(() => reset())}
+                          style={{ borderRadius: 8 }}
+                        >
+                          重新检测引擎
+                        </Button>
+                        <Button
+                          onClick={handleReset}
+                          style={{ borderRadius: 8 }}
+                        >
+                          重新上传
+                        </Button>
+                      </Flex>,
+                    ]}
+                  ></Result>
                 )}
 
                 {isReady && result && (
