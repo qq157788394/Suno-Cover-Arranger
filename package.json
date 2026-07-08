@@ -1,6 +1,7 @@
 {
   "name": "suno-cover-arranger",
   "version": "2.2.0",
+  "packageManager": "pnpm@11.5.2",
   "private": true,
   "description": "大师来了！ - 懂编曲，更懂作词的 Suno 终极辅助。",
   "repository": "git@github.com:qq157788394/Suno-Cover-Arranger.git",
