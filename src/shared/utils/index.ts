@@ -4,8 +4,8 @@
  */
 
 // 剪贴板工具函数
-export * from './clipboard';
+export * from "./clipboard";
 // 通用格式化工具函数
-export * from './format';
+export * from "./format";
 // 验证工具函数
-export * from './validation';
+export * from "./validation";

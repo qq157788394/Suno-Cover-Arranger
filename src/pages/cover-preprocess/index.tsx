@@ -4,7 +4,7 @@
  * 使用 ProForm 实现表单布局，对齐 lyrics-craft 页面风格
  */
 
-import { DownloadOutlined } from '@ant-design/icons';
+import { DownloadOutlined } from "@ant-design/icons";
 import {
   PageContainer,
   ProCard,
@@ -12,19 +12,19 @@ import {
   ProForm,
   type ProFormInstance,
   ProFormRadio,
-} from '@ant-design/pro-components';
-import { Button, Col, Empty, message, Row, Tag } from 'antd';
-import React, { useRef, useState } from 'react';
-import { runCoverPreprocessPipeline } from '@/services/audio';
+} from "@ant-design/pro-components";
+import { Button, Col, Empty, message, Row, Tag } from "antd";
+import React, { useRef, useState } from "react";
+import { runCoverPreprocessPipeline } from "@/services/audio";
 import type {
   PipelineOutput,
   PipelineProgress,
   PresetLevel,
   SpeedMode,
-} from '@/shared/types/types';
-import AudioPreview from './components/AudioPreview';
-import AudioUploader from './components/AudioUploader';
-import ProcessProgress from './components/ProcessProgress';
+} from "@/shared/types/types";
+import AudioPreview from "./components/AudioPreview";
+import AudioUploader from "./components/AudioUploader";
+import ProcessProgress from "./components/ProcessProgress";
 
 /** 表单数据类型定义 */
 interface CoverPreprocessFormData {
@@ -41,23 +41,23 @@ const PRESET_OPTIONS: {
   value: PresetLevel;
   label: string;
 }[] = [
-  { value: 'none', label: '不处理' },
-  { value: 'light', label: '轻度' },
-  { value: 'medium', label: '中度' },
-  { value: 'heavy', label: '重度（推荐）' },
+  { value: "none", label: "不处理" },
+  { value: "light", label: "轻度" },
+  { value: "medium", label: "中度" },
+  { value: "heavy", label: "重度（推荐）" },
 ];
 
 /** 变速模式选项配置 */
 const SPEED_MODE_OPTIONS: { value: SpeedMode; label: string }[] = [
-  { value: 'none', label: '不变速' },
-  { value: 'slowdown', label: '0.5 倍' },
-  { value: 'speedup', label: '2 倍' },
+  { value: "none", label: "不变速" },
+  { value: "slowdown", label: "0.5 倍" },
+  { value: "speedup", label: "2 倍" },
 ];
 
 /** 默认表单值 */
 const DEFAULT_FORM_VALUES: Partial<CoverPreprocessFormData> = {
-  preset: 'heavy',
-  speedMode: 'none',
+  preset: "heavy",
+  speedMode: "none",
 };
 
 /** 格式化毫秒为可读时长 */
@@ -74,13 +74,13 @@ function formatProcessingTime(ms: number): string {
 function formatDuration(seconds: number): string {
   const m = Math.floor(seconds / 60);
   const s = Math.floor(seconds % 60);
-  return `${m}:${s.toString().padStart(2, '0')}`;
+  return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
 /** 下载 Blob 为文件 */
 function downloadBlob(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
+  const a = document.createElement("a");
   a.href = url;
   a.download = filename;
   document.body.appendChild(a);
@@ -105,7 +105,7 @@ const CoverPreprocess: React.FC = () => {
     values: CoverPreprocessFormData,
   ): Promise<boolean> => {
     if (!values.audioFile) {
-      messageApi.warning('请先上传音频文件');
+      messageApi.warning("请先上传音频文件");
       return false;
     }
 
@@ -122,7 +122,7 @@ const CoverPreprocess: React.FC = () => {
       });
       setResult(output);
       setProgress(null);
-      messageApi.success('预处理完成！');
+      messageApi.success("预处理完成！");
       return true;
     } catch (error) {
       messageApi.error(`预处理失败：${(error as Error).message}`);
@@ -139,15 +139,15 @@ const CoverPreprocess: React.FC = () => {
     // 从表单获取文件名和参数信息
     const formValues = formRef.current?.getFieldsValue();
     const originalName = formValues?.audioFile?.name
-      ? formValues.audioFile.name.replace(/\.[^.]+$/, '')
-      : 'output';
+      ? formValues.audioFile.name.replace(/\.[^.]+$/, "")
+      : "output";
     const speedLabel =
-      formValues?.speedMode === 'slowdown'
-        ? '_0.5x'
-        : formValues?.speedMode === 'speedup'
-          ? '_2x'
-          : '';
-    const filename = `${originalName}_${formValues?.preset || 'medium'}${speedLabel}.mp3`;
+      formValues?.speedMode === "slowdown"
+        ? "_0.5x"
+        : formValues?.speedMode === "speedup"
+          ? "_2x"
+          : "";
+    const filename = `${originalName}_${formValues?.preset || "medium"}${speedLabel}.mp3`;
     downloadBlob(result.mp3Blob, filename);
   };
 
@@ -158,7 +158,7 @@ const CoverPreprocess: React.FC = () => {
         <Row gutter={[24, 0]}>
           {/* 左侧：表单配置区域 */}
           <Col xxl={12} xl={12} lg={12} md={24} sm={24} xs={24}>
-            <ProCard title="预处理配置" style={{ height: '100%' }}>
+            <ProCard title="预处理配置" style={{ height: "100%" }}>
               <ProForm<CoverPreprocessFormData>
                 layout="vertical"
                 grid
@@ -183,9 +183,9 @@ const CoverPreprocess: React.FC = () => {
                 <ProForm.Item
                   name="audioFile"
                   label="原始音频"
-                  rules={[{ required: true, message: '请上传原始音频文件' }]}
+                  rules={[{ required: true, message: "请上传原始音频文件" }]}
                   colProps={{ span: 24 }}
-                  style={{ width: '100%' }}
+                  style={{ width: "100%" }}
                 >
                   <AudioUploader disabled={processing} />
                 </ProForm.Item>
@@ -198,7 +198,7 @@ const CoverPreprocess: React.FC = () => {
                     label: option.label,
                     value: option.value,
                   }))}
-                  rules={[{ required: true, message: '请选择预设强度' }]}
+                  rules={[{ required: true, message: "请选择预设强度" }]}
                   fieldProps={{
                     disabled: processing,
                   }}
@@ -224,7 +224,7 @@ const CoverPreprocess: React.FC = () => {
 
           {/* 右侧：处理结果展示 */}
           <Col xxl={12} xl={12} lg={12} md={24} sm={24} xs={24}>
-            <ProCard title="处理结果" style={{ height: '100%' }}>
+            <ProCard title="处理结果" style={{ height: "100%" }}>
               {processing && progress ? (
                 /* 处理中：展示仪表盘式进度条 */
                 <ProcessProgress progress={progress} />
@@ -248,11 +248,11 @@ const CoverPreprocess: React.FC = () => {
                       {formatProcessingTime(result.processingTimeMs)}
                     </ProDescriptions.Item>
                     <ProDescriptions.Item label="预设强度">
-                      {result.preset === 'light'
-                        ? '轻度'
-                        : result.preset === 'medium'
-                          ? '中度'
-                          : '重度'}
+                      {result.preset === "light"
+                        ? "轻度"
+                        : result.preset === "medium"
+                          ? "中度"
+                          : "重度"}
                     </ProDescriptions.Item>
                     <ProDescriptions.Item label="输出大小">
                       <Tag>

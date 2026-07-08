@@ -1,14 +1,14 @@
 // Ant Design Icons
-import { CopyOutlined } from '@ant-design/icons';
+import { CopyOutlined } from "@ant-design/icons";
 
 // Ant Design Pro Components
-import { ProCard } from '@ant-design/pro-components';
+import { ProCard } from "@ant-design/pro-components";
 
 // Ant Design Base Components
-import { Button, Input } from 'antd';
+import { Button, Input } from "antd";
 
 // React
-import React, { memo } from 'react';
+import React, { memo } from "react";
 
 // 可复用的结果卡片组件
 const ResultCard = memo(
@@ -35,7 +35,7 @@ const ResultCard = memo(
             复制
           </Button>
         }
-        style={{ height: '100%' }}
+        style={{ height: "100%" }}
       >
         <Input.TextArea
           value={value}

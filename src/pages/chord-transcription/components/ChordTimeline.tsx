@@ -8,36 +8,36 @@
  * 因此引擎只装 lv-chordia 时也能完整展示。
  */
 
-import React from 'react';
-import type { TranscriptionChordSegment } from '@/shared/types/types';
+import React from "react";
+import type { TranscriptionChordSegment } from "@/shared/types/types";
 
 /** 格式化时间 mm:ss */
 function formatTime(seconds: number): string {
   const m = Math.floor(seconds / 60);
   const s = Math.floor(seconds % 60);
-  return `${m}:${s.toString().padStart(2, '0')}`;
+  return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
 const ChordTimeline: React.FC<{ segments: TranscriptionChordSegment[] }> = ({
   segments,
 }) => {
   if (segments.length === 0) {
-    return <div style={{ color: '#9CA3AF', fontSize: 13 }}>暂无和弦数据</div>;
+    return <div style={{ color: "#9CA3AF", fontSize: 13 }}>暂无和弦数据</div>;
   }
 
   return (
     <div
       style={{
-        display: 'flex',
-        flexWrap: 'wrap',
+        display: "flex",
+        flexWrap: "wrap",
         gap: 8,
         maxHeight: 360,
-        overflowY: 'auto',
+        overflowY: "auto",
         padding: 4,
       }}
     >
       {segments.map((seg) => {
-        const isNoChord = seg.chordLabel === 'N';
+        const isNoChord = seg.chordLabel === "N";
         // key 用 (start,end,label) 组合字符串：同数据跨渲染恒定唯一，
         // 避免使用浮点 start_time 作 key 导致的重渲染错配（审查 #16），且规避 noArrayIndexKey。
         const segKey = `${seg.start_time}-${seg.end_time}-${seg.chordLabel}`;
@@ -47,25 +47,25 @@ const ChordTimeline: React.FC<{ segments: TranscriptionChordSegment[] }> = ({
             title={`${formatTime(seg.start_time)} - ${formatTime(seg.end_time)}`}
             style={{
               minWidth: 76,
-              padding: '8px 10px',
+              padding: "8px 10px",
               borderRadius: 8,
-              border: '1px solid #F0F0F0',
-              background: isNoChord ? '#F9FAFB' : '#FFF7ED',
-              textAlign: 'center',
-              flex: '0 0 auto',
+              border: "1px solid #F0F0F0",
+              background: isNoChord ? "#F9FAFB" : "#FFF7ED",
+              textAlign: "center",
+              flex: "0 0 auto",
             }}
           >
             <div
               style={{
                 fontSize: 15,
                 fontWeight: 600,
-                color: isNoChord ? '#9CA3AF' : '#0F1419',
-                whiteSpace: 'nowrap',
+                color: isNoChord ? "#9CA3AF" : "#0F1419",
+                whiteSpace: "nowrap",
               }}
             >
-              {isNoChord ? '—' : seg.chordLabel}
+              {isNoChord ? "—" : seg.chordLabel}
             </div>
-            <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>
+            <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 2 }}>
               {formatTime(seg.start_time)}
             </div>
           </div>

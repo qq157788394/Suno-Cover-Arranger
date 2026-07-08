@@ -1,8 +1,8 @@
 // IndexedDB 封装工具，用于管理应用程序数据的存储和读取
 
-const DB_NAME = 'SunoCoverArrangerDB';
+const DB_NAME = "SunoCoverArrangerDB";
 const DB_VERSION = 1;
-const STORE_NAME = 'settings';
+const STORE_NAME = "settings";
 
 // 打开数据库连接
 const openDB = (): Promise<IDBDatabase> => {
@@ -18,12 +18,12 @@ const openDB = (): Promise<IDBDatabase> => {
 
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         const objectStore = db.createObjectStore(STORE_NAME, {
-          keyPath: 'id',
+          keyPath: "id",
           autoIncrement: true,
         });
 
         // 创建索引以提高查询效率
-        objectStore.createIndex('key', 'key', { unique: true });
+        objectStore.createIndex("key", "key", { unique: true });
       }
     };
   });
@@ -38,9 +38,9 @@ const storeData = async (
     const db = await openDB();
 
     return new Promise((resolve) => {
-      const transaction = db.transaction([STORE_NAME], 'readwrite');
+      const transaction = db.transaction([STORE_NAME], "readwrite");
       const objectStore = transaction.objectStore(STORE_NAME);
-      const keyIndex = objectStore.index('key');
+      const keyIndex = objectStore.index("key");
 
       // 首先检查是否已存在该键
       const getRequest = keyIndex.get(key);
@@ -90,9 +90,9 @@ const getData = async (
     const db = await openDB();
 
     return new Promise((resolve) => {
-      const transaction = db.transaction([STORE_NAME], 'readonly');
+      const transaction = db.transaction([STORE_NAME], "readonly");
       const objectStore = transaction.objectStore(STORE_NAME);
-      const keyIndex = objectStore.index('key');
+      const keyIndex = objectStore.index("key");
 
       const request = keyIndex.get(key);
 
@@ -120,9 +120,9 @@ const deleteData = async (
     const db = await openDB();
 
     return new Promise((resolve) => {
-      const transaction = db.transaction([STORE_NAME], 'readwrite');
+      const transaction = db.transaction([STORE_NAME], "readwrite");
       const objectStore = transaction.objectStore(STORE_NAME);
-      const keyIndex = objectStore.index('key');
+      const keyIndex = objectStore.index("key");
 
       // 首先查找数据的ID
       const getRequest = keyIndex.get(key);
@@ -151,7 +151,7 @@ const deleteData = async (
 };
 
 // API Key 相关的存储键名
-const API_KEY_STORAGE_KEY = 'deepseekApiKey';
+const API_KEY_STORAGE_KEY = "deepseekApiKey";
 
 // 存储 API Key 到 IndexedDB
 const saveApiKeyToIndexedDB = async (
@@ -168,7 +168,7 @@ const getApiKeyFromIndexedDB = async (): Promise<{
 }> => {
   const result = await getData(API_KEY_STORAGE_KEY);
   if (result.success) {
-    return { success: true, apiKey: result.data || '' };
+    return { success: true, apiKey: result.data || "" };
   } else {
     return { success: false, error: result.error };
   }

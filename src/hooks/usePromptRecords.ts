@@ -1,6 +1,6 @@
-import { useCallback, useState } from 'react';
-import { db } from '@/services/db';
-import type { PromptRecord } from '@/shared/types/types';
+import { useCallback, useState } from "react";
+import { db } from "@/services/db";
+import type { PromptRecord } from "@/shared/types/types";
 
 export interface PromptRecordFilters {
   keyword?: string;
@@ -158,7 +158,7 @@ export const usePromptRecords = (currentUserId: number) => {
         setRecords(fetchedRecords);
         return fetchedRecords;
       } catch (error) {
-        console.error('获取记录失败：', error);
+        console.error("获取记录失败：", error);
         setRecords([]);
         return [];
       } finally {
@@ -185,7 +185,7 @@ export const usePromptRecords = (currentUserId: number) => {
         await fetchRecords();
         return { success: true };
       } catch (error) {
-        console.error('删除记录失败：', error);
+        console.error("删除记录失败：", error);
         return { success: false, error };
       }
     },
@@ -207,7 +207,7 @@ export const usePromptRecords = (currentUserId: number) => {
       setRecords([]);
       return { success: true };
     } catch (error) {
-      console.error('清空记录失败：', error);
+      console.error("清空记录失败：", error);
       return { success: false, error };
     }
   }, [currentUserId]);

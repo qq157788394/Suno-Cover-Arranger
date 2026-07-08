@@ -1,6 +1,6 @@
-import { Radio, Space, Typography } from 'antd';
-import React from 'react';
-import type { PresetLevel } from '@/shared/types/types';
+import { Radio, Space, Typography } from "antd";
+import React from "react";
+import type { PresetLevel } from "@/shared/types/types";
 
 const { Text } = Typography;
 
@@ -17,24 +17,24 @@ const PRESET_OPTIONS: {
   description: string;
 }[] = [
   {
-    value: 'none',
-    label: '不处理',
-    description: '跳过频谱混淆，直接编码输出原始音频',
+    value: "none",
+    label: "不处理",
+    description: "跳过频谱混淆，直接编码输出原始音频",
   },
   {
-    value: 'light',
-    label: 'Light',
-    description: '轻度混淆，保持原始音质，推荐用于质量要求高的场景',
+    value: "light",
+    label: "Light",
+    description: "轻度混淆，保持原始音质，推荐用于质量要求高的场景",
   },
   {
-    value: 'medium',
-    label: 'Medium',
-    description: '中度混淆，平衡音质与指纹混淆效果，适合大多数场景',
+    value: "medium",
+    label: "Medium",
+    description: "中度混淆，平衡音质与指纹混淆效果，适合大多数场景",
   },
   {
-    value: 'heavy',
-    label: 'Heavy',
-    description: '重度混淆，最大程度改变频谱指纹，音质会有一定损失',
+    value: "heavy",
+    label: "Heavy",
+    description: "重度混淆，最大程度改变频谱指纹，音质会有一定损失",
   },
 ];
 
@@ -50,7 +50,7 @@ const PresetSelector: React.FC<PresetSelectorProps> = ({
   return (
     <Space
       direction="vertical"
-      style={{ marginTop: 16, marginBottom: 16, width: '100%' }}
+      style={{ marginTop: 16, marginBottom: 16, width: "100%" }}
     >
       <Text strong>预设强度</Text>
       <Radio.Group

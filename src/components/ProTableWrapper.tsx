@@ -2,9 +2,9 @@ import {
   type ProColumns,
   ProTable,
   type RequestData,
-} from '@ant-design/pro-components';
-import { Space } from 'antd';
-import React from 'react';
+} from "@ant-design/pro-components";
+import { Space } from "antd";
+import React from "react";
 
 interface ProTableWrapperProps<T extends Record<string, any>> {
   /** 表格列配置 */
@@ -12,7 +12,7 @@ interface ProTableWrapperProps<T extends Record<string, any>> {
   /** 数据请求函数 */
   request?: (
     params: any,
-    sort: Record<string, 'ascend' | 'descend' | null>,
+    sort: Record<string, "ascend" | "descend" | null>,
     filter: Record<string, (string | number)[] | null>,
   ) => Promise<Partial<RequestData<T>>>;
   /** 数据源 */
@@ -33,7 +33,7 @@ interface ProTableWrapperProps<T extends Record<string, any>> {
   pagination?: any;
   /** 搜索配置 */
   searchConfig?: {
-    labelWidth?: 'auto' | number;
+    labelWidth?: "auto" | number;
     defaultCollapsed?: boolean;
     span?: number;
   };
@@ -61,7 +61,7 @@ const ProTableWrapper = <T extends Record<string, any>>({
   showSearch = true,
   showActions = false,
   actionButtons = [],
-  rowKey = 'id',
+  rowKey = "id",
   pagination = {
     pageSize: 10,
     showSizeChanger: true,
@@ -69,7 +69,7 @@ const ProTableWrapper = <T extends Record<string, any>>({
     showTotal: (total: number) => `共 ${total} 条记录`,
   },
   searchConfig = {
-    labelWidth: 'auto',
+    labelWidth: "auto",
     defaultCollapsed: false,
     span: 6,
   },

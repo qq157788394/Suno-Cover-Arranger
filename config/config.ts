@@ -1,13 +1,13 @@
 // https://umijs.org/config/
 
-import { join } from 'node:path';
-import { defineConfig } from '@umijs/max';
-import defaultSettings from './defaultSettings';
-import proxy from './proxy';
+import { join } from "node:path";
+import { defineConfig } from "@umijs/max";
+import defaultSettings from "./defaultSettings";
+import proxy from "./proxy";
 
-import routes from './routes';
+import routes from "./routes";
 
-const { REACT_APP_ENV = 'dev' } = process.env;
+const { REACT_APP_ENV = "dev" } = process.env;
 
 /**
  * @name 使用公共路径
@@ -15,7 +15,7 @@ const { REACT_APP_ENV = 'dev' } = process.env;
  * @doc https://umijs.org/docs/api/config#publicpath
  */
 // 前端始终部署到 GitHub Pages 子路径（Tauri 壳远程加载，不再打包进 .app）
-const PUBLIC_PATH: string = '/Suno-Cover-Arranger/';
+const PUBLIC_PATH: string = "/Suno-Cover-Arranger/";
 
 const config: any = defineConfig({
   /**
@@ -30,7 +30,7 @@ const config: any = defineConfig({
    * @doc https://umijs.org/docs/api/config#history
    */
   history: {
-    type: 'hash',
+    type: "hash",
   },
 
   publicPath: PUBLIC_PATH,
@@ -92,7 +92,7 @@ const config: any = defineConfig({
    * @name layout 插件
    * @doc https://umijs.org/docs/max/layout-menu
    */
-  title: 'Ant Design Pro',
+  title: "Ant Design Pro",
   layout: {
     locale: false,
     ...defaultSettings,
@@ -103,8 +103,8 @@ const config: any = defineConfig({
    * @doc https://umijs.org/docs/max/moment2dayjs
    */
   moment2dayjs: {
-    preset: 'antd',
-    plugins: ['duration'],
+    preset: "antd",
+    plugins: ["duration"],
   },
   /**
    * @name 国际化插件
@@ -112,7 +112,7 @@ const config: any = defineConfig({
    */
   locale: {
     // default zh-CN
-    default: 'zh-CN',
+    default: "zh-CN",
     antd: true,
     // default true, when it is true, will use `navigator.language` overwrite default
     baseNavigator: true,
@@ -142,9 +142,9 @@ const config: any = defineConfig({
    */
   headScripts: [
     // 解决首次加载时白屏的问题
-    { src: join(PUBLIC_PATH, 'scripts/loading.js'), async: true },
+    { src: join(PUBLIC_PATH, "scripts/loading.js"), async: true },
     // lamejs MP3 编码器（全局脚本，避免 CJS/ESM 互操作问题）
-    { src: join(PUBLIC_PATH, 'scripts/lame.all.js'), async: false },
+    { src: join(PUBLIC_PATH, "scripts/lame.all.js"), async: false },
   ],
   /**
    * @name 配置HTML头部的link标签
@@ -153,14 +153,14 @@ const config: any = defineConfig({
    */
   links: [
     {
-      rel: 'icon',
-      type: 'image/x-icon',
-      href: join(PUBLIC_PATH, 'favicon.ico'),
+      rel: "icon",
+      type: "image/x-icon",
+      href: join(PUBLIC_PATH, "favicon.ico"),
     },
-    { rel: 'shortcut icon', href: join(PUBLIC_PATH, 'favicon.ico') },
+    { rel: "shortcut icon", href: join(PUBLIC_PATH, "favicon.ico") },
   ],
   //================ pro 插件配置 =================
-  presets: ['umi-presets-pro'],
+  presets: ["umi-presets-pro"],
   /**
    * @name openAPI 插件的配置
    * @description 基于 openapi 的规范生成serve 和mock，能减少很多样板代码
@@ -171,18 +171,18 @@ const config: any = defineConfig({
       requestLibPath: "import { request } from '@umijs/max'",
       // 或者使用在线的版本
       // schemaPath: "https://gw.alipayobjects.com/os/antfincdn/M%24jrzTTYJN/oneapi.json"
-      schemaPath: join(__dirname, 'oneapi.json'),
+      schemaPath: join(__dirname, "oneapi.json"),
       mock: false,
     },
     {
       requestLibPath: "import { request } from '@umijs/max'",
       schemaPath:
-        'https://gw.alipayobjects.com/os/antfincdn/CA1dOm%2631B/openapi.json',
-      projectName: 'swagger',
+        "https://gw.alipayobjects.com/os/antfincdn/CA1dOm%2631B/openapi.json",
+      projectName: "swagger",
     },
   ],
   mock: {
-    include: ['mock/**/*', 'src/pages/**/_mock.ts'],
+    include: ["mock/**/*", "src/pages/**/_mock.ts"],
   },
   /**
    * @name 是否开启 mako
@@ -195,7 +195,7 @@ const config: any = defineConfig({
   exportStatic: {},
 
   define: {
-    'process.env.CI': process.env.CI,
+    "process.env.CI": process.env.CI,
   },
 });
 

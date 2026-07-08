@@ -7,20 +7,20 @@
  * - 状态更精简：IDLE / ANALYZING / READY / ERROR / ENGINE_OFFLINE
  */
 
-import { invoke } from '@tauri-apps/api/core';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { invoke } from "@tauri-apps/api/core";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   analyzeWithLocalEngine,
   ENGINE_OFFLINE_MARKER,
   normalizeRaw,
-} from '@/services/transcription/client';
+} from "@/services/transcription/client";
 import type {
   TranscriptionResult,
   TranscriptionStatus,
-} from '@/shared/types/types';
+} from "@/shared/types/types";
 
 export function useTranscription() {
-  const [status, setStatus] = useState<TranscriptionStatus>('IDLE');
+  const [status, setStatus] = useState<TranscriptionStatus>("IDLE");
   const [result, setResult] = useState<TranscriptionResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
@@ -43,7 +43,7 @@ export function useTranscription() {
 
     fileRef.current = file;
     setFileName(file.name);
-    setStatus('ANALYZING');
+    setStatus("ANALYZING");
     setError(null);
     try {
       let res: TranscriptionResult;
@@ -53,7 +53,7 @@ export function useTranscription() {
         // 所以文件以 Uint8Array 经 Tauri IPC 二进制通道送 Rust，
         // 由 Rust 用原生 reqwest 转发——免 base64 中转，去掉 33% 体积与主线程编码（ADR-6 / #5/#7）。
         const buf = await file.arrayBuffer();
-        const raw = await invoke<string>('analyze_local_engine', {
+        const raw = await invoke<string>("analyze_local_engine", {
           fileName: file.name,
           fileBytes: new Uint8Array(buf),
         });
@@ -65,7 +65,7 @@ export function useTranscription() {
       if (seq !== requestSeqRef.current) return;
       setResult(res);
       setAnalyzedAt(Date.now());
-      setStatus('READY');
+      setStatus("READY");
     } catch (e) {
       // 过期响应（被重置 / 新上传取代）一律忽略，不再 setState
       if (seq !== requestSeqRef.current) return;
@@ -75,12 +75,12 @@ export function useTranscription() {
       if (
         baseUrl &&
         (msg.includes(ENGINE_OFFLINE_MARKER) ||
-          msg.includes('调用本地引擎失败'))
+          msg.includes("调用本地引擎失败"))
       ) {
-        setStatus('ENGINE_OFFLINE');
+        setStatus("ENGINE_OFFLINE");
       } else {
         // 其余（含「引擎返回错误 HTTP xxx」）一律展示真实原因，不再笼统报离线
-        setStatus('ERROR');
+        setStatus("ERROR");
       }
       setError(msg);
     }
@@ -96,7 +96,7 @@ export function useTranscription() {
     requestSeqRef.current += 1;
     abortRef.current?.abort();
     abortRef.current = null;
-    setStatus('IDLE');
+    setStatus("IDLE");
     setResult(null);
     setError(null);
     setFileName(null);

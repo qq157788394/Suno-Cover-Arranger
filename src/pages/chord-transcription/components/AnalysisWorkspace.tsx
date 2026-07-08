@@ -1,14 +1,14 @@
-import { Button, Flex, Result, Spin, Typography } from 'antd';
+import { Button, Flex, Result, Spin, Typography } from "antd";
 
 const { Text } = Typography;
 
-import React from 'react';
-import FileDropZone from '@/pages/chord-analysis/components/FileDropZone';
+import React from "react";
+import FileDropZone from "@/pages/chord-analysis/components/FileDropZone";
 import type {
   TranscriptionResult,
   TranscriptionStatus,
-} from '@/shared/types/types';
-import AnalysisResultCard from './AnalysisResultCard';
+} from "@/shared/types/types";
+import AnalysisResultCard from "./AnalysisResultCard";
 
 /**
  * 引擎就绪后的上传 / 分析 / 结果 / 异常工作区。
@@ -31,14 +31,14 @@ export function AnalysisWorkspace({
   onReset: () => void;
   onReupload: () => void;
 }) {
-  const isIdle = status === 'IDLE';
-  const isAnalyzing = status === 'ANALYZING';
-  const isError = status === 'ERROR';
-  const isReady = status === 'READY';
+  const isIdle = status === "IDLE";
+  const isAnalyzing = status === "ANALYZING";
+  const isError = status === "ERROR";
+  const isReady = status === "READY";
 
   if (isIdle) {
     return (
-      <div style={{ maxWidth: 640, margin: '0 auto' }}>
+      <div style={{ maxWidth: 640, margin: "0 auto" }}>
         <FileDropZone disabled={false} onFileSelect={onFileSelect} />
       </div>
     );

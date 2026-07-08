@@ -10,9 +10,9 @@
  * - displayMode='chord'|'degree' 控制展示内容
  */
 
-import { Typography } from 'antd';
-import React, { useMemo } from 'react';
-import type { BeatChord } from '@/shared/types/types';
+import { Typography } from "antd";
+import React, { useMemo } from "react";
+import type { BeatChord } from "@/shared/types/types";
 
 const { Text } = Typography;
 
@@ -24,7 +24,7 @@ export interface ChordGridProps {
   /** 当前播放时间（秒） */
   currentTime: number;
   /** 展示模式 */
-  displayMode: 'chord' | 'degree';
+  displayMode: "chord" | "degree";
 }
 
 const BEATS_PER_ROW = 16;
@@ -61,30 +61,30 @@ function cellStyle(cell: Cell): React.CSSProperties {
     width: CELL_SIZE,
     height: CELL_SIZE,
     borderRadius: 6,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
     fontSize: 12,
     fontWeight: 600,
-    cursor: 'default',
-    transition: 'background 0.2s, box-shadow 0.2s',
+    cursor: "default",
+    transition: "background 0.2s, box-shadow 0.2s",
   };
 
   if (!cell.chord) {
-    return { ...base, background: '#F9F9FB', border: '1px dashed #E5E7EB' };
+    return { ...base, background: "#F9F9FB", border: "1px dashed #E5E7EB" };
   }
   if (cell.isCurrent) {
     return {
       ...base,
-      background: '#374151',
-      color: '#FFFFFF',
-      boxShadow: '0 2px 8px rgba(55,65,81,0.35)',
+      background: "#374151",
+      color: "#FFFFFF",
+      boxShadow: "0 2px 8px rgba(55,65,81,0.35)",
     };
   }
   if (cell.isPast) {
-    return { ...base, background: '#F3F4F6', opacity: 0.45 };
+    return { ...base, background: "#F3F4F6", opacity: 0.45 };
   }
-  return { ...base, background: '#FFFFFF', border: '1px solid #D1D5DB' };
+  return { ...base, background: "#FFFFFF", border: "1px solid #D1D5DB" };
 }
 
 const ChordGrid: React.FC<ChordGridProps> = ({
@@ -131,8 +131,8 @@ const ChordGrid: React.FC<ChordGridProps> = ({
     return (
       <div
         style={{
-          textAlign: 'center',
-          padding: '32px 0',
+          textAlign: "center",
+          padding: "32px 0",
         }}
       >
         <Text type="secondary">暂无可显示的和弦数据</Text>
@@ -141,17 +141,17 @@ const ChordGrid: React.FC<ChordGridProps> = ({
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       {/* 表头：前奏 label + 小节标签 */}
-      <div style={{ display: 'flex', paddingLeft: 0 }}>
+      <div style={{ display: "flex", paddingLeft: 0 }}>
         <div style={{ width: 64, flexShrink: 0 }} />
-        {(['section-0', 'section-1', 'section-2', 'section-3'] as const).map(
+        {(["section-0", "section-1", "section-2", "section-3"] as const).map(
           (key, m) => (
             <div
               key={key}
               style={{
                 width: BEATS_PER_MEASURE * (CELL_SIZE + BEAT_GAP) - BEAT_GAP,
-                textAlign: 'center',
+                textAlign: "center",
                 marginLeft: m > 0 ? MEASURE_GAP : 0,
               }}
             >
@@ -165,16 +165,16 @@ const ChordGrid: React.FC<ChordGridProps> = ({
       {rows.map((row, rowIndex) => (
         <div
           key={row[0]?.beatIndex ?? rowIndex}
-          style={{ display: 'flex', alignItems: 'center' }}
+          style={{ display: "flex", alignItems: "center" }}
         >
           {/* 行标签 */}
           <div
             style={{
               width: 64,
               height: CELL_SIZE,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'flex-end',
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-end",
               paddingRight: 8,
               flexShrink: 0,
             }}
@@ -185,7 +185,7 @@ const ChordGrid: React.FC<ChordGridProps> = ({
           {/* 方格 */}
           {row.map((cell, colIndex) => {
             const isShowText = cell.isDownbeat || cell.isChordChange;
-            const textColor = cell.isCurrent ? '#FFFFFF' : '#1F2937';
+            const textColor = cell.isCurrent ? "#FFFFFF" : "#1F2937";
 
             // 小节间距
             const marginLeft =
@@ -203,7 +203,7 @@ const ChordGrid: React.FC<ChordGridProps> = ({
                   marginLeft,
                   flexShrink: 0,
                 }}
-                title={`${cell.chord || '—'} ${cell.degree || ''} (${displayMode})`}
+                title={`${cell.chord || "—"} ${cell.degree || ""} (${displayMode})`}
               >
                 {cell.chord && (
                   <span
@@ -212,21 +212,21 @@ const ChordGrid: React.FC<ChordGridProps> = ({
                       fontWeight: cell.isCurrent ? 700 : 600,
                       color: textColor,
                       maxWidth: CELL_SIZE - 8,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                      textAlign: 'center',
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      textAlign: "center",
                     }}
                   >
                     {isShowText
-                      ? displayMode === 'degree' && cell.degree
+                      ? displayMode === "degree" && cell.degree
                         ? cell.degree
                         : cell.chord
-                      : ''}
+                      : ""}
                   </span>
                 )}
                 {!cell.chord && (
-                  <span style={{ fontSize: 10, color: '#D1D5DB' }}>—</span>
+                  <span style={{ fontSize: 10, color: "#D1D5DB" }}>—</span>
                 )}
               </div>
             );
@@ -237,14 +237,14 @@ const ChordGrid: React.FC<ChordGridProps> = ({
       {/* 底部说明 */}
       <div
         style={{
-          textAlign: 'center',
+          textAlign: "center",
           fontSize: 12,
-          color: '#9CA3AF',
+          color: "#9CA3AF",
           paddingTop: 4,
         }}
       >
-        每行 4 小节，每小节 4 拍 · 跟随播放实时高亮当前拍 ·{' '}
-        {displayMode === 'degree' ? '展示功能级数' : '展示和弦名称'}
+        每行 4 小节，每小节 4 拍 · 跟随播放实时高亮当前拍 ·{" "}
+        {displayMode === "degree" ? "展示功能级数" : "展示和弦名称"}
       </div>
     </div>
   );

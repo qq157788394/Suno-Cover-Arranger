@@ -1,9 +1,9 @@
-import { Button, Typography } from 'antd';
+import { Button, Typography } from "antd";
 
 const { Text } = Typography;
 
-import React from 'react';
-import type { AssetItem } from '../types';
+import React from "react";
+import type { AssetItem } from "../types";
 
 /** 单条资产状态 + 缺失时「下载」按钮（触发 Rust prefetch_asset 本地拉取） */
 export function AssetRow({
@@ -15,15 +15,15 @@ export function AssetRow({
   downloading: boolean;
   onDownload: (id: string) => void;
 }) {
-  const mark = asset.present ? '✅' : '❌';
+  const mark = asset.present ? "✅" : "❌";
   return (
     <div
       style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '8px 0',
-        borderBottom: '1px solid #F3F4F6',
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: "8px 0",
+        borderBottom: "1px solid #F3F4F6",
       }}
     >
       <span style={{ fontSize: 14 }}>
@@ -34,8 +34,8 @@ export function AssetRow({
           </Text>
         )}
       </span>
-      <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{ fontFamily: 'monospace', fontSize: 13 }}>{mark}</span>
+      <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ fontFamily: "monospace", fontSize: 13 }}>{mark}</span>
         {!asset.present && (
           <Button
             size="small"

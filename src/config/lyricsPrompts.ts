@@ -9,7 +9,7 @@ import {
   OUTPUT_COUNT_OPTIONS,
   PERSONA_OPTIONS,
   WORDING_STYLE_OPTIONS,
-} from './lyricsEnums';
+} from "./lyricsEnums";
 
 /**
  * System Prompt - 定义AI歌词助手的角色、职责和输出规则
@@ -215,7 +215,7 @@ export function getClosenessLevelInstruction(closenessLevel: number): string {
   const option = CLOSENESS_LEVEL_OPTIONS.find(
     (opt) => opt.value === closenessLevel,
   );
-  return option?.prompt_instruction || '';
+  return option?.prompt_instruction || "";
 }
 
 /**
@@ -225,7 +225,7 @@ export function getClosenessLevelInstruction(closenessLevel: number): string {
  */
 export function getOutputCountInstruction(outputCount: number): string {
   const option = OUTPUT_COUNT_OPTIONS.find((opt) => opt.value === outputCount);
-  return option?.prompt_instruction || '请提供 1 个完整的创作方案。';
+  return option?.prompt_instruction || "请提供 1 个完整的创作方案。";
 }
 
 /**
@@ -235,7 +235,7 @@ export function getOutputCountInstruction(outputCount: number): string {
  */
 export function getWordingStyleInstruction(wordingStyles?: string[]): string {
   if (!wordingStyles || wordingStyles.length === 0) {
-    return '【用词风格】：不限。请根据歌曲风格和内容自然选择用词风格。';
+    return "【用词风格】：不限。请根据歌曲风格和内容自然选择用词风格。";
   }
 
   const selectedOptions = wordingStyles
@@ -243,14 +243,14 @@ export function getWordingStyleInstruction(wordingStyles?: string[]): string {
     .filter((opt): opt is EnumOption => opt !== undefined);
 
   if (selectedOptions.length === 0) {
-    return '【用词风格】：不限。请根据歌曲风格和内容自然选择用词风格。';
+    return "【用词风格】：不限。请根据歌曲风格和内容自然选择用词风格。";
   }
 
-  const styleNames = selectedOptions.map((opt) => opt.label).join(' + ');
+  const styleNames = selectedOptions.map((opt) => opt.label).join(" + ");
   const instructions = selectedOptions
     .map((opt) => opt.prompt_instruction)
     .filter((instruction): instruction is string => instruction !== undefined)
-    .join('\n');
+    .join("\n");
 
   return `【用词风格】：${styleNames}。\n${instructions}`;
 }
@@ -265,6 +265,6 @@ export function getPersonaInstruction(persona: string): string {
   return (
     option?.prompt_instruction ||
     PERSONA_OPTIONS[0].prompt_instruction ||
-    '不限制叙事视角，AI 自由选择'
+    "不限制叙事视角，AI 自由选择"
   );
 }

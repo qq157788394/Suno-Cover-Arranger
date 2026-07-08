@@ -2,20 +2,20 @@
  * 通用格式化工具函数
  * 提供各种数据格式化功能，包括日期、语言、参考歌曲等
  */
-import type { ReferenceSong } from '../types';
+import type { ReferenceSong } from "../types";
 
 /**
  * 语言映射：将内部语言代码转换为对外显示的完整语言名称
  * 用于在提示中确保语言描述的一致性和准确性
  */
 const languageMap: Record<string, string> = {
-  Mandarin: 'Mandarin Chinese',
-  Cantonese: 'Cantonese',
-  Minnan: 'Minnan',
-  English: 'English',
-  Korean: 'Korean',
-  Japanese: 'Japanese',
-  Other: 'Other',
+  Mandarin: "Mandarin Chinese",
+  Cantonese: "Cantonese",
+  Minnan: "Minnan",
+  English: "English",
+  Korean: "Korean",
+  Japanese: "Japanese",
+  Other: "Other",
 };
 
 /**
@@ -39,13 +39,13 @@ export const formatReferenceSongs = (
   targetArtist: string,
 ): string => {
   if (referenceSongs.length === 0) {
-    return 'None';
+    return "None";
   }
 
   return referenceSongs
     .filter((song) => song.title)
     .map((song) => `${song.title} by ${song.artist || targetArtist}`)
-    .join('\n');
+    .join("\n");
 };
 
 /**
@@ -56,24 +56,24 @@ export const formatReferenceSongs = (
  */
 export const formatDate = (
   date: Date | string,
-  format: string = 'YYYY-MM-DD HH:mm:ss',
+  format: string = "YYYY-MM-DD HH:mm:ss",
 ): string => {
-  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  const dateObj = typeof date === "string" ? new Date(date) : date;
 
   const year = dateObj.getFullYear();
-  const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-  const day = String(dateObj.getDate()).padStart(2, '0');
-  const hours = String(dateObj.getHours()).padStart(2, '0');
-  const minutes = String(dateObj.getMinutes()).padStart(2, '0');
-  const seconds = String(dateObj.getSeconds()).padStart(2, '0');
+  const month = String(dateObj.getMonth() + 1).padStart(2, "0");
+  const day = String(dateObj.getDate()).padStart(2, "0");
+  const hours = String(dateObj.getHours()).padStart(2, "0");
+  const minutes = String(dateObj.getMinutes()).padStart(2, "0");
+  const seconds = String(dateObj.getSeconds()).padStart(2, "0");
 
   return format
-    .replace('YYYY', String(year))
-    .replace('MM', month)
-    .replace('DD', day)
-    .replace('HH', hours)
-    .replace('mm', minutes)
-    .replace('ss', seconds);
+    .replace("YYYY", String(year))
+    .replace("MM", month)
+    .replace("DD", day)
+    .replace("HH", hours)
+    .replace("mm", minutes)
+    .replace("ss", seconds);
 };
 
 /**
@@ -82,7 +82,7 @@ export const formatDate = (
  * @returns 千分位格式的数字字符串
  */
 export const formatNumber = (number: number): string => {
-  return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 };
 
 /**

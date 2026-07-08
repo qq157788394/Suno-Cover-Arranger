@@ -15,12 +15,13 @@
       "!**/public",
       "!**/coverage",
       "!**/node_modules",
+      "!**/local-engine/.venv",
+      "!**/src-tauri/target",
       "!biome.json"
     ]
   },
   "formatter": {
-    "enabled": true,
-    "indentStyle": "space"
+    "enabled": false
   },
   "linter": {
     "enabled": true,

@@ -3,11 +3,11 @@ import {
   ProCard,
   ProForm,
   ProFormText,
-} from '@ant-design/pro-components';
-import { Alert, Flex, Form, message, Radio, Typography } from 'antd';
-import React, { useEffect } from 'react';
+} from "@ant-design/pro-components";
+import { Alert, Flex, Form, message, Radio, Typography } from "antd";
+import React, { useEffect } from "react";
 
-import { useApiKey } from '@/hooks/useApiKey';
+import { useApiKey } from "@/hooks/useApiKey";
 
 const { Text, Paragraph, Title, Link } = Typography;
 
@@ -29,7 +29,7 @@ const AISettingPage: React.FC = () => {
   useEffect(() => {
     if (!isLoading) {
       form.setFieldsValue({
-        model: model || 'deepseek',
+        model: model || "deepseek",
         apiKey: apiKey,
       });
     }
@@ -38,7 +38,7 @@ const AISettingPage: React.FC = () => {
   // 处理模型变化，使用新添加的switchModel方法
   const handleModelChange = async (e: any) => {
     const newModel = e.target.value;
-    console.log('Changing model to:', newModel);
+    console.log("Changing model to:", newModel);
     await switchModel(newModel);
   };
 
@@ -49,15 +49,15 @@ const AISettingPage: React.FC = () => {
   }) => {
     // 验证API Key格式
     if (!validateApiKey(values.apiKey)) {
-      message.error('API Key格式不正确，请输入有效的API Key');
+      message.error("API Key格式不正确，请输入有效的API Key");
       return;
     }
 
     const result = await saveApiKey(values.apiKey, values.model);
     if (result) {
-      message.success('API Key 已成功保存');
+      message.success("API Key 已成功保存");
     } else {
-      message.error('保存API Key失败，请稍后重试');
+      message.error("保存API Key失败，请稍后重试");
     }
   };
 
@@ -67,12 +67,12 @@ const AISettingPage: React.FC = () => {
     if (result) {
       // 清空表单内容
       form.setFieldsValue({
-        model: 'deepseek',
-        apiKey: '',
+        model: "deepseek",
+        apiKey: "",
       });
-      message.success('API Key 已删除');
+      message.success("API Key 已删除");
     } else {
-      message.error('删除API Key失败，请稍后重试');
+      message.error("删除API Key失败，请稍后重试");
     }
   };
 
@@ -88,7 +88,7 @@ const AISettingPage: React.FC = () => {
           <ProForm
             layout="vertical"
             initialValues={{
-              model: model || 'deepseek',
+              model: model || "deepseek",
               apiKey: apiKey,
             }}
             form={form}
@@ -96,8 +96,8 @@ const AISettingPage: React.FC = () => {
             onReset={handleFormReset}
             submitter={{
               searchConfig: {
-                submitText: '保存 API Key',
-                resetText: '删除 API Key',
+                submitText: "保存 API Key",
+                resetText: "删除 API Key",
               },
             }}
             loading={false}
@@ -105,23 +105,23 @@ const AISettingPage: React.FC = () => {
             <ProForm.Item
               name="model"
               label="首选 AI 模型"
-              rules={[{ required: true, message: '请选择首选 AI 模型' }]}
+              rules={[{ required: true, message: "请选择首选 AI 模型" }]}
             >
               <Radio.Group
                 value={model}
                 options={[
                   {
-                    value: 'deepseek',
+                    value: "deepseek",
                     label:
-                      'DeepSeek v4（最新模型，需充值，10元起步，支持国货💪）',
+                      "DeepSeek v4（最新模型，需充值，10元起步，支持国货💪）",
                   },
                   {
-                    value: 'gemini',
-                    label: 'Google Gemini-3.5-Flash（推荐，可白嫖）',
+                    value: "gemini",
+                    label: "Google Gemini-3.5-Flash（推荐，可白嫖）",
                   },
                   {
-                    value: 'glm',
-                    label: '智谱AI GLM-4.7-Flash（可白嫖）',
+                    value: "glm",
+                    label: "智谱AI GLM-4.7-Flash（可白嫖）",
                   },
                   // {
                   //   value: "mimo",
@@ -138,12 +138,12 @@ const AISettingPage: React.FC = () => {
               label="API Key"
               placeholder="请输入所选 AI 模型的 API Key"
               fieldProps={{
-                size: 'large',
+                size: "large",
               }}
               rules={[
                 {
                   required: true,
-                  message: '请输入 API Key',
+                  message: "请输入 API Key",
                 },
                 {
                   validator: (_rule, value) => {
@@ -151,7 +151,7 @@ const AISettingPage: React.FC = () => {
                       return Promise.resolve();
                     }
                     return Promise.reject(
-                      new Error('API Key格式不正确，请输入有效的 API Key'),
+                      new Error("API Key格式不正确，请输入有效的 API Key"),
                     );
                   },
                 },
@@ -227,12 +227,12 @@ const AISettingPage: React.FC = () => {
                   账号（Gmail）登录。
                 </li>
                 <li>
-                  获取密钥 登录后，点击左上角的 <Text code>Get API key</Text>{' '}
+                  获取密钥 登录后，点击左上角的 <Text code>Get API key</Text>{" "}
                   按钮
                 </li>
                 <li>
-                  创建密钥 点击 <Text code>Create API key</Text>{' '}
-                  按钮，如果弹窗询问，选择{' '}
+                  创建密钥 点击 <Text code>Create API key</Text>{" "}
+                  按钮，如果弹窗询问，选择{" "}
                   <Text code>Create API key in new project</Text>
                   （在新项目中创建）
                 </li>

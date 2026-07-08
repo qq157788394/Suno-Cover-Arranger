@@ -7,8 +7,8 @@
  * - 连续点击 10 次在 localhost:8000 与 GitHub Pages 之间切换，
  *   第 6 次起开始提示「即将切换」，逻辑见 useEnvSwitchTrigger。
  */
-import { Typography } from 'antd';
-import { useEnvSwitchTrigger } from '../hooks/useEnvSwitch';
+import { Typography } from "antd";
+import { useEnvSwitchTrigger } from "../hooks/useEnvSwitch";
 
 const { Text } = Typography;
 
@@ -19,7 +19,7 @@ const EnvSwitchTrigger: React.FC = () => {
     <>
       {contextHolder}
       <Text
-        style={{ opacity: 0, cursor: 'pointer', userSelect: 'none' }}
+        style={{ opacity: 0, cursor: "pointer", userSelect: "none" }}
         onClick={onClick}
       >
         环境切换

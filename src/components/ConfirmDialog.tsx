@@ -1,5 +1,5 @@
-import { Modal } from 'antd';
-import React from 'react';
+import { Modal } from "antd";
+import React from "react";
 
 interface ConfirmDialogProps {
   /** 对话框标题 */
@@ -13,7 +13,7 @@ interface ConfirmDialogProps {
   /** 取消按钮文本 */
   cancelText?: string;
   /** 确定按钮类型 */
-  okType?: 'primary' | 'default' | 'dashed' | 'text' | 'link' | 'danger';
+  okType?: "primary" | "default" | "dashed" | "text" | "link" | "danger";
   /** 是否显示关闭按钮 */
   closable?: boolean;
   /** 是否显示遮罩 */
@@ -33,12 +33,12 @@ interface ConfirmDialogProps {
 }
 
 const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
-  title = '确认操作',
-  content = '确定要执行此操作吗？',
+  title = "确认操作",
+  content = "确定要执行此操作吗？",
   visible,
-  okText = '确定',
-  cancelText = '取消',
-  okType = 'primary',
+  okText = "确定",
+  cancelText = "取消",
+  okType = "primary",
   closable = true,
   mask = true,
   maskClosable = false,
@@ -53,7 +53,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
     try {
       await onConfirm();
     } catch (error) {
-      console.error('确认操作失败:', error);
+      console.error("确认操作失败:", error);
     }
   };
 

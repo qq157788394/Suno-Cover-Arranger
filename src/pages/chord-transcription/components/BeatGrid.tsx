@@ -10,20 +10,20 @@
  * 纯算法在 beatGridUtils.ts，本文件负责渲染 + 音频状态管理。
  */
 
-import { CaretRightOutlined, PauseOutlined } from '@ant-design/icons';
-import { Button, Tooltip, Typography } from 'antd';
+import { CaretRightOutlined, PauseOutlined } from "@ant-design/icons";
+import { Button, Tooltip, Typography } from "antd";
 import React, {
   useCallback,
   useEffect,
   useMemo,
   useRef,
   useState,
-} from 'react';
+} from "react";
 import type {
   TranscriptionChordSegment,
   TranscriptionRhythm,
   TranscriptionRomanSegment,
-} from '@/shared/types/types';
+} from "@/shared/types/types";
 import {
   BARS_PER_ROW,
   buildBeatCells,
@@ -32,7 +32,7 @@ import {
   groupBarsIntoRows,
   resolveCellDisplay,
   splitIntoBars,
-} from './beatGridUtils';
+} from "./beatGridUtils";
 
 const { Text } = Typography;
 
@@ -47,17 +47,17 @@ const BAR_GAP = 12; // 小节之间的较大间隔
 
 /** 默认格样式 */
 const STYLE_CELL: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  background: '#F3F4F6',
-  border: '1px solid #E8E8E8',
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background: "#F3F4F6",
+  border: "1px solid #E8E8E8",
   borderRadius: 5,
   fontSize: 12,
   fontWeight: 600,
-  color: '#374151',
-  overflow: 'hidden',
-  userSelect: 'none',
+  color: "#374151",
+  overflow: "hidden",
+  userSelect: "none",
   width: CELL_W,
   height: CELL_H,
 };
@@ -65,9 +65,9 @@ const STYLE_CELL: React.CSSProperties = {
 /** 当前播放位置的格样式 */
 const STYLE_ACTIVE_CELL: React.CSSProperties = {
   ...STYLE_CELL,
-  background: '#374151',
-  color: '#FFFFFF',
-  borderColor: '#374151',
+  background: "#374151",
+  color: "#FFFFFF",
+  borderColor: "#374151",
 };
 
 // ── 组件 ────────────────────────────────────────────────
@@ -87,7 +87,7 @@ const BeatGrid: React.FC<BeatGridProps> = ({
   rhythm,
   roman,
   audioUrl,
-  displayMode = 'chord',
+  displayMode = "chord",
 }) => {
   // ── 网格数据 ─────────────────────────────────────
   const gridData = useMemo(() => {
@@ -136,18 +136,18 @@ const BeatGrid: React.FC<BeatGridProps> = ({
     const onPlay = () => setPlaying(true);
     const onPause = () => setPlaying(false);
 
-    audio.addEventListener('timeupdate', onTimeUpdate);
-    audio.addEventListener('loadedmetadata', onLoadedMetadata);
-    audio.addEventListener('ended', onEnded);
-    audio.addEventListener('play', onPlay);
-    audio.addEventListener('pause', onPause);
+    audio.addEventListener("timeupdate", onTimeUpdate);
+    audio.addEventListener("loadedmetadata", onLoadedMetadata);
+    audio.addEventListener("ended", onEnded);
+    audio.addEventListener("play", onPlay);
+    audio.addEventListener("pause", onPause);
 
     return () => {
-      audio.removeEventListener('timeupdate', onTimeUpdate);
-      audio.removeEventListener('loadedmetadata', onLoadedMetadata);
-      audio.removeEventListener('ended', onEnded);
-      audio.removeEventListener('play', onPlay);
-      audio.removeEventListener('pause', onPause);
+      audio.removeEventListener("timeupdate", onTimeUpdate);
+      audio.removeEventListener("loadedmetadata", onLoadedMetadata);
+      audio.removeEventListener("ended", onEnded);
+      audio.removeEventListener("play", onPlay);
+      audio.removeEventListener("pause", onPause);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
   }, [audioUrl]);
@@ -157,7 +157,7 @@ const BeatGrid: React.FC<BeatGridProps> = ({
     return () => {
       if (audioRef.current) {
         audioRef.current.pause();
-        audioRef.current.src = '';
+        audioRef.current.src = "";
       }
     };
   }, []);
@@ -187,7 +187,7 @@ const BeatGrid: React.FC<BeatGridProps> = ({
 
   /** 格式化时间 mm:ss */
   const fmt = (s: number) =>
-    `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+    `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 
   // ── 无节奏数据降级 ─────────────────────────────────
   if (!gridData) {
@@ -205,8 +205,8 @@ const BeatGrid: React.FC<BeatGridProps> = ({
     <div key={`row-${rowIndex}`} style={{ marginBottom: BAR_GAP }}>
       <div
         style={{
-          display: 'flex',
-          alignItems: 'stretch',
+          display: "flex",
+          alignItems: "stretch",
         }}
       >
         {/* 该行所有小节 */}
@@ -215,10 +215,10 @@ const BeatGrid: React.FC<BeatGridProps> = ({
             {/* 小节序号 */}
             <div
               style={{
-                display: 'flex',
-                alignItems: 'center',
+                display: "flex",
+                alignItems: "center",
                 fontSize: 10,
-                color: '#BFBFBF',
+                color: "#BFBFBF",
                 paddingLeft: 2,
                 paddingBottom: 3,
               }}
@@ -229,7 +229,7 @@ const BeatGrid: React.FC<BeatGridProps> = ({
             {/* 一小节的格子 */}
             <div
               style={{
-                display: 'grid',
+                display: "grid",
                 gridTemplateColumns: `repeat(${bpb}, ${CELL_W}px)`,
                 gap: `${BEAT_GAP}px`,
                 marginRight: BAR_GAP,
@@ -251,11 +251,11 @@ const BeatGrid: React.FC<BeatGridProps> = ({
                   <Tooltip
                     key={exactGlobalIdx}
                     title={
-                      cell.subLabel && cell.label !== 'N'
+                      cell.subLabel && cell.label !== "N"
                         ? `${cell.label} (${cell.subLabel})`
-                        : cell.label !== 'N'
+                        : cell.label !== "N"
                           ? cell.label
-                          : ''
+                          : ""
                     }
                   >
                     <div style={active ? STYLE_ACTIVE_CELL : { ...STYLE_CELL }}>
@@ -264,11 +264,11 @@ const BeatGrid: React.FC<BeatGridProps> = ({
                           fontSize: 11,
                           fontWeight: 600,
                           lineHeight: 1.2,
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
                           maxWidth: CELL_W - 6,
-                          textAlign: 'center',
+                          textAlign: "center",
                         }}
                       >
                         {display}
@@ -286,7 +286,7 @@ const BeatGrid: React.FC<BeatGridProps> = ({
 
   // ── 主渲染 ─────────────────────────────────────────
   return (
-    <div style={{ overflowX: 'auto' }}>
+    <div style={{ overflowX: "auto" }}>
       {/* 隐藏的 Audio 元素 */}
       {audioUrl && (
         // biome-ignore lint/a11y/useMediaCaption: 音乐播放器无语音内容，无需字幕轨
@@ -296,8 +296,8 @@ const BeatGrid: React.FC<BeatGridProps> = ({
       {/* 播放控制栏 */}
       <div
         style={{
-          display: 'flex',
-          alignItems: 'center',
+          display: "flex",
+          alignItems: "center",
           gap: 10,
           marginBottom: 14,
         }}
@@ -305,7 +305,7 @@ const BeatGrid: React.FC<BeatGridProps> = ({
         <Button
           shape="circle"
           size="small"
-          type={playing ? 'default' : 'primary'}
+          type={playing ? "default" : "primary"}
           icon={playing ? <PauseOutlined /> : <CaretRightOutlined />}
           onClick={togglePlay}
           disabled={!audioUrl}
@@ -317,10 +317,10 @@ const BeatGrid: React.FC<BeatGridProps> = ({
           style={{
             flex: 1,
             height: 4,
-            background: '#E5E7EB',
+            background: "#E5E7EB",
             borderRadius: 2,
-            position: 'relative',
-            cursor: audioUrl ? 'pointer' : 'default',
+            position: "relative",
+            cursor: audioUrl ? "pointer" : "default",
           }}
           onClick={(e) => {
             if (!audioUrl || !audioRef.current) return;
@@ -334,20 +334,20 @@ const BeatGrid: React.FC<BeatGridProps> = ({
         >
           <div
             style={{
-              position: 'absolute',
+              position: "absolute",
               left: 0,
               top: 0,
-              height: '100%',
+              height: "100%",
               width: duration > 0 ? `${(currentTime / duration) * 100}%` : 0,
-              background: '#FF9000',
+              background: "#FF9000",
               borderRadius: 2,
-              transition: 'width 0.1s linear',
+              transition: "width 0.1s linear",
             }}
           />
         </div>
 
         {/* 时间显示 */}
-        <Text style={{ fontSize: 11, color: '#9CA3AF', minWidth: 80 }}>
+        <Text style={{ fontSize: 11, color: "#9CA3AF", minWidth: 80 }}>
           {fmt(currentTime)} / {fmt(duration)}
         </Text>
       </div>
@@ -355,7 +355,7 @@ const BeatGrid: React.FC<BeatGridProps> = ({
       {/* 表头：每拍的编号（重复 4 组对应 4 小节） */}
       <div
         style={{
-          display: 'flex',
+          display: "flex",
           marginBottom: 6,
         }}
       >
@@ -370,9 +370,9 @@ const BeatGrid: React.FC<BeatGridProps> = ({
               <div
                 key={beatKey}
                 style={{
-                  textAlign: 'center',
+                  textAlign: "center",
                   fontSize: 9,
-                  color: '#C4C4C4',
+                  color: "#C4C4C4",
                   lineHeight: 1,
                 }}
               >
@@ -384,7 +384,7 @@ const BeatGrid: React.FC<BeatGridProps> = ({
             <div
               key={headerRowKey}
               style={{
-                display: 'grid',
+                display: "grid",
                 gridTemplateColumns: `repeat(${bpb}, ${CELL_W}px)`,
                 gap: `${BEAT_GAP}px`,
                 marginRight: BAR_GAP,
@@ -404,8 +404,8 @@ const BeatGrid: React.FC<BeatGridProps> = ({
         style={{
           marginTop: 12,
           fontSize: 11,
-          color: '#BFBFBF',
-          display: 'flex',
+          color: "#BFBFBF",
+          display: "flex",
           gap: 14,
         }}
       >

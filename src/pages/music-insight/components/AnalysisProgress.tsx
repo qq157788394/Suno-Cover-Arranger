@@ -1,8 +1,8 @@
 /**
  * 音乐理解 — 分析进度组件
  */
-import { Flex, Progress, Spin, Typography } from 'antd';
-import React from 'react';
+import { Flex, Progress, Spin, Typography } from "antd";
+import React from "react";
 
 const { Text } = Typography;
 

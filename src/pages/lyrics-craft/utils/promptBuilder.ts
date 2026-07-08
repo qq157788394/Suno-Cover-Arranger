@@ -1,8 +1,8 @@
 import {
   getLyricsSystemPrompt,
   getLyricsUserPrompt,
-} from '@/services/lyricsPromptService';
-import type { LyricsFormData } from '@/shared/types/types';
+} from "@/services/lyricsPromptService";
+import type { LyricsFormData } from "@/shared/types/types";
 
 /**
  * 大师写歌词 - Prompt拼接工具类

@@ -1,11 +1,11 @@
-import { Button, Flex, Result, Typography } from 'antd';
+import { Button, Flex, Result, Typography } from "antd";
 
 const { Paragraph, Text } = Typography;
 
-import React from 'react';
-import type { EngineStatusDetail } from '../types';
-import EngineDependencyPanel from './EngineDependencyPanel';
-import TerminalLog from './TerminalLog';
+import React from "react";
+import type { EngineStatusDetail } from "../types";
+import EngineDependencyPanel from "./EngineDependencyPanel";
+import TerminalLog from "./TerminalLog";
 
 /**
  * 未就绪态容器：依赖清单 + 安装入口 + 终端日志。
@@ -34,14 +34,14 @@ export function EngineSetupPanel({
   onPrefetch: (id: string) => void;
 }) {
   return (
-    <div style={{ maxWidth: 680, margin: '0 auto' }}>
+    <div style={{ maxWidth: 680, margin: "0 auto" }}>
       <Result
         status="404"
-        title={offline ? '引擎连接中断' : '本地引擎未就绪'}
+        title={offline ? "引擎连接中断" : "本地引擎未就绪"}
         subTitle={
           offline
-            ? '上传时无法连接到本地引擎，可能已停止运行。可重新检测，或一键安装 & 启动以重启。'
-            : '需先安装并启动，击下方一键安装可自动完成'
+            ? "上传时无法连接到本地引擎，可能已停止运行。可重新检测，或一键安装 & 启动以重启。"
+            : "需先安装并启动，击下方一键安装可自动完成"
         }
         extra={[
           <Flex key="install" gap="medium">
@@ -51,7 +51,7 @@ export function EngineSetupPanel({
               onClick={onInstall}
               style={{ borderRadius: 8 }}
             >
-              {installing ? '正在安装并启动…' : '一键安装 & 启动'}
+              {installing ? "正在安装并启动…" : "一键安装 & 启动"}
             </Button>
             <Button
               onClick={onDetect}

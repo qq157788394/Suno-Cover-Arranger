@@ -9,7 +9,7 @@
 /** 是否运行在 Tauri 桌面壳内（非浏览器）。 */
 export function isRunningInTauri(): boolean {
   return (
-    typeof window !== 'undefined' &&
-    ('__TAURI_INTERNALS__' in window || '__TAURI__' in window)
+    typeof window !== "undefined" &&
+    ("__TAURI_INTERNALS__" in window || "__TAURI__" in window)
   );
 }

@@ -1,18 +1,18 @@
-import React from 'react';
-import type { EngineStatusDetail } from '../types';
-import AssetRow from './AssetRow';
-import StatusRow from './StatusRow';
+import React from "react";
+import type { EngineStatusDetail } from "../types";
+import AssetRow from "./AssetRow";
+import StatusRow from "./StatusRow";
 
 /** 根据三层依赖探测结果，生成「模型与依赖就绪」行的提示文案。 */
-export function modelReadyHint(layers: EngineStatusDetail['layers']): string {
-  if (!layers) return '（未知）';
+export function modelReadyHint(layers: EngineStatusDetail["layers"]): string {
+  if (!layers) return "（未知）";
   const miss: string[] = [];
-  if (!layers.lv_chordia) miss.push('lv-chordia');
-  if (!layers.madmom) miss.push('madmom');
-  if (!layers.chord_romanizer) miss.push('chord-romanizer');
+  if (!layers.lv_chordia) miss.push("lv-chordia");
+  if (!layers.madmom) miss.push("madmom");
+  if (!layers.chord_romanizer) miss.push("chord-romanizer");
   return miss.length
-    ? `缺失：${miss.join(' / ')}`
-    : 'lv-chordia / madmom / chord-romanizer 均已就位';
+    ? `缺失：${miss.join(" / ")}`
+    : "lv-chordia / madmom / chord-romanizer 均已就位";
 }
 
 /** 引擎依赖清单：uv / 源码 / .venv / 服务 + 逐条资产（或 model_ready 兜底）+ 端到端分析验证 */

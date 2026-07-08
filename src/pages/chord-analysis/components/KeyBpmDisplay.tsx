@@ -3,8 +3,8 @@
  * 使用 Tag 组件显示调性和速度信息
  */
 
-import { Space, Tag, Typography } from 'antd';
-import React from 'react';
+import { Space, Tag, Typography } from "antd";
+import React from "react";
 
 const { Text } = Typography;
 
@@ -27,13 +27,13 @@ const KeyBpmDisplay: React.FC<KeyBpmDisplayProps> = ({
 }) => {
   return (
     <Space size={12} style={{ marginTop: 16 }}>
-      <Tag color="orange" style={{ fontSize: 14, padding: '4px 12px' }}>
+      <Tag color="orange" style={{ fontSize: 14, padding: "4px 12px" }}>
         {keyName}
         <Text type="secondary" style={{ fontSize: 11, marginLeft: 6 }}>
           ({(keyConfidence * 100).toFixed(0)}%)
         </Text>
       </Tag>
-      <Tag color="blue" style={{ fontSize: 14, padding: '4px 12px' }}>
+      <Tag color="blue" style={{ fontSize: 14, padding: "4px 12px" }}>
         {Math.round(bpm)} BPM
         <Text type="secondary" style={{ fontSize: 11, marginLeft: 6 }}>
           ({(bpmConfidence * 100).toFixed(0)}%)

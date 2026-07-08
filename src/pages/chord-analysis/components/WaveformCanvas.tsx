@@ -15,8 +15,8 @@
  * 使用 requestAnimationFrame 驱动重绘
  */
 
-import React, { useCallback, useEffect, useRef } from 'react';
-import type { ChordSegment } from '@/shared/types/types';
+import React, { useCallback, useEffect, useRef } from "react";
+import type { ChordSegment } from "@/shared/types/types";
 
 export interface WaveformCanvasProps {
   peaks: Float32Array | number[];
@@ -36,14 +36,14 @@ interface BeatInfo {
   isDownbeat: boolean;
 }
 
-const CANVAS_FILL_COLOR = '#e8e8e8';
-const BEAT_LINE_COLOR = 'rgba(0, 0, 0, 0.15)';
-const DOWNBEAT_LINE_COLOR = 'rgba(0, 0, 0, 0.3)';
-const MEASURE_LINE_COLOR = 'rgba(0, 0, 0, 0.25)';
-const PLAYHEAD_COLOR = '#ff9000';
-const CHORD_BG_COLOR = 'rgba(255, 144, 0, 0.08)';
-const CHORD_LABEL_COLOR = '#333';
-const CHORD_BORDER_COLOR = 'rgba(255, 144, 0, 0.3)';
+const CANVAS_FILL_COLOR = "#e8e8e8";
+const BEAT_LINE_COLOR = "rgba(0, 0, 0, 0.15)";
+const DOWNBEAT_LINE_COLOR = "rgba(0, 0, 0, 0.3)";
+const MEASURE_LINE_COLOR = "rgba(0, 0, 0, 0.25)";
+const PLAYHEAD_COLOR = "#ff9000";
+const CHORD_BG_COLOR = "rgba(255, 144, 0, 0.08)";
+const CHORD_LABEL_COLOR = "#333";
+const CHORD_BORDER_COLOR = "rgba(255, 144, 0, 0.3)";
 
 const WaveformCanvas: React.FC<WaveformCanvasProps> = ({
   peaks,
@@ -97,7 +97,7 @@ const WaveformCanvas: React.FC<WaveformCanvasProps> = ({
     canvas.style.width = `${containerWidth}px`;
     canvas.style.height = `${height}px`;
 
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     ctx.scale(dpr, dpr);
@@ -145,7 +145,7 @@ const WaveformCanvas: React.FC<WaveformCanvasProps> = ({
       for (let i = startIndex; i <= endIndex; i++) {
         const t = (i / peaks.length) * duration;
         const x = t * PIXELS_PER_SECOND - offset;
-        const peak = typeof peaks[i] === 'number' ? peaks[i] : 0;
+        const peak = typeof peaks[i] === "number" ? peaks[i] : 0;
         const y = waveMidY - peak * waveHeight * 0.5;
 
         if (firstPoint) {
@@ -160,7 +160,7 @@ const WaveformCanvas: React.FC<WaveformCanvasProps> = ({
       for (let i = endIndex; i >= startIndex; i--) {
         const t = (i / peaks.length) * duration;
         const x = t * PIXELS_PER_SECOND - offset;
-        const peak = typeof peaks[i] === 'number' ? peaks[i] : 0;
+        const peak = typeof peaks[i] === "number" ? peaks[i] : 0;
         const y = waveMidY + peak * waveHeight * 0.5;
         ctx.lineTo(x, y);
       }
@@ -207,7 +207,7 @@ const WaveformCanvas: React.FC<WaveformCanvasProps> = ({
     const viewEndTime = (offset + containerWidth) / PIXELS_PER_SECOND;
     let startIdx = 0,
       endIdx = beats.length;
-    for (let lo = 0, hi = beats.length - 1; lo <= hi; ) {
+    for (let lo = 0, hi = beats.length - 1; lo <= hi;) {
       const mid = (lo + hi) >> 1;
       if (beats[mid].time < viewStartTime) {
         lo = mid + 1;
@@ -216,7 +216,7 @@ const WaveformCanvas: React.FC<WaveformCanvasProps> = ({
         startIdx = mid;
       }
     }
-    for (let lo = 0, hi = beats.length - 1; lo <= hi; ) {
+    for (let lo = 0, hi = beats.length - 1; lo <= hi;) {
       const mid = (lo + hi) >> 1;
       if (beats[mid].time <= viewEndTime) {
         lo = mid + 1;
@@ -256,8 +256,8 @@ const WaveformCanvas: React.FC<WaveformCanvasProps> = ({
     }
 
     // --- 5. 和弦标签 ---
-    ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
-    ctx.textAlign = 'center';
+    ctx.font = "12px -apple-system, BlinkMacSystemFont, sans-serif";
+    ctx.textAlign = "center";
 
     chordSegments.forEach((seg) => {
       const segStartX = seg.startTime * PIXELS_PER_SECOND - offset;
@@ -275,10 +275,10 @@ const WaveformCanvas: React.FC<WaveformCanvasProps> = ({
             currentTimeRef.current >= seg.startTime &&
             currentTimeRef.current < seg.endTime;
 
-          ctx.fillStyle = isCurrent ? '#ff9000' : CHORD_LABEL_COLOR;
+          ctx.fillStyle = isCurrent ? "#ff9000" : CHORD_LABEL_COLOR;
           ctx.font = isCurrent
-            ? 'bold 12px -apple-system, BlinkMacSystemFont, sans-serif'
-            : '12px -apple-system, BlinkMacSystemFont, sans-serif';
+            ? "bold 12px -apple-system, BlinkMacSystemFont, sans-serif"
+            : "12px -apple-system, BlinkMacSystemFont, sans-serif";
 
           const clampedX = Math.min(Math.max(labelX, 20), containerWidth - 20);
           ctx.fillText(seg.chord, clampedX, height - 8);
@@ -335,8 +335,8 @@ const WaveformCanvas: React.FC<WaveformCanvasProps> = ({
   useEffect(() => {
     draw();
     const handleResize = () => draw();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, [draw]);
 
   // 点击跳转
@@ -362,21 +362,21 @@ const WaveformCanvas: React.FC<WaveformCanvasProps> = ({
     <div
       ref={containerRef}
       style={{
-        width: '100%',
+        width: "100%",
         height: 170,
-        position: 'relative',
-        overflow: 'hidden',
+        position: "relative",
+        overflow: "hidden",
         borderRadius: 6,
-        background: '#fafafa',
-        cursor: 'pointer',
+        background: "#fafafa",
+        cursor: "pointer",
       }}
     >
       <canvas
         ref={canvasRef}
         onClick={handleClick}
         style={{
-          display: 'block',
-          width: '100%',
+          display: "block",
+          width: "100%",
           height: 160,
         }}
       />
@@ -384,10 +384,10 @@ const WaveformCanvas: React.FC<WaveformCanvasProps> = ({
       <div
         style={{
           height: 10,
-          width: '100%',
-          position: 'relative',
-          background: '#f5f5f5',
-          borderTop: '1px solid #e8e8e8',
+          width: "100%",
+          position: "relative",
+          background: "#f5f5f5",
+          borderTop: "1px solid #e8e8e8",
         }}
       />
     </div>

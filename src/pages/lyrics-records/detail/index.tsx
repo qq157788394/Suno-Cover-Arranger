@@ -3,10 +3,10 @@
  * 展示歌词生成记录的详细信息，包括表单数据和生成的歌词
  */
 
-import { CopyOutlined } from '@ant-design/icons';
-import { ProCard, ProDescriptions } from '@ant-design/pro-components';
-import { XMarkdown } from '@ant-design/x-markdown';
-import { useModel } from '@umijs/max';
+import { CopyOutlined } from "@ant-design/icons";
+import { ProCard, ProDescriptions } from "@ant-design/pro-components";
+import { XMarkdown } from "@ant-design/x-markdown";
+import { useModel } from "@umijs/max";
 import {
   Button,
   Divider,
@@ -15,8 +15,8 @@ import {
   Segmented,
   Space,
   Typography,
-} from 'antd';
-import React from 'react';
+} from "antd";
+import React from "react";
 import {
   CLOSENESS_LEVEL_OPTIONS,
   CREATION_MODE_OPTIONS,
@@ -26,9 +26,9 @@ import {
   SONG_STRUCTURE_OPTIONS,
   SONG_STYLE_OPTIONS,
   WORDING_STYLE_OPTIONS,
-} from '@/config/lyricsEnums';
-import { MASTER_STYLE_CARDS } from '@/config/masterStyleConfig';
-import type { LyricsRecord } from '@/shared/types/types';
+} from "@/config/lyricsEnums";
+import { MASTER_STYLE_CARDS } from "@/config/masterStyleConfig";
+import type { LyricsRecord } from "@/shared/types/types";
 
 const { Paragraph, Text } = Typography;
 
@@ -41,23 +41,23 @@ const LyricsRecordDetail: React.FC<LyricsRecordDetailProps> = ({
   record,
   onClose,
 }) => {
-  const { initialState } = useModel('@@initialState');
+  const { initialState } = useModel("@@initialState");
 
   // 根据主题设置确定XMarkdown的主题类
-  const isDarkTheme = initialState?.settings?.navTheme === 'realDark';
+  const isDarkTheme = initialState?.settings?.navTheme === "realDark";
   const markdownThemeClass = isDarkTheme
-    ? 'markdown-body-dark'
-    : 'markdown-body-light';
+    ? "markdown-body-dark"
+    : "markdown-body-light";
 
   // 当前选中的Segmented项
-  const [activeItem, setActiveItem] = React.useState<string>('basic-info');
+  const [activeItem, setActiveItem] = React.useState<string>("basic-info");
 
   const handleCopy = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      message.success('复制成功');
+      message.success("复制成功");
     } catch (_error) {
-      message.error('复制失败');
+      message.error("复制失败");
     }
   };
 
@@ -72,11 +72,11 @@ const LyricsRecordDetail: React.FC<LyricsRecordDetailProps> = ({
 
   // Segmented选项
   const segmentedOptions = [
-    { label: '基本信息', value: 'basic-info' },
-    { label: '大师歌词', value: 'generated-lyrics' },
-    { label: '原始素材', value: 'raw-material' },
-    { label: '参考歌词', value: 'reference-lyrics' },
-    { label: '创作参数', value: 'creation-parameters' },
+    { label: "基本信息", value: "basic-info" },
+    { label: "大师歌词", value: "generated-lyrics" },
+    { label: "原始素材", value: "raw-material" },
+    { label: "参考歌词", value: "reference-lyrics" },
+    { label: "创作参数", value: "creation-parameters" },
   ];
 
   // 滚动到指定元素
@@ -84,15 +84,15 @@ const LyricsRecordDetail: React.FC<LyricsRecordDetailProps> = ({
     const element = document.getElementById(elementId);
     if (element) {
       // 获取当前Drawer的滚动容器
-      const currentDrawer = element.closest('.ant-drawer');
+      const currentDrawer = element.closest(".ant-drawer");
       if (currentDrawer) {
-        const drawerContent = currentDrawer.querySelector('.ant-drawer-body');
+        const drawerContent = currentDrawer.querySelector(".ant-drawer-body");
         if (drawerContent instanceof HTMLElement) {
           // 计算滚动位置，考虑到顶部边距
           const elementTop = element.offsetTop - 57 - 24;
           drawerContent.scrollTo({
             top: elementTop,
-            behavior: 'smooth',
+            behavior: "smooth",
           });
         }
       }
@@ -102,13 +102,13 @@ const LyricsRecordDetail: React.FC<LyricsRecordDetailProps> = ({
   // 监听滚动事件，自动更新activeItem
   React.useEffect(() => {
     // 获取当前Drawer的滚动容器
-    const basicInfoElement = document.getElementById('basic-info');
+    const basicInfoElement = document.getElementById("basic-info");
     if (!basicInfoElement) return;
 
-    const currentDrawer = basicInfoElement.closest('.ant-drawer');
+    const currentDrawer = basicInfoElement.closest(".ant-drawer");
     if (!currentDrawer) return;
 
-    const drawerContent = currentDrawer.querySelector('.ant-drawer-body');
+    const drawerContent = currentDrawer.querySelector(".ant-drawer-body");
     if (!(drawerContent instanceof HTMLElement)) return;
 
     const handleScroll = () => {
@@ -130,11 +130,11 @@ const LyricsRecordDetail: React.FC<LyricsRecordDetailProps> = ({
     };
 
     // 添加滚动事件监听
-    drawerContent.addEventListener('scroll', handleScroll);
+    drawerContent.addEventListener("scroll", handleScroll);
 
     // 清理函数
     return () => {
-      drawerContent.removeEventListener('scroll', handleScroll);
+      drawerContent.removeEventListener("scroll", handleScroll);
     };
   }, [segmentedOptions]);
 
@@ -147,7 +147,7 @@ const LyricsRecordDetail: React.FC<LyricsRecordDetailProps> = ({
         size={992}
         onClose={onClose}
       >
-        <div style={{ textAlign: 'center', padding: '100px 0' }}>
+        <div style={{ textAlign: "center", padding: "100px 0" }}>
           记录不存在
         </div>
       </Drawer>
@@ -234,7 +234,7 @@ const LyricsRecordDetail: React.FC<LyricsRecordDetailProps> = ({
 
       <ProCard id="reference-lyrics" title="参考歌词" ghost>
         <XMarkdown className={markdownThemeClass} config={{ breaks: true }}>
-          {record.form_data.reference_lyrics || '无'}
+          {record.form_data.reference_lyrics || "无"}
         </XMarkdown>
       </ProCard>
 
@@ -251,8 +251,8 @@ const LyricsRecordDetail: React.FC<LyricsRecordDetailProps> = ({
                       (item) => String(item.value) === String(style),
                     )?.label || style,
                 )
-                .join('、')
-            : record.form_data.wording_style || '无'}
+                .join("、")
+            : record.form_data.wording_style || "无"}
         </ProDescriptions.Item>
         <ProDescriptions.Item label="贴近度">
           {CLOSENESS_LEVEL_OPTIONS.find(
@@ -289,7 +289,7 @@ const LyricsRecordDetail: React.FC<LyricsRecordDetailProps> = ({
           {record.ai_result.model}
         </ProDescriptions.Item>
         <ProDescriptions.Item label="生成时间">
-          {new Date(record.created_at).toLocaleString('zh-CN')}
+          {new Date(record.created_at).toLocaleString("zh-CN")}
         </ProDescriptions.Item>
       </ProDescriptions>
     </Drawer>

@@ -8,15 +8,15 @@
  * - 错误处理 + 重试
  */
 
-import { message } from 'antd';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { message } from "antd";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type {
   AnalysisStatus,
   AnalysisStep,
   ChordSegment,
   PlaybackState,
   SongAnalysis,
-} from '@/shared/types/types';
+} from "@/shared/types/types";
 
 /** 音名上行指定半音数（用于 Minor → 相对大调显示） */
 const NOTE_SEMITONES_MAP: Record<string, number> = {
@@ -28,9 +28,9 @@ const NOTE_SEMITONES_MAP: Record<string, number> = {
   A: 9,
   B: 11,
 };
-const NOTE_LETTERS_ARR = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+const NOTE_LETTERS_ARR = ["C", "D", "E", "F", "G", "A", "B"];
 function transposeSemitones(note: string, semitones: number): string {
-  if (!note) return 'C';
+  if (!note) return "C";
   const letter = note.charAt(0).toUpperCase();
   const acc = (note.match(/#/g) || []).length - (note.match(/b/g) || []).length;
   const basePc = NOTE_SEMITONES_MAP[letter] ?? 0;
@@ -43,7 +43,7 @@ function transposeSemitones(note: string, semitones: number): string {
   if (diff > 6) diff -= 12;
   return (
     targetLetter +
-    (diff === 0 ? '' : diff > 0 ? '#'.repeat(diff) : 'b'.repeat(-diff))
+    (diff === 0 ? "" : diff > 0 ? "#".repeat(diff) : "b".repeat(-diff))
   );
 }
 
@@ -94,8 +94,8 @@ export interface UseChordAnalysisReturn {
 
 export function useChordAnalysis(): UseChordAnalysisReturn {
   // 分析状态
-  const [analysisStatus, setAnalysisStatus] = useState<AnalysisStatus>('IDLE');
-  const [playbackState, setPlaybackState] = useState<PlaybackState>('STOPPED');
+  const [analysisStatus, setAnalysisStatus] = useState<AnalysisStatus>("IDLE");
+  const [playbackState, setPlaybackState] = useState<PlaybackState>("STOPPED");
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [currentChord, setCurrentChord] = useState<ChordSegment | null>(null);
   const [songAnalysis, setSongAnalysis] = useState<SongAnalysis | null>(null);
@@ -113,10 +113,10 @@ export function useChordAnalysis(): UseChordAnalysisReturn {
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isLoading =
-    analysisStatus === 'FILE_LOADING' ||
-    analysisStatus === 'WASM_LOADING' ||
-    analysisStatus === 'DECODING' ||
-    analysisStatus === 'ANALYZING';
+    analysisStatus === "FILE_LOADING" ||
+    analysisStatus === "WASM_LOADING" ||
+    analysisStatus === "DECODING" ||
+    analysisStatus === "ANALYZING";
 
   /** 终止 Worker */
   const terminateWorker = useCallback(() => {
@@ -142,7 +142,7 @@ export function useChordAnalysis(): UseChordAnalysisReturn {
     setAudioUrl(null);
     setCurrentTime(0);
     setCurrentChord(null);
-    setPlaybackState('STOPPED');
+    setPlaybackState("STOPPED");
   }, [audioUrl]);
 
   /** 提取音频峰值数据（降采样波形） */
@@ -189,7 +189,7 @@ export function useChordAnalysis(): UseChordAnalysisReturn {
   const startAnalysis = useCallback(
     async (file: File) => {
       setFileName(file.name);
-      setAnalysisStatus('FILE_LOADING');
+      setAnalysisStatus("FILE_LOADING");
       setError(null);
       setProgressPercent(0);
       setCurrentStep(undefined);
@@ -200,41 +200,41 @@ export function useChordAnalysis(): UseChordAnalysisReturn {
         setAudioUrl(URL.createObjectURL(file));
 
         // 2. 解码音频 + 提取峰值
-        setAnalysisStatus('DECODING');
+        setAnalysisStatus("DECODING");
         const { peaks: extractedPeaks, audioBuffer } = await extractPeaks(file);
         setPeaks(extractedPeaks);
 
         // 5. Worker 提取 essentia 特征
-        setAnalysisStatus('WASM_LOADING');
+        setAnalysisStatus("WASM_LOADING");
 
         const features = await new Promise<any>((resolve, reject) => {
           const baseUrl = window.location.pathname.startsWith(
-            '/Suno-Cover-Arranger',
+            "/Suno-Cover-Arranger",
           )
-            ? '/Suno-Cover-Arranger/'
-            : '/';
-          const workerUrl = baseUrl + 'chord-analysis.worker.js';
+            ? "/Suno-Cover-Arranger/"
+            : "/";
+          const workerUrl = baseUrl + "chord-analysis.worker.js";
           const w = new Worker(workerUrl);
           workerRef.current = w;
           const timeout = setTimeout(() => {
             w.terminate();
             workerRef.current = null;
-            reject(new Error('分析超时'));
+            reject(new Error("分析超时"));
           }, 90000);
 
           w.onmessage = (e) => {
-            if (e.data.type === 'error') {
+            if (e.data.type === "error") {
               clearTimeout(timeout);
               w.terminate();
               workerRef.current = null;
               reject(new Error(e.data.error));
-            } else if (e.data.type === 'result') {
+            } else if (e.data.type === "result") {
               clearTimeout(timeout);
               w.terminate();
               workerRef.current = null;
               resolve(e.data.features);
-            } else if (e.data.type === 'log') {
-              console.log('[Worker]', e.data.msg);
+            } else if (e.data.type === "log") {
+              console.log("[Worker]", e.data.msg);
             }
           };
           w.onerror = (err) => {
@@ -251,7 +251,7 @@ export function useChordAnalysis(): UseChordAnalysisReturn {
           const copy = audioBuffer.getChannelData(0).buffer.slice(0);
           w.postMessage(
             {
-              type: 'analyze',
+              type: "analyze",
               audioBuffer: copy,
               sampleRate: audioBuffer.sampleRate,
             },
@@ -260,8 +260,8 @@ export function useChordAnalysis(): UseChordAnalysisReturn {
         });
 
         // 6. 构建结果
-        setAnalysisStatus('ANALYZING');
-        setCurrentStep('done');
+        setAnalysisStatus("ANALYZING");
+        setCurrentStep("done");
         setProgressPercent(100);
 
         // Worker 返回 chordSegments（自有和弦匹配）
@@ -272,8 +272,8 @@ export function useChordAnalysis(): UseChordAnalysisReturn {
                 {
                   startTime: 0,
                   endTime: audioBuffer.duration,
-                  chord: `${features.key}${features.scale === 'minor' ? 'm' : ''}`,
-                  degree: features.scale === 'minor' ? 'Im' : 'I',
+                  chord: `${features.key}${features.scale === "minor" ? "m" : ""}`,
+                  degree: features.scale === "minor" ? "Im" : "I",
                   confidence: features.keyStrength || 0.5,
                 },
               ];
@@ -286,7 +286,7 @@ export function useChordAnalysis(): UseChordAnalysisReturn {
           sampleRate: audioBuffer.sampleRate,
           // Minor 键同步显示相对大调：A Minor / C Major
           key:
-            features.scale === 'minor'
+            features.scale === "minor"
               ? `${features.key} Minor / ${transposeSemitones(features.key, 3)} Major`
               : `${features.key} ${features.scale.charAt(0).toUpperCase()}${features.scale.slice(1)}`,
           keyConfidence: features.keyStrength,
@@ -295,17 +295,17 @@ export function useChordAnalysis(): UseChordAnalysisReturn {
           chordSegments: chordSegs,
           beatChords: features.beatChords || [],
           beatList: features.beatList || [],
-          vocabularyLevel: 'extended' as const,
+          vocabularyLevel: "extended" as const,
           analyzedAt: Date.now(),
           analysisDurationMs: 0,
         } as any;
         setSongAnalysis(result);
-        setAnalysisStatus('READY');
+        setAnalysisStatus("READY");
         setCurrentChord(chordSegs[0]);
         message.success(`分析完成: ${result.key}, ${features.bpm} BPM`);
       } catch (err) {
-        const errMsg = err instanceof Error ? err.message : '未知错误';
-        setAnalysisStatus('ERROR');
+        const errMsg = err instanceof Error ? err.message : "未知错误";
+        setAnalysisStatus("ERROR");
         setError(`分析失败：${errMsg}`);
         setRetryable(true);
       }
@@ -326,7 +326,7 @@ export function useChordAnalysis(): UseChordAnalysisReturn {
   const handlePlay = useCallback(() => {
     if (audioRef.current) {
       audioRef.current.play();
-      setPlaybackState('PLAYING');
+      setPlaybackState("PLAYING");
     }
   }, []);
 
@@ -334,7 +334,7 @@ export function useChordAnalysis(): UseChordAnalysisReturn {
   const handlePause = useCallback(() => {
     if (audioRef.current) {
       audioRef.current.pause();
-      setPlaybackState('PAUSED');
+      setPlaybackState("PAUSED");
     }
   }, []);
 
@@ -343,7 +343,7 @@ export function useChordAnalysis(): UseChordAnalysisReturn {
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
-      setPlaybackState('STOPPED');
+      setPlaybackState("STOPPED");
       setCurrentTime(0);
       setCurrentChord(
         songAnalysis && songAnalysis.chordSegments.length > 0
@@ -366,7 +366,7 @@ export function useChordAnalysis(): UseChordAnalysisReturn {
     cleanupAudio();
     setError(null);
     setRetryable(false);
-    setAnalysisStatus('IDLE');
+    setAnalysisStatus("IDLE");
     setSongAnalysis(null);
     setCurrentChord(null);
 
@@ -394,7 +394,7 @@ export function useChordAnalysis(): UseChordAnalysisReturn {
     };
 
     const onEnded = () => {
-      setPlaybackState('STOPPED');
+      setPlaybackState("STOPPED");
       setCurrentTime(0);
       setCurrentChord(
         songAnalysis && songAnalysis.chordSegments.length > 0
@@ -405,24 +405,24 @@ export function useChordAnalysis(): UseChordAnalysisReturn {
 
     const onPause = () => {
       if (!audio.ended) {
-        setPlaybackState('PAUSED');
+        setPlaybackState("PAUSED");
       }
     };
 
     const onPlay = () => {
-      setPlaybackState('PLAYING');
+      setPlaybackState("PLAYING");
     };
 
-    audio.addEventListener('timeupdate', onTimeUpdate);
-    audio.addEventListener('ended', onEnded);
-    audio.addEventListener('pause', onPause);
-    audio.addEventListener('play', onPlay);
+    audio.addEventListener("timeupdate", onTimeUpdate);
+    audio.addEventListener("ended", onEnded);
+    audio.addEventListener("pause", onPause);
+    audio.addEventListener("play", onPlay);
 
     return () => {
-      audio.removeEventListener('timeupdate', onTimeUpdate);
-      audio.removeEventListener('ended', onEnded);
-      audio.removeEventListener('pause', onPause);
-      audio.removeEventListener('play', onPlay);
+      audio.removeEventListener("timeupdate", onTimeUpdate);
+      audio.removeEventListener("ended", onEnded);
+      audio.removeEventListener("pause", onPause);
+      audio.removeEventListener("play", onPlay);
     };
   }, [songAnalysis]);
 

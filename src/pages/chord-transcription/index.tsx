@@ -8,11 +8,11 @@
  * 引擎检测 / 安装 / 上传分析等业务逻辑已下沉到 useEngineStatus 与 ChordTranscriptionClient。
  * 环境切换的隐藏触发已移至 App.tsx 的全局顶栏（EnvSwitchTrigger），本页不再涉及。
  */
-import { PageContainer, ProCard } from '@ant-design/pro-components';
-import React, { useMemo } from 'react';
-import { isRunningInTauri } from '@/shared/utils/tauri';
-import { ChordTranscriptionClient } from './ChordTranscriptionClient';
-import ClientRequiredPanel from './components/ClientRequiredPanel';
+import { PageContainer, ProCard } from "@ant-design/pro-components";
+import React, { useMemo } from "react";
+import { isRunningInTauri } from "@/shared/utils/tauri";
+import { ChordTranscriptionClient } from "./ChordTranscriptionClient";
+import ClientRequiredPanel from "./components/ClientRequiredPanel";
 
 const ChordTranscriptionPage: React.FC = () => {
   // 环境判定：只在最顶层判一次。浏览器 → 面板引导下载；客户端 → 全部走本地引擎逻辑。
@@ -21,9 +21,9 @@ const ChordTranscriptionPage: React.FC = () => {
   return (
     <PageContainer
       header={{
-        title: '大师扒谱·引擎版',
+        title: "大师扒谱·引擎版",
         subTitle:
-          '调用本地模型，识别歌曲和弦 / 调性 / BPM / 节奏，分析精度约70%',
+          "调用本地模型，识别歌曲和弦 / 调性 / BPM / 节奏，分析精度约70%",
         ghost: true,
       }}
     >

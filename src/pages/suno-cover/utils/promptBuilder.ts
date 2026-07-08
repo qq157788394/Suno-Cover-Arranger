@@ -1,5 +1,5 @@
-import { USER_PROMPT_TEMPLATE } from '@/config/prompts';
-import type { GenerateRequest } from '@/shared/types/types';
+import { USER_PROMPT_TEMPLATE } from "@/config/prompts";
+import type { GenerateRequest } from "@/shared/types/types";
 
 /**
  * 翻唱编曲大师 - Prompt拼接工具类
@@ -28,12 +28,12 @@ export class SunoCoverPromptBuilder {
       target_artist,
     );
 
-    return USER_PROMPT_TEMPLATE.replace('{fullLanguageName}', fullLanguageName)
-      .replace('{targetArtist}', target_artist)
-      .replace('{referenceSongsBlock}', referenceSongsBlock)
-      .replace('{styleNote}', style_note || '')
-      .replace('{extraNote}', extra_note || '')
-      .replace('{lyricsRaw}', lyrics_raw);
+    return USER_PROMPT_TEMPLATE.replace("{fullLanguageName}", fullLanguageName)
+      .replace("{targetArtist}", target_artist)
+      .replace("{referenceSongsBlock}", referenceSongsBlock)
+      .replace("{styleNote}", style_note || "")
+      .replace("{extraNote}", extra_note || "")
+      .replace("{lyricsRaw}", lyrics_raw);
   }
 
   /**
@@ -43,14 +43,14 @@ export class SunoCoverPromptBuilder {
    */
   private static getFullLanguageName(language: string): string {
     const languageMap: { [key: string]: string } = {
-      Mandarin: 'Mandarin Chinese',
-      Cantonese: 'Cantonese Chinese',
-      English: 'English',
-      Japanese: 'Japanese',
-      Korean: 'Korean',
-      Spanish: 'Spanish',
-      French: 'French',
-      German: 'German',
+      Mandarin: "Mandarin Chinese",
+      Cantonese: "Cantonese Chinese",
+      English: "English",
+      Japanese: "Japanese",
+      Korean: "Korean",
+      Spanish: "Spanish",
+      French: "French",
+      German: "German",
     };
     return languageMap[language] || language;
   }
@@ -66,7 +66,7 @@ export class SunoCoverPromptBuilder {
     targetArtist: string,
   ): string {
     if (!songs || songs.length === 0) {
-      return 'None provided.';
+      return "None provided.";
     }
     return songs
       .filter((song: { title?: string }) => song.title)
@@ -74,9 +74,9 @@ export class SunoCoverPromptBuilder {
         const artistPart =
           song.artist && song.artist !== targetArtist
             ? ` by ${song.artist}`
-            : '';
+            : "";
         return `- "${song.title}"${artistPart}`;
       })
-      .join('\n  ');
+      .join("\n  ");
   }
 }

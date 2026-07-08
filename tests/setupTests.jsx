@@ -1,3 +1,3 @@
-import 'reflect-metadata';
+import "reflect-metadata";
 
-require('@testing-library/jest-dom');
+require("@testing-library/jest-dom");

@@ -4,16 +4,16 @@
  * temperature参数控制AI生成内容的创造性，值越高越有创造性，值越低越保守
  */
 
-import { AIProviderType } from './aiProviderConfig';
+import { AIProviderType } from "./aiProviderConfig";
 
 /**
  * 业务类型枚举
  */
 export enum BusinessType {
   /** 大师做编曲业务 */
-  ARRANGEMENT = 'arrangement',
+  ARRANGEMENT = "arrangement",
   /** 大师写歌词业务 */
-  LYRICS = 'lyrics',
+  LYRICS = "lyrics",
 }
 
 /**

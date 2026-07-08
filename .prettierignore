@@ -1,0 +1,14 @@
+.umi
+.umi-production
+.umi-test
+.umi-test-production
+src/services
+mock
+dist
+server
+public
+coverage
+node_modules
+local-engine/.venv
+src-tauri/target
+pnpm-lock.yaml

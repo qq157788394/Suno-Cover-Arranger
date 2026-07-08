@@ -1,9 +1,9 @@
 // Step 3: 和弦匹配测试
 // 从 tests/chord-features.json 加载特征 → chord-matcher → viterbi → segmenter
 
-const fs = require('node:fs');
+const fs = require("node:fs");
 const testData = JSON.parse(
-  fs.readFileSync('tests/chord-features.json', 'utf8'),
+  fs.readFileSync("tests/chord-features.json", "utf8"),
 );
 
 console.log(
@@ -17,24 +17,24 @@ console.log(
 // 和弦模板（从 chord-templates.ts 提取）
 const CHORD_TEMPLATES = {
   C: [1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0],
-  'C#': [0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0],
+  "C#": [0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0],
   D: [0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0],
   Eb: [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0],
   E: [0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1],
   F: [1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0],
-  'F#': [0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0],
+  "F#": [0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0],
   G: [0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1],
   Ab: [1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0],
   A: [0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0],
   Bb: [0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0],
   B: [0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1],
   Cm: [1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0],
-  'C#m': [0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
+  "C#m": [0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
   Dm: [0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0],
   Ebm: [0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0],
   Em: [0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1],
   Fm: [1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0],
-  'F#m': [0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0],
+  "F#m": [0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0],
   Gm: [0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0],
   Abm: [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
   Am: [1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0],
@@ -44,7 +44,7 @@ const CHORD_TEMPLATES = {
 
 // 余弦相似度匹配
 function matchFrame(chroma) {
-  let bestChord = 'N';
+  let bestChord = "N";
   let bestScore = -Infinity;
   for (const [name, tmpl] of Object.entries(CHORD_TEMPLATES)) {
     let dot = 0,

@@ -9,40 +9,40 @@
  * 浏览器模式（非 Tauri）下 onClick 直接 no-op，且不渲染触发点。
  */
 
-import { message } from 'antd';
-import { useCallback, useEffect, useRef } from 'react';
+import { message } from "antd";
+import { useCallback, useEffect, useRef } from "react";
 import {
   GH_PAGES_ORIGIN,
   LOCAL_DEV_ORIGIN,
-} from '@/services/transcription/client';
-import { isRunningInTauri } from '@/shared/utils/tauri';
+} from "@/services/transcription/client";
+import { isRunningInTauri } from "@/shared/utils/tauri";
 
 /** 仅本仓库前缀（用于环境切换 URL 重组，与 GH_PAGES_ORIGIN 配套）。 */
-const GH_PAGES_REPO = 'Suno-Cover-Arranger';
+const GH_PAGES_REPO = "Suno-Cover-Arranger";
 
 /** 切换完成回传参数名（跳转后用于回显「已切换」并清掉 query）。 */
-export const ENV_SWITCH_PARAM = '__env';
+export const ENV_SWITCH_PARAM = "__env";
 
-export type EnvKind = 'local' | 'ghpages';
+export type EnvKind = "local" | "ghpages";
 
 /** 当前所在环境：localhost / 127.0.0.1 视为本地开发，其余视为线上。 */
 export function currentEnv(): EnvKind {
   const { origin } = window.location;
   if (
-    origin.startsWith('http://localhost') ||
-    origin.startsWith('http://127.0.0.1')
+    origin.startsWith("http://localhost") ||
+    origin.startsWith("http://127.0.0.1")
   ) {
-    return 'local';
+    return "local";
   }
-  return 'ghpages';
+  return "ghpages";
 }
 
 /** 根据目标环境重组完整 URL（保留当前 pathname，仅替换源）。 */
 export function buildEnvUrl(target: EnvKind): string {
   const path = window.location.pathname;
-  if (target === 'local') {
-    const stripped = path.replace(new RegExp(`^/${GH_PAGES_REPO}`), '');
-    return LOCAL_DEV_ORIGIN + (stripped || '/');
+  if (target === "local") {
+    const stripped = path.replace(new RegExp(`^/${GH_PAGES_REPO}`), "");
+    return LOCAL_DEV_ORIGIN + (stripped || "/");
   }
   const withPrefix = path.startsWith(`/${GH_PAGES_REPO}`)
     ? path
@@ -67,9 +67,9 @@ export function useEnvSwitchTrigger() {
   const [messageApi, contextHolder] = message.useMessage();
 
   const triggerSwitch = useCallback(() => {
-    const target: EnvKind = currentEnv() === 'local' ? 'ghpages' : 'local';
+    const target: EnvKind = currentEnv() === "local" ? "ghpages" : "local";
     const url = buildEnvUrl(target);
-    const sep = url.includes('?') ? '&' : '?';
+    const sep = url.includes("?") ? "&" : "?";
     // 整页跳转（Tauri webview 会重新加载目标源），并带上回传参数。
     window.location.href = `${url}${sep}${ENV_SWITCH_PARAM}=${target}`;
   }, []);
@@ -105,16 +105,16 @@ export function useEnvSwitchTrigger() {
     const switched = params.get(ENV_SWITCH_PARAM) as EnvKind | null;
     if (!switched) return;
     const label =
-      switched === 'local'
-        ? '已切换至本地开发环境 (localhost:8000)'
-        : '已切换至线上环境 (GitHub Pages)';
+      switched === "local"
+        ? "已切换至本地开发环境 (localhost:8000)"
+        : "已切换至线上环境 (GitHub Pages)";
     messageApi.info(label);
     params.delete(ENV_SWITCH_PARAM);
     const clean =
       window.location.pathname +
-      (params.toString() ? `?${params.toString()}` : '') +
+      (params.toString() ? `?${params.toString()}` : "") +
       window.location.hash;
-    window.history.replaceState({}, '', clean);
+    window.history.replaceState({}, "", clean);
   }, [isClient, messageApi]);
 
   return { isClient, onClick, contextHolder };

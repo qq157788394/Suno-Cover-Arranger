@@ -9,30 +9,30 @@
  *   - essentia.js-core.umd.js (Core API，UMD 版本)
  *   - essentia.js-core.umd.min.js (Core API，UMD 压缩版)
  */
-const fs = require('node:fs');
-const path = require('node:path');
+const fs = require("node:fs");
+const path = require("node:path");
 
-const SRC = path.join(__dirname, '..', 'node_modules', 'essentia.js', 'dist');
-const DEST = path.join(__dirname, '..', 'public', 'essentia-wasm');
+const SRC = path.join(__dirname, "..", "node_modules", "essentia.js", "dist");
+const DEST = path.join(__dirname, "..", "public", "essentia-wasm");
 
 const FILES_TO_COPY = [
-  { src: 'essentia-wasm.web.js', dest: 'essentia-wasm.web.js' },
-  { src: 'essentia-wasm.web.wasm', dest: 'essentia-wasm.web.wasm' },
-  { src: 'essentia-wasm.web.wasm', dest: 'essentia-wasm.wasm' },
-  { src: 'essentia-wasm.web.wasm', dest: 'essentia-wasm.es.wasm' },
-  { src: 'essentia-wasm.umd.js', dest: 'essentia-wasm.umd.js' },
-  { src: 'essentia.js-core.es.js', dest: 'essentia.js-core.es.js' },
-  { src: 'essentia.js-core.umd.js', dest: 'essentia.js-core.umd.js' },
-  { src: 'essentia.js-core.umd.min.js', dest: 'essentia.js-core.umd.min.js' },
+  { src: "essentia-wasm.web.js", dest: "essentia-wasm.web.js" },
+  { src: "essentia-wasm.web.wasm", dest: "essentia-wasm.web.wasm" },
+  { src: "essentia-wasm.web.wasm", dest: "essentia-wasm.wasm" },
+  { src: "essentia-wasm.web.wasm", dest: "essentia-wasm.es.wasm" },
+  { src: "essentia-wasm.umd.js", dest: "essentia-wasm.umd.js" },
+  { src: "essentia.js-core.es.js", dest: "essentia.js-core.es.js" },
+  { src: "essentia.js-core.umd.js", dest: "essentia.js-core.umd.js" },
+  { src: "essentia.js-core.umd.min.js", dest: "essentia.js-core.umd.min.js" },
   // ML 推理支持（使 Worker 中 importScripts 加载）
-  { src: 'essentia.js-model.umd.js', dest: 'essentia.js-model.umd.js' },
-  { src: 'essentia.js-model.umd.min.js', dest: 'essentia.js-model.umd.min.js' },
+  { src: "essentia.js-model.umd.js", dest: "essentia.js-model.umd.js" },
+  { src: "essentia.js-model.umd.min.js", dest: "essentia.js-model.umd.min.js" },
 ];
 
 function copy() {
   // 检查源目录
   if (!fs.existsSync(SRC)) {
-    console.warn('[essentia-copy] 源目录不存在:', SRC, '— 请先 pnpm install');
+    console.warn("[essentia-copy] 源目录不存在:", SRC, "— 请先 pnpm install");
     return;
   }
 
@@ -44,7 +44,7 @@ function copy() {
     const srcPath = path.join(SRC, src);
     const destPath = path.join(DEST, dest);
     if (!fs.existsSync(srcPath)) {
-      console.warn('[essentia-copy] 跳过（不存在）:', src);
+      console.warn("[essentia-copy] 跳过（不存在）:", src);
       continue;
     }
     fs.copyFileSync(srcPath, destPath);

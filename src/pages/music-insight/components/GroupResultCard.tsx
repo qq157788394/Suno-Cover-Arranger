@@ -2,10 +2,10 @@
  * 音乐理解 — 分组结果卡片（情绪/能量分析）
  * 使用与 StructuredResultCard 一致的 Descriptions + Progress 格式
  */
-import { ProCard } from '@ant-design/pro-components';
-import { Descriptions, Progress } from 'antd';
-import React from 'react';
-import type { ModelRawOutput } from '@/shared/types/types';
+import { ProCard } from "@ant-design/pro-components";
+import { Descriptions, Progress } from "antd";
+import React from "react";
+import type { ModelRawOutput } from "@/shared/types/types";
 
 interface Props {
   title: string;
@@ -43,7 +43,7 @@ const GroupResultCard: React.FC<Props> = ({ title, items }) => {
             <Progress
               percent={item.pct}
               strokeColor={
-                item.pct >= 50 ? 'orange' : item.pct >= 30 ? 'gold' : 'pink'
+                item.pct >= 50 ? "orange" : item.pct >= 30 ? "gold" : "pink"
               }
               size="medium"
             />

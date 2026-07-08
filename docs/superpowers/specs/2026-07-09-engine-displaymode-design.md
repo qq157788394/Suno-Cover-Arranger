@@ -21,6 +21,7 @@
 ## 设计
 
 ### 1. `beatGridUtils.ts` 抽纯函数（便于单测）
+
 - 新增 `export type ChordDisplayMode = 'chord' | 'degree'`
 - 新增纯函数：
   ```ts
@@ -30,8 +31,8 @@
     isEmpty: boolean,
     displayMode: ChordDisplayMode,
   ): string {
-    if (isEmpty) return '';
-    if (displayMode === 'degree') return subLabel || label;
+    if (isEmpty) return "";
+    if (displayMode === "degree") return subLabel || label;
     return label;
   }
   ```
@@ -41,28 +42,31 @@
   - `isEmpty` → 空串
 
 ### 2. `BeatGrid.tsx` 接入 displayMode
+
 - props 增加 `displayMode?: ChordDisplayMode`（默认 `'chord'`）
 - `renderRow` 内用 `resolveCellDisplay(cell.label, cell.subLabel, cell.isEmpty, displayMode)` 得到主显示文本，替换原来固定渲染 `cell.label`
 - tooltip 保持 `cell.label (cell.subLabel)` 同时展示两种（无论模式）
 
 ### 3. `AnalysisResultCard.tsx` 增加切换控件
+
 - 引入 `Segmented` 与 `useState`
 - 本地状态 `displayMode`，默认 `'chord'`
 - 「和弦网格」`Card` 的 `extra` 位放 `Segmented`（右对齐），选项 `和弦名称`/`功能级数`
 - 将 `displayMode` 透传给 `BeatGrid`
 
 ### 4. 其他约定
+
 - 不持久化（刷新回「和弦名称」），与网页版一致
 - 引擎版网格为「每拍显字、不合并」（弹唱视图特性），切换后每拍显示对应模式文本，保持该特性
 
 ## 涉及文件
 
-| 文件 | 改动 |
-|------|------|
-| `src/pages/chord-transcription/components/beatGridUtils.ts` | 新增 `ChordDisplayMode` 类型 + `resolveCellDisplay` 纯函数 |
-| `src/pages/chord-transcription/components/BeatGrid.tsx` | 新增 `displayMode` prop，渲染按模式选字 |
-| `src/pages/chord-transcription/components/AnalysisResultCard.tsx` | 新增 `Segmented` + 本地状态，透传 `displayMode` |
-| `tests/beatGridUtils.test.ts`（新建） | `resolveCellDisplay` 单测（TDD 用） |
+| 文件                                                              | 改动                                                       |
+| ----------------------------------------------------------------- | ---------------------------------------------------------- |
+| `src/pages/chord-transcription/components/beatGridUtils.ts`       | 新增 `ChordDisplayMode` 类型 + `resolveCellDisplay` 纯函数 |
+| `src/pages/chord-transcription/components/BeatGrid.tsx`           | 新增 `displayMode` prop，渲染按模式选字                    |
+| `src/pages/chord-transcription/components/AnalysisResultCard.tsx` | 新增 `Segmented` + 本地状态，透传 `displayMode`            |
+| `tests/beatGridUtils.test.ts`（新建）                             | `resolveCellDisplay` 单测（TDD 用）                        |
 
 ## 验证
 

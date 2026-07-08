@@ -171,7 +171,7 @@ export interface LyricsGenerateResponse {
 // ==================== 参考音频预处理类型 ====================
 
 /** 预设强度等级 */
-export type PresetLevel = 'none' | 'light' | 'medium' | 'heavy';
+export type PresetLevel = "none" | "light" | "medium" | "heavy";
 
 /** EQ 频段定义 */
 export interface EqBand {
@@ -186,7 +186,7 @@ export interface PhaserConfig {
   delay: number; // 延迟时间 (ms)
   decay: number; // 衰减系数
   speed: number; // 调制速度
-  type: 'triangular' | 'sinusoidal'; // 调制波形类型
+  type: "triangular" | "sinusoidal"; // 调制波形类型
 }
 
 /** 频域峰值位置微扰配置（对抗星座图特征提取） */
@@ -230,13 +230,13 @@ export interface PresetConfig {
 
 /** 处理进度回调 */
 export interface PipelineProgress {
-  stage: 'decode' | 'stage2' | 'stage3' | 'encode' | 'done';
+  stage: "decode" | "stage2" | "stage3" | "encode" | "done";
   progress: number; // 0-100
   label: string;
 }
 
 /** Stage 3 变速模式 */
-export type SpeedMode = 'none' | 'slowdown' | 'speedup';
+export type SpeedMode = "none" | "slowdown" | "speedup";
 
 /** 流水线输入 */
 export interface PipelineInput {
@@ -322,7 +322,7 @@ export interface SongAnalysis {
   /** 节拍位置 + 强/弱标记 */
   beatList?: { time: number; isDownbeat: boolean }[];
   /** 和弦词汇级别 */
-  vocabularyLevel: 'extended';
+  vocabularyLevel: "extended";
   /** 分析完成时间戳 */
   analyzedAt: number;
   /** 分析耗时（毫秒） */
@@ -369,25 +369,20 @@ export interface LyricsRecord {
 
 /** 分析状态 */
 export type AnalysisStatus =
-  | 'IDLE'
-  | 'FILE_LOADING'
-  | 'WASM_LOADING'
-  | 'DECODING'
-  | 'ANALYZING'
-  | 'READY'
-  | 'ERROR';
+  | "IDLE"
+  | "FILE_LOADING"
+  | "WASM_LOADING"
+  | "DECODING"
+  | "ANALYZING"
+  | "READY"
+  | "ERROR";
 
 /** 播放状态 */
-export type PlaybackState = 'PLAYING' | 'PAUSED' | 'STOPPED';
+export type PlaybackState = "PLAYING" | "PAUSED" | "STOPPED";
 
 /** Worker 进度步骤（供前端 useChordAnalysis 使用） */
 export type AnalysisStep =
-  | 'hpcp'
-  | 'key_bpm'
-  | 'chord_match'
-  | 'viterbi'
-  | 'romanize'
-  | 'done';
+  "hpcp" | "key_bpm" | "chord_match" | "viterbi" | "romanize" | "done";
 
 // ==================== 音乐理解 (Music Insight) 类型 ====================
 
@@ -461,8 +456,4 @@ export interface TranscriptionResult {
 
 /** 扒谱分析状态 */
 export type TranscriptionStatus =
-  | 'IDLE'
-  | 'ANALYZING'
-  | 'READY'
-  | 'ERROR'
-  | 'ENGINE_OFFLINE';
+  "IDLE" | "ANALYZING" | "READY" | "ERROR" | "ENGINE_OFFLINE";

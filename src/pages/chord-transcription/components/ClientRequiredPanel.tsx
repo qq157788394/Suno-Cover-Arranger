@@ -1,6 +1,6 @@
-import { ProCard } from '@ant-design/pro-components';
-import { Button, Result } from 'antd';
-import React from 'react';
+import { ProCard } from "@ant-design/pro-components";
+import { Button, Result } from "antd";
+import React from "react";
 
 /** 浏览器模式面板：本功能需桌面客户端，引导下载后永远结束（不再进入引擎逻辑） */
 export function ClientRequiredPanel() {

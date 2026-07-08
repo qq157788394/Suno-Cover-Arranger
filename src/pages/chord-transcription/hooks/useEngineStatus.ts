@@ -8,18 +8,18 @@
  * 浏览器模式（非 Tauri）下所有动作 no-op，仅返回 isClient=false。
  */
 
-import { invoke } from '@tauri-apps/api/core';
-import { listen, type UnlistenFn } from '@tauri-apps/api/event';
-import { message, notification } from 'antd';
+import { invoke } from "@tauri-apps/api/core";
+import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { message, notification } from "antd";
 import React, {
   useCallback,
   useEffect,
   useMemo,
   useRef,
   useState,
-} from 'react';
-import { isRunningInTauri } from '@/shared/utils/tauri';
-import type { EngineStatusDetail } from '../types';
+} from "react";
+import { isRunningInTauri } from "@/shared/utils/tauri";
+import type { EngineStatusDetail } from "../types";
 
 export function useEngineStatus() {
   const isClient = useMemo(() => isRunningInTauri(), []);
@@ -57,8 +57,8 @@ export function useEngineStatus() {
       setPrefetchingId(assetId);
       setPrefetchError(null);
       try {
-        const msg = await invoke<string>('prefetch_asset', { assetId });
-        message.success(msg || '已下载并缓存');
+        const msg = await invoke<string>("prefetch_asset", { assetId });
+        message.success(msg || "已下载并缓存");
       } catch (err) {
         const reason = String(err);
         setPrefetchError(reason);
@@ -81,7 +81,7 @@ export function useEngineStatus() {
     setChecking(true);
     setDetectError(null);
     try {
-      const detail = (await invoke('get_engine_status')) as EngineStatusDetail;
+      const detail = (await invoke("get_engine_status")) as EngineStatusDetail;
       setEngineDetail(detail);
       const assetsAll = detail.assets
         ? detail.assets.every((a) => a.present)
@@ -97,10 +97,10 @@ export function useEngineStatus() {
       );
       // 检测时就把 ffmpeg 备好；仅自动触发一次，避免重检测死循环。
       if (detail.running && detail.assets && !autoFfmpegRef.current) {
-        const ff = detail.assets.find((a) => a.id === 'ffmpeg');
+        const ff = detail.assets.find((a) => a.id === "ffmpeg");
         if (ff && !ff.present) {
           autoFfmpegRef.current = true;
-          prefetchAssetRef.current('ffmpeg');
+          prefetchAssetRef.current("ffmpeg");
         }
       }
     } catch (err) {
@@ -130,13 +130,13 @@ export function useEngineStatus() {
     const unlisten: UnlistenFn[] = [];
     (async () => {
       const offProgress = await listen<string>(
-        'engine-install-progress',
+        "engine-install-progress",
         (e) => {
           if (active) setInstallLog((prev) => [...prev, e.payload]);
         },
       );
       const offReady = await listen<{ port: number; msg: string }>(
-        'engine-ready',
+        "engine-ready",
         () => {
           if (!active) return;
           setInstallError(null);
@@ -160,9 +160,9 @@ export function useEngineStatus() {
     setInstallError(null);
     try {
       // 命令会阻塞到后台真正干完才返回：ok 字符串=成功消息，reject=失败原因
-      const msg = await invoke<string>('install_local_engine');
+      const msg = await invoke<string>("install_local_engine");
       setInstallError(null);
-      message.success(msg || '本地引擎安装并启动成功');
+      message.success(msg || "本地引擎安装并启动成功");
       detectEngine();
     } catch (err) {
       const reason = String(err);
@@ -176,7 +176,7 @@ export function useEngineStatus() {
   useEffect(() => {
     if (installError) {
       notification.error({
-        message: '安装失败',
+        message: "安装失败",
         description: installError,
       });
     }
@@ -185,7 +185,7 @@ export function useEngineStatus() {
   useEffect(() => {
     if (prefetchError) {
       notification.error({
-        message: '依赖下载失败',
+        message: "依赖下载失败",
         description: prefetchError,
       });
     }

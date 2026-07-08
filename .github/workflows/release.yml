@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 permissions:
   contents: write
@@ -23,12 +23,12 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: "22"
 
       - name: Install frontend deps (for tauri CLI)
         run: pnpm install
         env:
-          HUSKY: '0'
+          HUSKY: "0"
 
       - name: Setup Rust (Apple Silicon + Intel)
         uses: dtolnay/rust-toolchain@stable
@@ -59,12 +59,12 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: "22"
 
       - name: Install frontend deps (for tauri CLI)
         run: pnpm install
         env:
-          HUSKY: '0'
+          HUSKY: "0"
 
       - name: Setup Rust (x64)
         uses: dtolnay/rust-toolchain@stable

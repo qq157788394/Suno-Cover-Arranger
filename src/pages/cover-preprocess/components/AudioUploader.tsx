@@ -1,24 +1,24 @@
-import { UploadOutlined } from '@ant-design/icons';
-import type { UploadProps } from 'antd';
-import { message, Typography, Upload } from 'antd';
-import React from 'react';
+import { UploadOutlined } from "@ant-design/icons";
+import type { UploadProps } from "antd";
+import { message, Typography, Upload } from "antd";
+import React from "react";
 
 const { Dragger } = Upload;
 const { Text, Paragraph } = Typography;
 
 /** 支持的音频格式 */
-const ACCEPTED_AUDIO_TYPES = ['.mp3', '.wav', '.flac', '.m4a'];
+const ACCEPTED_AUDIO_TYPES = [".mp3", ".wav", ".flac", ".m4a"];
 
 /** 支持的 MIME 类型 */
 const ACCEPTED_MIME_TYPES = [
-  'audio/mpeg',
-  'audio/wav',
-  'audio/wave',
-  'audio/x-wav',
-  'audio/flac',
-  'audio/x-flac',
-  'audio/mp4',
-  'audio/x-m4a',
+  "audio/mpeg",
+  "audio/wav",
+  "audio/wave",
+  "audio/x-wav",
+  "audio/flac",
+  "audio/x-flac",
+  "audio/mp4",
+  "audio/x-m4a",
 ];
 
 interface AudioUploaderProps {
@@ -51,14 +51,14 @@ const AudioUploader: React.FC<AudioUploaderProps> = ({
       ACCEPTED_AUDIO_TYPES.some((ext) => file.name.toLowerCase().endsWith(ext));
 
     if (!isValidType) {
-      message.error('仅支持 MP3、WAV、FLAC、M4A 格式的音频文件');
+      message.error("仅支持 MP3、WAV、FLAC、M4A 格式的音频文件");
       return;
     }
 
     // 检查文件大小（限制 200MB）
     const maxSize = 200 * 1024 * 1024;
     if (file.size > maxSize) {
-      message.error('文件大小不能超过 200MB');
+      message.error("文件大小不能超过 200MB");
       return;
     }
 
@@ -66,9 +66,9 @@ const AudioUploader: React.FC<AudioUploaderProps> = ({
   };
 
   const uploadProps: UploadProps = {
-    name: 'audio',
+    name: "audio",
     multiple: false,
-    accept: ACCEPTED_AUDIO_TYPES.join(','),
+    accept: ACCEPTED_AUDIO_TYPES.join(","),
     maxCount: 1,
     disabled,
     // 阻止自动上传，改为手动处理
@@ -88,7 +88,7 @@ const AudioUploader: React.FC<AudioUploaderProps> = ({
     <Dragger {...uploadProps}>
       <Typography>
         <UploadOutlined
-          style={{ fontSize: 48, color: 'var(--ant-color-primary)' }}
+          style={{ fontSize: 48, color: "var(--ant-color-primary)" }}
         />
         <Paragraph>点击或拖拽音频文件到此区域上传</Paragraph>
         <Text type="secondary">

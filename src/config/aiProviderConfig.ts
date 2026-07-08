@@ -9,13 +9,13 @@
  */
 export enum AIProviderType {
   /** DeepSeek */
-  DEEPSEEK = 'deepseek',
+  DEEPSEEK = "deepseek",
   /** Google Gemini */
-  GEMINI = 'gemini',
+  GEMINI = "gemini",
   /** 智谱AI GLM */
-  GLM = 'glm',
+  GLM = "glm",
   /** 小米MiMo */
-  MIMO = 'mimo',
+  MIMO = "mimo",
 }
 
 /**
@@ -33,10 +33,10 @@ export type AIProviderModelType =
  * 用于UI展示
  */
 export const AI_PROVIDER_DISPLAY_NAMES: Record<AIProviderModelType, string> = {
-  [AIProviderType.DEEPSEEK]: 'DeepSeek',
-  [AIProviderType.GEMINI]: 'Google Gemini',
-  [AIProviderType.GLM]: '智谱AI GLM',
-  [AIProviderType.MIMO]: '小米MiMo',
+  [AIProviderType.DEEPSEEK]: "DeepSeek",
+  [AIProviderType.GEMINI]: "Google Gemini",
+  [AIProviderType.GLM]: "智谱AI GLM",
+  [AIProviderType.MIMO]: "小米MiMo",
 };
 
 /**

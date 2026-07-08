@@ -1,14 +1,14 @@
-import { message, Spin } from 'antd';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useTranscription } from '@/hooks/useTranscription';
+import { message, Spin } from "antd";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useTranscription } from "@/hooks/useTranscription";
 import {
   LOCAL_ENGINE_BASE,
   validateAudioFile,
-} from '@/services/transcription/client';
-import { isRunningInTauri } from '@/shared/utils/tauri';
-import AnalysisWorkspace from './components/AnalysisWorkspace';
-import EngineSetupPanel from './components/EngineSetupPanel';
-import { useEngineStatus } from './hooks/useEngineStatus';
+} from "@/services/transcription/client";
+import { isRunningInTauri } from "@/shared/utils/tauri";
+import AnalysisWorkspace from "./components/AnalysisWorkspace";
+import EngineSetupPanel from "./components/EngineSetupPanel";
+import { useEngineStatus } from "./hooks/useEngineStatus";
 
 /**
  * 客户端（Tauri 壳）内的大师扒谱容器：组合引擎状态机（useEngineStatus）与上传分析
@@ -53,7 +53,7 @@ export function ChordTranscriptionClient() {
   );
 
   useEffect(() => {
-    if (status === 'READY' && fileRef.current) {
+    if (status === "READY" && fileRef.current) {
       // 重上传会再次进入 READY：先回收上一次的 object URL，避免 blob 逐步泄漏（审查 #9）。
       if (audioUrlRef.current) {
         URL.revokeObjectURL(audioUrlRef.current);
@@ -90,7 +90,7 @@ export function ChordTranscriptionClient() {
   const handleReuploadFileChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
-      e.target.value = '';
+      e.target.value = "";
       if (!file) return;
       // 复用与首次上传一致的校验，杜绝重上传绕过校验传入超大或非法文件（审查 #2）。
       const check = validateAudioFile(file);
@@ -103,7 +103,7 @@ export function ChordTranscriptionClient() {
     [handleFileSelectWithRef],
   );
 
-  const isEngineOffline = status === 'ENGINE_OFFLINE';
+  const isEngineOffline = status === "ENGINE_OFFLINE";
   // 合并原 AnalysisWorkspace 的 ENGINE_OFFLINE 分支：引擎连接中断即视作回到未就绪，
   // 清空上传态并统一走 EngineSetupPanel（与原 detectEngine().then(reset) 等价）。
   const showSetup = !checking && (!engineReady || isEngineOffline);
@@ -120,7 +120,7 @@ export function ChordTranscriptionClient() {
         ref={fileInputRef}
         type="file"
         accept="audio/*"
-        style={{ display: 'none' }}
+        style={{ display: "none" }}
         onChange={handleReuploadFileChange}
       />
       {checking ? (

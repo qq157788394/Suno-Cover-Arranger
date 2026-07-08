@@ -6,11 +6,11 @@
  * 视觉风格：大卡片上传区域，橙色图标，符合 Bento Attio Flat Modern 设计
  */
 
-import { SoundOutlined } from '@ant-design/icons';
-import { message, Typography, Upload } from 'antd';
-import type { UploadFile } from 'antd/es/upload/interface';
-import React, { useCallback } from 'react';
-import { validateAudioFile } from '@/services/transcription/client';
+import { SoundOutlined } from "@ant-design/icons";
+import { message, Typography, Upload } from "antd";
+import type { UploadFile } from "antd/es/upload/interface";
+import React, { useCallback } from "react";
+import { validateAudioFile } from "@/services/transcription/client";
 
 const { Dragger } = Upload;
 const { Text } = Typography;
@@ -43,8 +43,8 @@ const FileDropZone: React.FC<FileDropZoneProps> = ({
 
   const handleChange = useCallback((info: { file: UploadFile }) => {
     const { status } = info.file;
-    if (status === 'error') {
-      message.error('文件读取失败，请重试');
+    if (status === "error") {
+      message.error("文件读取失败，请重试");
     }
   }, []);
 
@@ -59,11 +59,11 @@ const FileDropZone: React.FC<FileDropZoneProps> = ({
       onChange={handleChange}
       showUploadList={false}
       style={{
-        padding: '56px 24px',
+        padding: "56px 24px",
         borderRadius: 12,
-        border: '2px dashed #E5E7EB',
-        background: '#FAFBFC',
-        transition: 'all 0.2s ease',
+        border: "2px dashed #E5E7EB",
+        background: "#FAFBFC",
+        transition: "all 0.2s ease",
       }}
     >
       {/* 橙色上传图标 */}
@@ -71,7 +71,7 @@ const FileDropZone: React.FC<FileDropZoneProps> = ({
         <SoundOutlined
           style={{
             fontSize: 48,
-            color: '#FF9000',
+            color: "#FF9000",
           }}
         />
       </div>
@@ -81,8 +81,8 @@ const FileDropZone: React.FC<FileDropZoneProps> = ({
         strong
         style={{
           fontSize: 16,
-          color: '#0F1419',
-          display: 'block',
+          color: "#0F1419",
+          display: "block",
           marginBottom: 8,
         }}
       >
@@ -94,9 +94,9 @@ const FileDropZone: React.FC<FileDropZoneProps> = ({
         type="secondary"
         style={{
           fontSize: 13,
-          color: '#9CA3AF',
-          display: 'block',
-          lineHeight: '20px',
+          color: "#9CA3AF",
+          display: "block",
+          lineHeight: "20px",
         }}
       >
         支持 MP3、WAV、FLAC、OGG、AAC 格式，文件大小不超过 50MB

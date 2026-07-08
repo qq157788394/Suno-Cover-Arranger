@@ -14,7 +14,7 @@
 import type {
   TranscriptionChordSegment,
   TranscriptionRomanSegment,
-} from '@/shared/types/types';
+} from "@/shared/types/types";
 
 // ── 常量 ───────────────────────────────────────────────
 
@@ -24,7 +24,7 @@ export const BARS_PER_ROW = 4;
 // ── 展示模式 ───────────────────────────────────────────
 
 /** 和弦网格展示模式：和弦名称 / 功能级数（与网页版一致） */
-export type ChordDisplayMode = 'chord' | 'degree';
+export type ChordDisplayMode = "chord" | "degree";
 
 /**
  * 根据展示模式解析单元格主显示文本。
@@ -40,8 +40,8 @@ export function resolveCellDisplay(
   isEmpty: boolean,
   displayMode: ChordDisplayMode,
 ): string {
-  if (isEmpty) return '';
-  if (displayMode === 'degree') return subLabel || label;
+  if (isEmpty) return "";
+  if (displayMode === "degree") return subLabel || label;
   return label;
 }
 
@@ -135,13 +135,13 @@ export function buildBeatCells(
     const romanSeg = sortedRoman
       ? findSegmentAtTime(sortedRoman, t, isLast)
       : undefined;
-    const romanLabel = romanSeg ? romanSeg.roman : '';
+    const romanLabel = romanSeg ? romanSeg.roman : "";
 
     cells.push({
-      chordLabel: matched?.chordLabel ?? 'N',
+      chordLabel: matched?.chordLabel ?? "N",
       romanLabel,
       isEmpty:
-        !matched || matched.chordLabel === 'N' || matched.chordLabel === '',
+        !matched || matched.chordLabel === "N" || matched.chordLabel === "",
     });
   }
 
@@ -163,7 +163,7 @@ export function splitIntoBars(
     const chunk = cells.slice(i, i + beatsPerBar);
     // 填充末尾不足一拍的空格
     while (chunk.length < beatsPerBar) {
-      chunk.push({ chordLabel: 'N', romanLabel: '', isEmpty: true });
+      chunk.push({ chordLabel: "N", romanLabel: "", isEmpty: true });
     }
     bars.push({
       barNumber: Math.floor(i / beatsPerBar) + 1,

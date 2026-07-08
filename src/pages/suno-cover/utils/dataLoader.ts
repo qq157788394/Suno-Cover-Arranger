@@ -3,8 +3,8 @@
  * 集中处理从URL参数加载记录数据和参考歌曲数据转换的逻辑
  */
 
-import { message } from 'antd';
-import { db } from '../../../services/db';
+import { message } from "antd";
+import { db } from "../../../services/db";
 
 /**
  * 处理参考歌曲数据
@@ -24,18 +24,18 @@ export const processReferenceSongs = async (
         .filter(
           (song: any) =>
             song &&
-            typeof song === 'object' &&
+            typeof song === "object" &&
             song.title &&
-            typeof song.title === 'string',
+            typeof song.title === "string",
         )
         .map((song: any) => ({
-          title: song.title || '',
-          artist: song.artist || '',
+          title: song.title || "",
+          artist: song.artist || "",
         }));
     }
 
     // 如果是字符串，尝试解析JSON
-    if (typeof referenceSongsData === 'string') {
+    if (typeof referenceSongsData === "string") {
       try {
         const parsed = JSON.parse(referenceSongsData);
         if (Array.isArray(parsed)) {
@@ -43,13 +43,13 @@ export const processReferenceSongs = async (
             .filter(
               (song: any) =>
                 song &&
-                typeof song === 'object' &&
+                typeof song === "object" &&
                 song.title &&
-                typeof song.title === 'string',
+                typeof song.title === "string",
             )
             .map((song: any) => ({
-              title: song.title || '',
-              artist: song.artist || '',
+              title: song.title || "",
+              artist: song.artist || "",
             }));
         }
       } catch (_parseError) {
@@ -78,18 +78,18 @@ export const loadRecordData = async (
 }> => {
   // 先定义空的表单数据结构（无论是否有recordId都需要）
   const formValues = {
-    song_name: '',
-    song_language: 'Mandarin',
-    target_artist: '',
-    style_note: '',
-    lyrics_raw: '',
-    extra_note: '',
+    song_name: "",
+    song_language: "Mandarin",
+    target_artist: "",
+    style_note: "",
+    lyrics_raw: "",
+    extra_note: "",
     reference_songs: [] as Array<{ title: string; artist: string }>,
   };
 
   // 定义结果数据
-  let stylesResult = '';
-  let lyricsResult = '';
+  let stylesResult = "";
+  let lyricsResult = "";
 
   // 如果没有recordId，直接返回空表单
   if (!recordId) {
@@ -101,7 +101,7 @@ export const loadRecordData = async (
     const record = await db.getPromptRecord(parseInt(recordId, 10));
 
     if (!record) {
-      message.error('记录不存在');
+      message.error("记录不存在");
       return { formValues, hasRecord: false, stylesResult, lyricsResult };
     }
 
@@ -112,27 +112,27 @@ export const loadRecordData = async (
 
     // 更新表单数据
     Object.assign(formValues, {
-      song_name: record.user_input.song_name || '',
-      song_language: record.user_input.song_language || 'Mandarin',
-      target_artist: record.user_input.target_singer || '',
-      style_note: record.user_input.style_description || '',
-      lyrics_raw: record.user_input.lyrics || '',
-      extra_note: record.user_input.scene || '',
+      song_name: record.user_input.song_name || "",
+      song_language: record.user_input.song_language || "Mandarin",
+      target_artist: record.user_input.target_singer || "",
+      style_note: record.user_input.style_description || "",
+      lyrics_raw: record.user_input.lyrics || "",
+      extra_note: record.user_input.scene || "",
       reference_songs:
         processedReferenceSongs.length > 0
           ? processedReferenceSongs
-          : [{ title: '', artist: '' }],
+          : [{ title: "", artist: "" }],
     });
 
     // 提取AI生成的结果数据
     if (record.ai_result) {
-      stylesResult = record.ai_result.styles || '';
-      lyricsResult = record.ai_result.lyrics || '';
+      stylesResult = record.ai_result.styles || "";
+      lyricsResult = record.ai_result.lyrics || "";
     }
 
     return { formValues, hasRecord: true, stylesResult, lyricsResult };
   } catch (_error) {
-    message.error('数据加载失败');
+    message.error("数据加载失败");
     return { formValues, hasRecord: false, stylesResult, lyricsResult };
   }
 };

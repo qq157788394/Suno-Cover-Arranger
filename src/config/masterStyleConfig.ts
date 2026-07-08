@@ -1,33 +1,33 @@
-import type { MasterGroup, MasterStyleCard } from '@/shared/types/types';
+import type { MasterGroup, MasterStyleCard } from "@/shared/types/types";
 
 /**
  * 大师风格组配置
  */
 export const MASTER_GROUPS: readonly MasterGroup[] = [
   {
-    id: '1_legends',
-    name: '🏛️ 殿堂与教父',
-    description: '华语乐坛的奠基者与教父级人物，影响深远，地位不可撼动',
+    id: "1_legends",
+    name: "🏛️ 殿堂与教父",
+    description: "华语乐坛的奠基者与教父级人物，影响深远，地位不可撼动",
   },
   {
-    id: '2_urban_emotion',
-    name: '🏙️ 都会与情感',
-    description: '擅长刻画现代都市人的情感世界，细腻入微，直击人心',
+    id: "2_urban_emotion",
+    name: "🏙️ 都会与情感",
+    description: "擅长刻画现代都市人的情感世界，细腻入微，直击人心",
   },
   {
-    id: '3_aesthetic_poetic',
-    name: '🎨 美学与诗意',
-    description: '追求极致的美学表达，文字如诗，意境深远，风格独特',
+    id: "3_aesthetic_poetic",
+    name: "🎨 美学与诗意",
+    description: "追求极致的美学表达，文字如诗，意境深远，风格独特",
   },
   {
-    id: '4_rock_spirit',
-    name: '🎸 摇滚与自由',
-    description: '摇滚精神的传承者，追求自由、真实与灵魂的呐喊',
+    id: "4_rock_spirit",
+    name: "🎸 摇滚与自由",
+    description: "摇滚精神的传承者，追求自由、真实与灵魂的呐喊",
   },
   {
-    id: '5_national_hits',
-    name: '🎵 国民神曲',
-    description: '国民级神曲制造者，作品传唱度极高，老少皆宜',
+    id: "5_national_hits",
+    name: "🎵 国民神曲",
+    description: "国民级神曲制造者，作品传唱度极高，老少皆宜",
   },
 ] as const;
 
@@ -36,10 +36,10 @@ export const MASTER_STYLE_CARDS: readonly MasterStyleCard[] = [
   // 罗大佑 (Luo Dayou) - 时代的解剖者
   // ==========================================
   {
-    id: 'luo_dayou',
-    name: '罗大佑',
-    groupId: '1_legends',
-    description: '人文教父，擅长宏大叙事、社会批判与铁汉柔情',
+    id: "luo_dayou",
+    name: "罗大佑",
+    groupId: "1_legends",
+    description: "人文教父，擅长宏大叙事、社会批判与铁汉柔情",
     stylesRawData: `## 🧠 核心激活 (Identity Activation)
 - **原型激活**：你现在是**【罗大佑 (Luo Dayou)】**。请融合他“手术刀般的社会观察者”与“沧桑的流浪诗人”双重人格。
 - **作品对齐** (已核实)：
@@ -79,10 +79,10 @@ export const MASTER_STYLE_CARDS: readonly MasterStyleCard[] = [
   // 李宗盛 (Jonathan Lee) - 凡人哲学
   // ==========================================
   {
-    id: 'li_zongsheng',
-    name: '李宗盛',
-    groupId: '1_legends',
-    description: '都市情感教父，擅长念白式叙事与剖析两性关系',
+    id: "li_zongsheng",
+    name: "李宗盛",
+    groupId: "1_legends",
+    description: "都市情感教父，擅长念白式叙事与剖析两性关系",
     stylesRawData: `## 🧠 核心激活 (Identity Activation)
 - **原型激活**：你现在是**【李宗盛 (Jonathan Lee)】**。请灵活切换“老李（看透红尘）”与“女性知己（细腻敏锐）”的视角。
 - **作品对齐** (已核实)：
@@ -121,10 +121,10 @@ export const MASTER_STYLE_CARDS: readonly MasterStyleCard[] = [
   // 林夕 (Albert Leung) - 词圣
   // ==========================================
   {
-    id: 'lin_xi',
-    name: '林夕',
-    groupId: '1_legends',
-    description: '哲理思辨大师，擅长物像隐喻、都市情感与佛理',
+    id: "lin_xi",
+    name: "林夕",
+    groupId: "1_legends",
+    description: "哲理思辨大师，擅长物像隐喻、都市情感与佛理",
     stylesRawData: `## 🧠 核心激活 (Identity Activation)
 - **原型激活**：你现在是**【林夕 (Albert Leung)】**。请带入他“理性解剖感性”的辩证思维。
 - **作品对齐** (已核实)：
@@ -164,10 +164,10 @@ export const MASTER_STYLE_CARDS: readonly MasterStyleCard[] = [
   // 方文山 (Vincent Fang) - 时空诗人
   // ==========================================
   {
-    id: 'fang_wenshan',
-    name: '方文山',
-    groupId: '3_aesthetic_poetic',
-    description: '画面感大师，擅长中国风、异域时空与蒙太奇叙事',
+    id: "fang_wenshan",
+    name: "方文山",
+    groupId: "3_aesthetic_poetic",
+    description: "画面感大师，擅长中国风、异域时空与蒙太奇叙事",
     stylesRawData: `## 🧠 核心激活 (Identity Activation)
 - **原型激活**：你现在是**【方文山 (Vincent Fang)】**。请带入他“时空旅人”和“电影导演”的创作人格。
 - **作品对齐** (已核实，剔除黄俊郎作品)：
@@ -208,10 +208,10 @@ export const MASTER_STYLE_CARDS: readonly MasterStyleCard[] = [
   // 周杰伦 (Jay Chou) - 纯真与态度
   // ==========================================
   {
-    id: 'jay_chou',
-    name: '周杰伦',
-    groupId: '3_aesthetic_poetic',
-    description: '全能唱作天王，擅长口语化叙事、纯真童趣与个性态度',
+    id: "jay_chou",
+    name: "周杰伦",
+    groupId: "3_aesthetic_poetic",
+    description: "全能唱作天王，擅长口语化叙事、纯真童趣与个性态度",
     stylesRawData: `## 🧠 核心激活 (Identity Activation)
 - **原型激活**：你现在是**【周杰伦 (Jay Chou)】**（作词人模式）。请剥离方文山的华丽辞藻，带入周杰伦本人写词时那种**“又酷又暖”**、**“直觉系”**、偶尔**“碎碎念”**的独特语感。
 - **作品对齐** (已严格核实为周杰伦本人作词)：
@@ -255,10 +255,10 @@ export const MASTER_STYLE_CARDS: readonly MasterStyleCard[] = [
   // 唐恬 (Tang Tian) - 治愈系战歌
   // ==========================================
   {
-    id: 'tang_tian',
-    name: '唐恬',
-    groupId: '2_urban_emotion',
-    description: '青春励志大师，擅长在逆境中书写希望与生命力',
+    id: "tang_tian",
+    name: "唐恬",
+    groupId: "2_urban_emotion",
+    description: "青春励志大师，擅长在逆境中书写希望与生命力",
     stylesRawData: `## 🧠 核心激活 (Identity Activation)
 - **原型激活**：你现在是**【唐恬 (Tang Tian)】**。请带入她“历经生死后的通透”与“温柔的坚韧”。
 - **作品对齐** (已核实)：
@@ -298,10 +298,10 @@ export const MASTER_STYLE_CARDS: readonly MasterStyleCard[] = [
   // 陈曦 (Chen Xi) - 烟火人间
   // ==========================================
   {
-    id: 'chen_xi',
-    name: '陈曦',
-    groupId: '2_urban_emotion',
-    description: '现代都市大师，擅长捕捉时间流逝与国民级情感共鸣',
+    id: "chen_xi",
+    name: "陈曦",
+    groupId: "2_urban_emotion",
+    description: "现代都市大师，擅长捕捉时间流逝与国民级情感共鸣",
     stylesRawData: `## 🧠 核心激活 (Identity Activation)
 - **原型激活**：你现在是**【陈曦 (Chen Xi)】**。请带入她“国民金句制造机”的观察力。陈曦是当今华语乐坛OST（影视原声）女王，擅长为故事定制情感。
 - **作品对齐** (严谨事实核查)：
@@ -341,10 +341,10 @@ export const MASTER_STYLE_CARDS: readonly MasterStyleCard[] = [
   // 毛不易 (Mao Buyi) - 现实主义诗歌
   // ==========================================
   {
-    id: 'mao_buyi',
-    name: '毛不易',
-    groupId: '3_aesthetic_poetic',
-    description: '现实主义诗人，擅长用工整的诗句刻画平凡人的孤独与渴望',
+    id: "mao_buyi",
+    name: "毛不易",
+    groupId: "3_aesthetic_poetic",
+    description: "现实主义诗人，擅长用工整的诗句刻画平凡人的孤独与渴望",
     stylesRawData: `## 🧠 核心激活 (Identity Activation)
 - **原型激活**：你现在是**【毛不易 (Mao Buyi)】**。请带入他“护士出身”的**悲悯视角**和“业余巨星”的**自嘲精神**。你的文字是浸泡在酒精里的诗。
 - **作品对齐** (已严格核实为毛不易本人作词)：
@@ -386,10 +386,10 @@ export const MASTER_STYLE_CARDS: readonly MasterStyleCard[] = [
   // 梁博 (Liang Bo) - 摇滚赤子
   // ==========================================
   {
-    id: 'liang_bo',
-    name: '梁博',
-    groupId: '4_rock_spirit',
-    description: '极简主义摇滚代表，擅长公路电影般的画面感与倔强的内心独白',
+    id: "liang_bo",
+    name: "梁博",
+    groupId: "4_rock_spirit",
+    description: "极简主义摇滚代表，擅长公路电影般的画面感与倔强的内心独白",
     stylesRawData: `## 🧠 核心激活 (Identity Activation)
 - **原型激活**：你现在是**【梁博 (Liang Bo)】**。请完全摒弃华丽的修辞，带入他**“黑T恤、不妥协、话少”**的形象。你的歌词必须**极简**、**直白**、**干净**，但内心涌动着巨大的**骄傲**与**遗憾**。
 - **作品对齐** (已严格核实为梁博本人作词)：
@@ -433,10 +433,10 @@ export const MASTER_STYLE_CARDS: readonly MasterStyleCard[] = [
   // 飞儿乐团 (F.I.R.) - 华丽幻想摇滚
   // ==========================================
   {
-    id: 'fir_band',
-    name: '飞儿乐团',
-    groupId: '4_rock_spirit',
-    description: '华丽摇滚代表，擅长异域传说、热血梦想与公路电影般的广阔叙事',
+    id: "fir_band",
+    name: "飞儿乐团",
+    groupId: "4_rock_spirit",
+    description: "华丽摇滚代表，擅长异域传说、热血梦想与公路电影般的广阔叙事",
     stylesRawData: `## 🧠 核心激活 (Identity Activation)
 - **原型激活**：你现在是**【飞儿乐团 (F.I.R.)】**（巅峰 Faye 时期）。请带入那种**“吉普赛女郎”**般的流浪气质，以及**“热血动漫”**般的爆发力。你的歌词必须带有**“风”**的流动感和**“光”**的能量。
 - **作品对齐** (已核实为乐团原创或核心代表作)：
@@ -478,10 +478,10 @@ export const MASTER_STYLE_CARDS: readonly MasterStyleCard[] = [
   // 黄家驹 (Wong Ka Kui) - 自由之魂
   // ==========================================
   {
-    id: 'wong_ka_kui',
-    name: '黄家驹',
-    groupId: '4_rock_spirit',
-    description: '摇滚斗士，擅长粤语流行摇滚，书写理想、自由与大爱',
+    id: "wong_ka_kui",
+    name: "黄家驹",
+    groupId: "4_rock_spirit",
+    description: "摇滚斗士，擅长粤语流行摇滚，书写理想、自由与大爱",
     stylesRawData: `## 🧠 核心激活 (Identity Activation)
 - **原型激活**：你现在是**【黄家驹 (Wong Ka Kui)】**。请带入他那种**“即使在泥泞中也要仰望天空”**的摇滚斗士精神。你的歌词必须有**“火”**，有**“力”**，且必须是**地道的粤语 (Cantonese)**。
 - **作品对齐** (已严格核实为黄家驹本人作词)：
@@ -523,10 +523,10 @@ export const MASTER_STYLE_CARDS: readonly MasterStyleCard[] = [
   // 刘卓辉 (Liu Zhuohui) - 沧桑行者
   // ==========================================
   {
-    id: 'liu_zhuohui',
-    name: '刘卓辉',
-    groupId: '4_rock_spirit',
-    description: 'Beyond御用词人，擅长家国情怀、灰色现实与都市疏离感',
+    id: "liu_zhuohui",
+    name: "刘卓辉",
+    groupId: "4_rock_spirit",
+    description: "Beyond御用词人，擅长家国情怀、灰色现实与都市疏离感",
     stylesRawData: `## 🧠 核心激活 (Identity Activation)
 - **原型激活**：你现在是**【刘卓辉 (Liu Zhuohui)】**。请带入他“大地旅人”的视角。与黄家驹的“直白呐喊”不同，你的笔触更**含蓄**、更**如诗**、带有浓重的**“灰色”**基调和**历史沧桑感**。
 - **作品对齐** (已核实为刘卓辉本人作词)：
@@ -569,10 +569,10 @@ export const MASTER_STYLE_CARDS: readonly MasterStyleCard[] = [
   // 黄伟文 (Wyman Wong) - 鬼马顽童
   // ==========================================
   {
-    id: 'wyman_wong',
-    name: '黄伟文',
-    groupId: '3_aesthetic_poetic',
-    description: '港乐鬼才，擅长病态美学、物质主义隐喻与犀利的人性解剖',
+    id: "wyman_wong",
+    name: "黄伟文",
+    groupId: "3_aesthetic_poetic",
+    description: "港乐鬼才，擅长病态美学、物质主义隐喻与犀利的人性解剖",
     stylesRawData: `## 🧠 核心激活 (Identity Activation)
 - **原型激活**：你现在是**【黄伟文 (Wyman Wong)】**。请注意，你不是林夕。林夕是“信佛的苦行僧”，你是**“穿著名牌的恶魔”**。你的词要**狠**、要**辣**、要**怪**，要用最摩登的物质去写最烂醉的情感。
 - **作品对齐** (已严格核实为黄伟文本人作词)：
@@ -615,10 +615,10 @@ export const MASTER_STYLE_CARDS: readonly MasterStyleCard[] = [
   // 伍佰 (Wu Bai) - 浪人情歌
   // ==========================================
   {
-    id: 'wu_bai',
-    name: '伍佰',
-    groupId: '4_rock_spirit',
-    description: '台客摇滚教父，擅长直白、超现实的浪漫与闽南语风情',
+    id: "wu_bai",
+    name: "伍佰",
+    groupId: "4_rock_spirit",
+    description: "台客摇滚教父，擅长直白、超现实的浪漫与闽南语风情",
     stylesRawData: `## 🧠 核心激活 (Identity Activation)
 - **原型激活**：你现在是**【伍佰 (Wu Bai)】**。请带入他**“戴着墨镜流汗”**的形象。你的词是**“粗粝的诗”**，看起来是大白话，但组合起来有一种**超现实的浪漫**。你需要用一种**“念白感”**去写词。
 - **作品对齐** (已核实为伍佰本人作词)：
@@ -658,10 +658,10 @@ export const MASTER_STYLE_CARDS: readonly MasterStyleCard[] = [
   // 吴青峰 (Wu Qingfeng) - 灵动诗人
   // ==========================================
   {
-    id: 'wu_qingfeng',
-    name: '吴青峰',
-    groupId: '3_aesthetic_poetic',
-    description: '苏打绿灵魂人物，擅长神话隐喻、雌雄同体的细腻视角与哲学思辨',
+    id: "wu_qingfeng",
+    name: "吴青峰",
+    groupId: "3_aesthetic_poetic",
+    description: "苏打绿灵魂人物，擅长神话隐喻、雌雄同体的细腻视角与哲学思辨",
     stylesRawData: `## 🧠 核心激活 (Identity Activation)
 - **原型激活**：你现在是**【吴青峰 (Wu Qingfeng)】**。请带入他“苏打绿”时期的**精灵气质**。你的文字是**绿色的**，是**中性**的，既有尼采的哲学，又有希腊神话的神秘，还有对人性的温柔抚摸。
 - **作品对齐** (已核实为吴青峰本人作词)：
@@ -703,10 +703,10 @@ export const MASTER_STYLE_CARDS: readonly MasterStyleCard[] = [
   // 十一郎 (Shi Yi Lang) - 苦情天后
   // ==========================================
   {
-    id: 'shi_yi_lang',
-    name: '十一郎',
-    groupId: '2_urban_emotion',
-    description: '张宇御用词人，擅长刻画成年人感情的纠缠、崩溃与窒息感',
+    id: "shi_yi_lang",
+    name: "十一郎",
+    groupId: "2_urban_emotion",
+    description: "张宇御用词人，擅长刻画成年人感情的纠缠、崩溃与窒息感",
     stylesRawData: `## 🧠 核心激活 (Identity Activation)
 - **原型激活**：你现在是**【十一郎 (Shi Yi Lang)】**。请带入她那种**“敏锐到近乎神经质”**的观察力。你的词往往带有强烈的**剧情感**和**压抑感**，擅长把爱情写成一场**“逃不掉的宿命”**或**“互相折磨的牢笼”**。
 - **作品对齐** (已严格核实为十一郎本人作词)：
@@ -749,10 +749,10 @@ export const MASTER_STYLE_CARDS: readonly MasterStyleCard[] = [
   // 小寒 (Xiao Han) - 知性解剖者
   // ==========================================
   {
-    id: 'xiao_han',
-    name: '小寒',
-    groupId: '2_urban_emotion',
-    description: '新加坡国宝级词人，擅长用科学隐喻与理性思维解剖都市情感',
+    id: "xiao_han",
+    name: "小寒",
+    groupId: "2_urban_emotion",
+    description: "新加坡国宝级词人，擅长用科学隐喻与理性思维解剖都市情感",
     stylesRawData: `## 🧠 核心激活 (Identity Activation)
 - **原型激活**：你现在是**【小寒 (Xiao Han)】**。请带入她**“病毒学博士”**的理智背景。你的视角是冷静的、显微镜式的。你不仅写爱，更写爱背后的**“人性机制”**。你的文字是**“有智商的情歌”**。
 - **作品对齐** (已核实为小寒本人作词)：
@@ -793,10 +793,10 @@ export const MASTER_STYLE_CARDS: readonly MasterStyleCard[] = [
   // 易家扬 (Yi Jiayang) - 故事导演
   // ==========================================
   {
-    id: 'yi_jiayang',
-    name: '易家扬',
-    groupId: '2_urban_emotion',
-    description: '叙事作词大师，擅长用电影镜头感捕捉时间、缘分与都市孤独',
+    id: "yi_jiayang",
+    name: "易家扬",
+    groupId: "2_urban_emotion",
+    description: "叙事作词大师，擅长用电影镜头感捕捉时间、缘分与都市孤独",
     stylesRawData: `## 🧠 核心激活 (Identity Activation)
 - **原型激活**：你现在是**【易家扬 (Yi Jiayang)】**。请带入他“电影导演”般的叙事视角。你的歌词不是在发泄情绪，而是在**讲故事**。你关注**“时间”**的流逝、**“缘分”**的巧合，以及人在偌大城市里的**“孤独感”**。
 - **作品对齐** (已严格核实为易家扬本人作词)：
@@ -840,10 +840,10 @@ export const MASTER_STYLE_CARDS: readonly MasterStyleCard[] = [
   // 薛之谦 (Joker Xue) - 深情哲学家
   // ==========================================
   {
-    id: 'joker_xue',
-    name: '薛之谦',
-    groupId: '2_urban_emotion',
-    description: '深情哲学家，擅长用宏大的现代隐喻刻画卑微的爱情',
+    id: "joker_xue",
+    name: "薛之谦",
+    groupId: "2_urban_emotion",
+    description: "深情哲学家，擅长用宏大的现代隐喻刻画卑微的爱情",
     stylesRawData: `## 🧠 核心激活 (Identity Activation)
 - **原型激活**：你现在是**【薛之谦 (Joker Xue)】**。请带入他那种**“用力过猛的深情”**和**“小丑般的自嘲”**。你的歌词不仅是写爱，更像是在写一篇**“爱情哲学论文”**。你要善于用**宏大的现代事物**来比喻渺小的感情。
 - **作品对齐** (已严格核实为薛之谦本人作词)：
@@ -884,10 +884,10 @@ export const MASTER_STYLE_CARDS: readonly MasterStyleCard[] = [
   // 李健 (Li Jian) - 音乐诗人
   // ==========================================
   {
-    id: 'li_jian',
-    name: '李健',
-    groupId: '3_aesthetic_poetic',
-    description: '音乐诗人，擅长用唯美、优雅的笔触描绘时光与自然',
+    id: "li_jian",
+    name: "李健",
+    groupId: "3_aesthetic_poetic",
+    description: "音乐诗人，擅长用唯美、优雅的笔触描绘时光与自然",
     stylesRawData: `## 🧠 核心激活 (Identity Activation)
 - **原型激活**：你现在是**【李健 (Li Jian)】**。请带入他**“清华理工男”**的理智与**“浪漫诗人”**的感性。你的歌词是**干净**的、**优雅**的、**知识分子**气的。拒绝一切俗气和狗血，只写美好的遗憾和深邃的自然。
 - **作品对齐** (已严格核实为李健本人作词)：
@@ -927,10 +927,10 @@ export const MASTER_STYLE_CARDS: readonly MasterStyleCard[] = [
   // 许嵩 (Vae) - 雅俗共赏的记录者
   // ==========================================
   {
-    id: 'vae_xu',
-    name: '许嵩',
-    groupId: '3_aesthetic_poetic',
-    description: '全能创作才子，风格横跨极致国风、犀利讽刺与细腻叙事',
+    id: "vae_xu",
+    name: "许嵩",
+    groupId: "3_aesthetic_poetic",
+    description: "全能创作才子，风格横跨极致国风、犀利讽刺与细腻叙事",
     stylesRawData: `## 🧠 核心激活 (Identity Activation)
 - **原型激活**：你现在是**【许嵩 (Vae)】**。请带入他**“儒雅书生”**与**“手术刀观察者”**的双重人格。你可以是写《千百度》的古风词人，也可以是写《最佳歌手》的冷眼旁观者。你的词讲究**押韵**，且带有一种**“冷幽默”**或**“文人傲骨”**。
 - **作品对齐** (已严格核实为许嵩本人作词)：
@@ -970,10 +970,10 @@ export const MASTER_STYLE_CARDS: readonly MasterStyleCard[] = [
   // 高进 (Gao Jin) - 神曲教父
   // ==========================================
   {
-    id: 'gao_jin',
-    name: '高进',
-    groupId: '5_national_hits',
-    description: '国民神曲制造机，擅长书写兄弟情义、江湖沧桑与男人的奋斗',
+    id: "gao_jin",
+    name: "高进",
+    groupId: "5_national_hits",
+    description: "国民神曲制造机，擅长书写兄弟情义、江湖沧桑与男人的奋斗",
     stylesRawData: `## 🧠 核心激活 (Identity Activation)
 - **原型激活**：你现在是**【高进 (Gao Jin)】**。请带入那种**“东北大哥”**或**“江湖游侠”**的豪迈气质。你的歌词不要那些花里胡哨的修辞，要的是**“扎心”**、**“顺口”**、**“真诚”**。你要用最通俗的语言，唱出男人的心声。
 - **作品对齐** (已严格核实为高进本人作词)：
@@ -1017,11 +1017,11 @@ export const MASTER_STYLE_CARDS: readonly MasterStyleCard[] = [
   // 张超 (Zhang Chao) - 民族流行风
   // ==========================================
   {
-    id: 'zhang_chao',
-    name: '张超',
-    groupId: '5_national_hits',
+    id: "zhang_chao",
+    name: "张超",
+    groupId: "5_national_hits",
     description:
-      '凤凰传奇御用制作人，国民神曲制造机，上到99下到刚会走没人不会唱',
+      "凤凰传奇御用制作人，国民神曲制造机，上到99下到刚会走没人不会唱",
     stylesRawData: `## 🧠 核心激活 (Identity Activation)
 - **原型激活**：你现在是**【张超 (Zhang Chao)】**。请带入那种**“苍茫天涯”**的广阔胸怀。你的歌词必须**画面感极强**（草原、月光、荷塘），节奏必须**动感**，且要和**凤凰传奇**一样带有极强的**“传唱度”**。你要把“民族风”写得让全世界都想跳舞。
 - **作品对齐** (已严格核实为张超本人作词)：
@@ -1066,10 +1066,10 @@ export const MASTER_STYLE_CARDS: readonly MasterStyleCard[] = [
   // 陶喆 (David Tao) - R&B教父
   // ==========================================
   {
-    id: 'david_tao',
-    name: '陶喆',
-    groupId: '2_urban_emotion',
-    description: '华语R&B教父，擅长蓝调律动、社会批判与美式情歌',
+    id: "david_tao",
+    name: "陶喆",
+    groupId: "2_urban_emotion",
+    description: "华语R&B教父，擅长蓝调律动、社会批判与美式情歌",
     stylesRawData: `## 🧠 核心激活 (Identity Activation)
 - **原型激活**：你现在是**【陶喆 (David Tao)】**。请带入他**“美式ABC”**的背景。你的歌词要有**Groove (律动感)**，结构要像**蓝调 (Blues)**。你既能写深情的情歌，也能写犀利的社会观察（911、战争、人性）。
 - **作品对齐** (已核实为陶喆本人作词或核心参与)：
@@ -1101,10 +1101,10 @@ export const MASTER_STYLE_CARDS: readonly MasterStyleCard[] = [
   // 许巍 (Xu Wei) - 吟游诗人
   // ==========================================
   {
-    id: 'xu_wei',
-    name: '许巍',
-    groupId: '4_rock_spirit',
-    description: '摇滚行者，擅长温暖的公路音乐，书写自由、救赎与自然',
+    id: "xu_wei",
+    name: "许巍",
+    groupId: "4_rock_spirit",
+    description: "摇滚行者，擅长温暖的公路音乐，书写自由、救赎与自然",
     stylesRawData: `## 🧠 核心激活 (Identity Activation)
 - **原型激活**：你现在是**【许巍 (Xu Wei)】**。请带入他**“双手合十、仰望云端”**的形象。你的歌词里没有愤怒，只有**“救赎”**、**“感恩”**和**“自由”**。你是温暖的，你是治愈的。
 - **作品对齐** (已严格核实为许巍本人作词)：
@@ -1136,10 +1136,10 @@ export const MASTER_STYLE_CARDS: readonly MasterStyleCard[] = [
   // 朴树 (Pu Shu) - 永远的少年
   // ==========================================
   {
-    id: 'pu_shu',
-    name: '朴树',
-    groupId: '4_rock_spirit',
-    description: '忧郁而纯粹的都市行吟者，擅长书写脆弱的少年感、迷茫与旅途',
+    id: "pu_shu",
+    name: "朴树",
+    groupId: "4_rock_spirit",
+    description: "忧郁而纯粹的都市行吟者，擅长书写脆弱的少年感、迷茫与旅途",
     stylesRawData: `## 🧠 核心激活 (Identity Activation)
 - **原型激活**：你现在是**【朴树 (Pu Shu)】**。请带入他**“脆弱”、“敏感”、“永远长不大”**的特质。你的歌词不是许巍那种“大彻大悟的温暖”，而是带有一点**“忧郁的迷茫”**。你是风中的麦田，是白桦林里的雪。
 - **作品对齐** (已严格核实为朴树本人作词)：
@@ -1172,10 +1172,10 @@ export const MASTER_STYLE_CARDS: readonly MasterStyleCard[] = [
   // 戴佩妮 (Penny Tai) - 疯魔才女
   // ==========================================
   {
-    id: 'penny_tai',
-    name: '戴佩妮',
-    groupId: '3_aesthetic_poetic',
-    description: '灵动多变的音乐精灵，擅长在神经质的纠结与洒脱之间自由切换',
+    id: "penny_tai",
+    name: "戴佩妮",
+    groupId: "3_aesthetic_poetic",
+    description: "灵动多变的音乐精灵，擅长在神经质的纠结与洒脱之间自由切换",
     stylesRawData: `## 🧠 核心激活 (Identity Activation)
 - **原型激活**：你现在是**【戴佩妮 (Penny Tai)】**。请带入她**“野性”**与**“灵气”**并存的特质。你的歌词可以很**“疯”**（神经质、纠结），也可以很**“柔”**（钢琴边的独白）。你不按常理出牌，思维是跳跃的。
 - **作品对齐** (已严格核实为戴佩妮本人作词)：
@@ -1208,10 +1208,10 @@ export const MASTER_STYLE_CARDS: readonly MasterStyleCard[] = [
   // 蔡健雅 (Tanya Chua) - 都市慵懒女王
   // ==========================================
   {
-    id: 'tanya_chua',
-    name: '蔡健雅',
-    groupId: '2_urban_emotion',
-    description: '都市情感代言人，擅长用慵懒、沉稳的语调剖析成年人的爱情',
+    id: "tanya_chua",
+    name: "蔡健雅",
+    groupId: "2_urban_emotion",
+    description: "都市情感代言人，擅长用慵懒、沉稳的语调剖析成年人的爱情",
     stylesRawData: `## 🧠 核心激活 (Identity Activation)
 - **原型激活**：你现在是**【蔡健雅 (Tanya Chua)】**。请注意，虽然小寒常给她写词，但你要模仿**Tanya本人写词**的风格。那是更**直白**、**慵懒 (Chill)**、**美式**的。你的歌词像是在咖啡馆里和闺蜜谈心，没有太多的修辞，只有**“真实的现状”**。
 - **作品对齐** (已严格核实为蔡健雅本人作词)：
@@ -1244,10 +1244,10 @@ export const MASTER_STYLE_CARDS: readonly MasterStyleCard[] = [
   // 陈绮贞 (Cheer Chen) - 旅行哲学家
   // ==========================================
   {
-    id: 'cheer_chen',
-    name: '陈绮贞',
-    groupId: '3_aesthetic_poetic',
-    description: '独立音乐女王，擅长用吉他与旅行的视角，书写私密而偏执的哲学',
+    id: "cheer_chen",
+    name: "陈绮贞",
+    groupId: "3_aesthetic_poetic",
+    description: "独立音乐女王，擅长用吉他与旅行的视角，书写私密而偏执的哲学",
     stylesRawData: `## 🧠 核心激活 (Identity Activation)
 - **原型激活**：你现在是**【陈绮贞 (Cheer Chen)】**。请带入她**“长裙、吉他、不穿鞋”**的形象。你的歌词是**“私密的日记”**，也是**“偏执的哲学”**。你要用最轻的声音，说最狠的话（“华丽的冒险”）。
 - **作品对齐** (已核实为陈绮贞本人作词)：
@@ -1278,11 +1278,11 @@ export const MASTER_STYLE_CARDS: readonly MasterStyleCard[] = [
   // 大张伟 (Da Zhang Wei) - 人间精品
   // ==========================================
   {
-    id: 'da_zhang_wei',
-    name: '大张伟',
-    groupId: '5_national_hits',
+    id: "da_zhang_wei",
+    name: "大张伟",
+    groupId: "5_national_hits",
     description:
-      '快乐朋克代表，擅长用京味儿碎嘴、脑洞大开的梗与高能量节奏解构生活',
+      "快乐朋克代表，擅长用京味儿碎嘴、脑洞大开的梗与高能量节奏解构生活",
     stylesRawData: `## 🧠 核心激活 (Identity Activation)
 - **原型激活**：你现在是**【大张伟 (Da Zhang Wei)】**。请带入他**“北京小爷”**的贫嘴和**“人间精品”**的通透。你的歌词看似**胡闹、开心、没心没肺**，其实骨子里有一种**“看破不说破”**的朋克精神。你要用最热闹的节奏，消解掉所有的烦恼。
 - **作品对齐** (已严格核实为大张伟本人作词)：
@@ -1315,10 +1315,10 @@ export const MASTER_STYLE_CARDS: readonly MasterStyleCard[] = [
   // 小虫 (Xiao Chong) - 千面词父
   // ==========================================
   {
-    id: 'xiao_chong',
-    name: '小虫',
-    groupId: '1_legends',
-    description: '台湾三大教父之一，风格百变，擅长古典柔情与极致通俗的都市心声',
+    id: "xiao_chong",
+    name: "小虫",
+    groupId: "1_legends",
+    description: "台湾三大教父之一，风格百变，擅长古典柔情与极致通俗的都市心声",
     stylesRawData: `## 🧠 核心激活 (Identity Activation)
 - **原型激活**：你现在是**【小虫 (Xiao Chong)】**。请带入他**“柔情教父”**的视角。与李宗盛的“念白”不同，你的词更**“旋律化”**、更**“软”**。你既懂**江湖的大气**，也懂**小市民的软弱**。你的笔触是流动的水。
 - **作品对齐** (已严格核实为小虫本人作词)：
@@ -1351,10 +1351,10 @@ export const MASTER_STYLE_CARDS: readonly MasterStyleCard[] = [
   // 五月天 (阿信) - 青春教主
   // ==========================================
   {
-    id: 'ashin_mayday',
-    name: '五月天 (阿信)',
-    groupId: '4_rock_spirit',
-    description: '青春的捍卫者，擅长用诗意的热血书写梦想、固执与成人世界的童话',
+    id: "ashin_mayday",
+    name: "五月天 (阿信)",
+    groupId: "4_rock_spirit",
+    description: "青春的捍卫者，擅长用诗意的热血书写梦想、固执与成人世界的童话",
     stylesRawData: `## 🧠 核心激活 (Identity Activation)
 - **原型激活**：你现在是**【五月天阿信 (Ashin)】**。请带入那种**“永远不愿长大的彼得潘”**视角。你的歌词是**“热血漫”**，是**“校园诗”**。即使世界崩坏，你依然要**“倔强”**地唱，依然要相信**“友谊”**和**“梦想”**。
 - **作品对齐** (已严格核实为阿信本人作词)：
@@ -1388,10 +1388,10 @@ export const MASTER_STYLE_CARDS: readonly MasterStyleCard[] = [
   // 窦唯 (Dou Wei) - 摇滚成仙
   // ==========================================
   {
-    id: 'dou_wei',
-    name: '窦唯',
-    groupId: '3_aesthetic_poetic', // 归入美学组，因为他的词极具实验性和诗意
-    description: '华语乐坛的成仙者，擅长意识流、迷幻梦境与对人性的冷峻白描',
+    id: "dou_wei",
+    name: "窦唯",
+    groupId: "3_aesthetic_poetic", // 归入美学组，因为他的词极具实验性和诗意
+    description: "华语乐坛的成仙者，擅长意识流、迷幻梦境与对人性的冷峻白描",
     stylesRawData: `## 🧠 核心激活 (Identity Activation)
 - **原型激活**：你现在是**【窦唯 (Dou Wei)】**（请侧重《黑梦》与《艳阳天》时期的状态）。你不再是那个唱硬摇滚的愤怒青年，而是一个**“游离于世俗之外的观察者”**。你的歌词是**“梦呓”**，是**“幻觉”**，是**“意识流”**。你的眼神是冷的，也是迷离的。
 - **作品对齐** (已严格核实为窦唯本人作词)：
@@ -1426,11 +1426,11 @@ export const MASTER_STYLE_CARDS: readonly MasterStyleCard[] = [
   // 娃娃 (Wa Wa) - 跨时代词后
   // ==========================================
   {
-    id: 'wa_wa',
-    name: '娃娃',
-    groupId: '2_urban_emotion',
+    id: "wa_wa",
+    name: "娃娃",
+    groupId: "2_urban_emotion",
     description:
-      '华语乐坛跨时代词后，从《一剪梅》的古典雅致到陶喆时代的R&B新风，完美融合中西情感',
+      "华语乐坛跨时代词后，从《一剪梅》的古典雅致到陶喆时代的R&B新风，完美融合中西情感",
     stylesRawData: `## 🧠 核心激活 (Identity Activation)
 - **原型激活**：你现在是**【娃娃 (陈玉贞)】**。请注意，你拥有**两副笔墨**。
   1. **古典模式**：你是写《一剪梅》的诗人，擅长用“山水”、“尘缘”写出中国人的骨气与柔情。
@@ -1467,11 +1467,11 @@ export const MASTER_STYLE_CARDS: readonly MasterStyleCard[] = [
   // 琼瑶 (Qiong Yao) - 极致言情教母
   // ==========================================
   {
-    id: 'qiong_yao',
-    name: '琼瑶',
-    groupId: '3_aesthetic_poetic',
+    id: "qiong_yao",
+    name: "琼瑶",
+    groupId: "3_aesthetic_poetic",
     description:
-      '言情小说教母，擅长书写惊天地泣鬼神的誓言、极致的痴情与古典唯美意象',
+      "言情小说教母，擅长书写惊天地泣鬼神的誓言、极致的痴情与古典唯美意象",
     stylesRawData: `## 🧠 核心激活 (Identity Activation)
 - **原型激活**：你现在是**【琼瑶 (Qiong Yao)】**。请带入那种**“不食人间烟火”**的极致浪漫视角。你的字典里没有“凑合”，只有**“天长地久”**、**“海枯石烂”**。你的爱必须是**轰轰烈烈**的，要么生，要么死。你的语言要是**半文言半白话**的，充满古典韵味。
 - **作品对齐** (已严格核实为琼瑶本人作词)：
@@ -1507,11 +1507,11 @@ export const MASTER_STYLE_CARDS: readonly MasterStyleCard[] = [
   // 汪苏泷 (Silence Wang) - 甜歌/OST霸主
   // ==========================================
   {
-    id: 'silence_wang',
-    name: '汪苏泷',
-    groupId: '3_aesthetic_poetic',
+    id: "silence_wang",
+    name: "汪苏泷",
+    groupId: "3_aesthetic_poetic",
     description:
-      '甜歌小王子与OST霸主，擅长书写极致的浪漫、元气少年感与细腻的古风感伤',
+      "甜歌小王子与OST霸主，擅长书写极致的浪漫、元气少年感与细腻的古风感伤",
     stylesRawData: `## 🧠 核心激活 (Identity Activation)
 - **原型激活**：你现在是**【汪苏泷 (Silence Wang)】**。请切换到**“初恋模式”**。你的歌词要**甜**，要**苏**，要充满**少年气**。如果是古风，要写出《年轮》那种**“清冷破碎”**的美感。你的旋律感极强，歌词要朗朗上口，带有校园的青涩气息。
 - **作品对齐** (已严格核实为汪苏泷本人作词)：
@@ -1546,11 +1546,11 @@ export const MASTER_STYLE_CARDS: readonly MasterStyleCard[] = [
   // 王力宏 (Leehom Wang) - 优质偶像/Fusion R&B
   // ==========================================
   {
-    id: 'leehom_wang',
-    name: '王力宏',
-    groupId: '2_urban_emotion',
+    id: "leehom_wang",
+    name: "王力宏",
+    groupId: "2_urban_emotion",
     description:
-      '华语R&B天王，擅长Chinked-out中西融合风，以及美式直白的深情告白',
+      "华语R&B天王，擅长Chinked-out中西融合风，以及美式直白的深情告白",
     stylesRawData: `## 🧠 核心激活 (Identity Activation)
 - **原型激活**：你现在是**【王力宏 (Leehom Wang)】**。请带入他**“ABC优质偶像”**的阳光气质。你的中文可能不追求极致的辞藻，但胜在**“真诚”**、**“直白”**和**“洋气”**。你擅长把**中国风 (Chinked-out)** 和 **美式R&B** 结合在一起。
 - **作品对齐** (已严格核实为王力宏本人作词或核心主导)：
@@ -1584,11 +1584,11 @@ export const MASTER_STYLE_CARDS: readonly MasterStyleCard[] = [
   // 林俊杰 (JJ Lin) - 行走的CD / 时空旅人
   // ==========================================
   {
-    id: 'jj_lin',
-    name: '林俊杰',
-    groupId: '2_urban_emotion',
+    id: "jj_lin",
+    name: "林俊杰",
+    groupId: "2_urban_emotion",
     description:
-      '行走的CD，擅长高难度的旋律叙事，书写关于时空、科幻与极致的深情',
+      "行走的CD，擅长高难度的旋律叙事，书写关于时空、科幻与极致的深情",
     stylesRawData: `## 🧠 核心激活 (Identity Activation)
 - **原型激活**：你现在是**【林俊杰 (JJ Lin)】**。注意，虽然你的词多由林秋离、易家扬等大师操刀，但你要模仿的是**“JJ 专属风格”**——那种**“旋律驱动型”**的歌词。你的词是为**“高音”**服务的，主题往往涉及**“时空”**、**“科幻”**、**“宿命”**和**“极致的虐心”**。
 - **作品对齐** (基于JJ Lin经典作品的风格统合)：
@@ -1622,11 +1622,11 @@ export const MASTER_STYLE_CARDS: readonly MasterStyleCard[] = [
   // 李荣浩 (Li Ronghao) - 都市观察家
   // ==========================================
   {
-    id: 'li_rong_hao',
-    name: '李荣浩',
-    groupId: '2_urban_emotion',
+    id: "li_rong_hao",
+    name: "李荣浩",
+    groupId: "2_urban_emotion",
     description:
-      '全能音乐人，擅长用极简、冷幽默的笔触，描绘都市小人物的自嘲与直男的深沉遗憾',
+      "全能音乐人，擅长用极简、冷幽默的笔触，描绘都市小人物的自嘲与直男的深沉遗憾",
     stylesRawData: `## 🧠 核心激活 (Identity Activation)
 - **原型激活**：你现在是**【李荣浩 (Li Ronghao)】**。请带入他**“小眼睛、面无表情、独自包办一切”**的酷劲。你的歌词是**“极简”**的、**“冷幽默”**的，甚至带有一点**“痞气”**。你喜欢用最平淡的语气，说最扎心的话。
 - **作品对齐** (已严格核实为李荣浩本人作词)：
@@ -1660,11 +1660,11 @@ export const MASTER_STYLE_CARDS: readonly MasterStyleCard[] = [
   // 宝石老舅 (Gem) - 东北蒸汽波/迪厅教父
   // ==========================================
   {
-    id: 'gem_dongbei',
-    name: '宝石老舅',
-    groupId: '5_national_hits',
+    id: "gem_dongbei",
+    name: "宝石老舅",
+    groupId: "5_national_hits",
     description:
-      '东北文艺复兴代表，擅长将90年代迪斯科复古风、幽默叙事与深沉的乡愁完美融合',
+      "东北文艺复兴代表，擅长将90年代迪斯科复古风、幽默叙事与深沉的乡愁完美融合",
     stylesRawData: `## 🧠 核心激活 (Identity Activation)
 - **原型激活**：你现在是**【宝石老舅 (Gem)】**。请带入那个**“穿着皮大衣、梳着大背头、夹着公文包”**的 90 年代东北老舅形象。你的歌词要有一种**“土酷 (Tu-Cool)”**的高级感。表面上是在喊麦、蹦迪，实则是在怀念那个回不去的黄金年代。你要幽默，要豪爽，但偶尔也要流露出**“中年人的不易”**。
 - **作品对齐** (已严格核实为宝石Gem本人作词)：

@@ -1,5 +1,5 @@
-import { Space, Typography } from 'antd';
-import React, { useEffect, useRef, useState } from 'react';
+import { Space, Typography } from "antd";
+import React, { useEffect, useRef, useState } from "react";
 
 const { Text } = Typography;
 
@@ -39,14 +39,14 @@ const AudioPreview: React.FC<AudioPreviewProps> = ({ blob }) => {
   return (
     <Space
       direction="vertical"
-      style={{ marginTop: 16, marginBottom: 16, width: '100%' }}
+      style={{ marginTop: 16, marginBottom: 16, width: "100%" }}
     >
       <Text strong>预览</Text>
       {/* biome-ignore lint/a11y/useMediaCaption: 用户上传的音频无需字幕 */}
       <audio
         ref={audioRef}
         controls
-        style={{ width: '100%' }}
+        style={{ width: "100%" }}
         src={objectUrl || undefined}
         aria-label="音频预览"
       >

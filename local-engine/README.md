@@ -5,12 +5,12 @@
 
 ## 组件
 
-| 能力 | 库 | 依赖 |
-|------|----|------|
-| 和弦转写 | lv-chordia (PyTorch) | 必装 |
-| 调性 / BPM / 节奏网格 | madmom (TensorFlow) | 可选（缺则降级只出和弦） |
-| 罗马级数 | chord-romanizer | 可选（需 key） |
-| HTTP 服务 | FastAPI + uvicorn | 必装 |
+| 能力                  | 库                   | 依赖                     |
+| --------------------- | -------------------- | ------------------------ |
+| 和弦转写              | lv-chordia (PyTorch) | 必装                     |
+| 调性 / BPM / 节奏网格 | madmom (TensorFlow)  | 可选（缺则降级只出和弦） |
+| 罗马级数              | chord-romanizer      | 可选（需 key）           |
+| HTTP 服务             | FastAPI + uvicorn    | 必装                     |
 
 音频全程不出本机；仅绑定 `127.0.0.1`，仅允许本机 Origin 调用。
 

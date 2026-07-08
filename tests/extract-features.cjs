@@ -1,11 +1,11 @@
-const essentia = require('essentia.js');
-const fs = require('node:fs');
-const { execSync } = require('node:child_process');
+const essentia = require("essentia.js");
+const fs = require("node:fs");
+const { execSync } = require("node:child_process");
 
 // 1. 解码 MP3 → WAV
 const mp3 =
-  '/Users/xiakeyao/Documents/trae_projects/Suno-Cover-Arranger/prd/百年孤寂 - 王菲.mp3';
-const wav = '/tmp/test_chord.wav';
+  "/Users/xiakeyao/Documents/trae_projects/Suno-Cover-Arranger/prd/百年孤寂 - 王菲.mp3";
+const wav = "/tmp/test_chord.wav";
 execSync(
   `afconvert -f WAVE -d LEI16 -c 1 -r 16000 "${mp3}" "${wav}" 2>/dev/null`,
 );
@@ -30,12 +30,12 @@ const keyResult = e.KeyExtractor(
   60,
   25,
   0.2,
-  'temperley',
+  "temperley",
   sr,
   0.0001,
   440,
-  'cosine',
-  'hann',
+  "cosine",
+  "hann",
 );
 
 // BPM
@@ -63,9 +63,9 @@ for (let i = 0; i < numFrames; i++) {
   const sl = floatData.slice(i * hop, i * hop + frameSize);
   const fv = e.arrayToVector(Array.from(sl));
   try {
-    const w = e.Windowing(fv, true, frameSize, 'hann', 0, true);
+    const w = e.Windowing(fv, true, frameSize, "hann", 0, true);
     const s = e.Spectrum(w.frame, frameSize);
-    const p = e.SpectralPeaks(s.spectrum, 0, 5000, 100, 40, 'frequency', sr);
+    const p = e.SpectralPeaks(s.spectrum, 0, 5000, 100, 40, "frequency", sr);
     if (p.frequencies.size() < 1) continue;
     const h = e.HPCP(
       p.frequencies,
@@ -77,11 +77,11 @@ for (let i = 0; i < numFrames; i++) {
       false,
       40,
       true,
-      'unitMax',
+      "unitMax",
       440,
       sr,
       12,
-      'cosine',
+      "cosine",
       1.0,
     );
     chromaFrames.push(Array.from(e.vectorToArray(h.hpcp)));
@@ -92,7 +92,7 @@ for (let i = 0; i < numFrames; i++) {
 
 // 保存
 const testData = {
-  fileName: '百年孤寂 - 王菲.mp3',
+  fileName: "百年孤寂 - 王菲.mp3",
   sampleRate: sr,
   duration: floatData.length / sr,
   key: keyResult.key,
@@ -107,7 +107,7 @@ const testData = {
 };
 
 const outPath =
-  '/Users/xiakeyao/Documents/trae_projects/Suno-Cover-Arranger/tests/chord-features.json';
+  "/Users/xiakeyao/Documents/trae_projects/Suno-Cover-Arranger/tests/chord-features.json";
 fs.writeFileSync(outPath, JSON.stringify(testData, null, 2));
 console.log(
   `\nSaved: ${chromaFrames.length} chroma frames, key=${keyResult.key} ${keyResult.scale}, bpm=${bpm}`,

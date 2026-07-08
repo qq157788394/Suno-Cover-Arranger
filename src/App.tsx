@@ -1,18 +1,18 @@
-import { HappyProvider } from '@ant-design/happy-work-theme';
-import type { Settings as LayoutSettings } from '@ant-design/pro-components';
-import { SettingDrawer } from '@ant-design/pro-components';
-import type { RequestConfig, RunTimeLayoutConfig } from '@umijs/max';
-import { ConfigProvider, Typography, theme } from 'antd';
+import { HappyProvider } from "@ant-design/happy-work-theme";
+import type { Settings as LayoutSettings } from "@ant-design/pro-components";
+import { SettingDrawer } from "@ant-design/pro-components";
+import type { RequestConfig, RunTimeLayoutConfig } from "@umijs/max";
+import { ConfigProvider, Typography, theme } from "antd";
 
 const { Link } = Typography;
 
-import React from 'react';
-import EnvSwitchTrigger from '@/components/EnvSwitchTrigger';
+import React from "react";
+import EnvSwitchTrigger from "@/components/EnvSwitchTrigger";
 // 导入合并后的全局样式文件
-import './index.css';
+import "./index.css";
 
-import defaultSettings from '../config/defaultSettings';
-import { errorConfig } from './requestErrorConfig';
+import defaultSettings from "../config/defaultSettings";
+import { errorConfig } from "./requestErrorConfig";
 
 // 移除了isDev变量，因为SettingDrawer现在在所有环境中都显示
 
@@ -25,9 +25,9 @@ export async function getInitialState(): Promise<{
   // 同步读取本地存储的主题配置，确保在应用程序启动时就被正确加载
   let savedSettings = null;
   try {
-    savedSettings = localStorage.getItem('themeSettings');
+    savedSettings = localStorage.getItem("themeSettings");
   } catch (error) {
-    console.error('Failed to read theme settings from localStorage:', error);
+    console.error("Failed to read theme settings from localStorage:", error);
   }
 
   const themeSettings = savedSettings
@@ -109,11 +109,11 @@ export const layout: RunTimeLayoutConfig = ({
             theme={{
               // 应用SettingDrawer的主题配置
               token: {
-                colorPrimary: initialState?.settings?.colorPrimary || '#ff9000',
+                colorPrimary: initialState?.settings?.colorPrimary || "#ff9000",
               },
               // 根据SettingDrawer的navTheme配置应用对应的主题算法
               algorithm:
-                initialState?.settings?.navTheme === 'realDark'
+                initialState?.settings?.navTheme === "realDark"
                   ? theme.darkAlgorithm
                   : theme.defaultAlgorithm,
             }}
@@ -127,10 +127,10 @@ export const layout: RunTimeLayoutConfig = ({
             onSettingChange={(settings) => {
               // 保存主题配置到本地存储
               try {
-                localStorage.setItem('themeSettings', JSON.stringify(settings));
+                localStorage.setItem("themeSettings", JSON.stringify(settings));
               } catch (error) {
                 console.error(
-                  'Failed to save theme settings to localStorage:',
+                  "Failed to save theme settings to localStorage:",
                   error,
                 );
               }
@@ -144,16 +144,16 @@ export const layout: RunTimeLayoutConfig = ({
             hideHintAlert={true}
             hideCopyButton={true}
             colorList={[
-              { key: 'p站黄', color: '#ff9000', title: 'P站黄' },
-              { key: 'techBlue', color: '#1677FF' },
-              { key: 'daybreak', color: '#1890ff' },
-              { key: 'dust', color: '#F5222D' },
-              { key: 'volcano', color: '#FA541C' },
-              { key: 'sunset', color: '#FAAD14' },
-              { key: 'cyan', color: '#13C2C2' },
-              { key: 'green', color: '#52C41A' },
-              { key: 'geekblue', color: '#2F54EB' },
-              { key: 'purple', color: '#722ED1' },
+              { key: "p站黄", color: "#ff9000", title: "P站黄" },
+              { key: "techBlue", color: "#1677FF" },
+              { key: "daybreak", color: "#1890ff" },
+              { key: "dust", color: "#F5222D" },
+              { key: "volcano", color: "#FA541C" },
+              { key: "sunset", color: "#FAAD14" },
+              { key: "cyan", color: "#13C2C2" },
+              { key: "green", color: "#52C41A" },
+              { key: "geekblue", color: "#2F54EB" },
+              { key: "purple", color: "#722ED1" },
             ]}
           />
         </>
@@ -169,6 +169,6 @@ export const layout: RunTimeLayoutConfig = ({
  * @doc https://umijs.org/docs/max/request#配置
  */
 export const request: RequestConfig = {
-  baseURL: 'https://proapi.azurewebsites.net',
+  baseURL: "https://proapi.azurewebsites.net",
   ...errorConfig,
 };

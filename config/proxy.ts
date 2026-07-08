@@ -13,10 +13,10 @@ export default {
   // 开发环境代理配置
   dev: {
     // 小米MiMo API代理
-    '/mimo-api/': {
-      target: 'https://api.xiaomimimo.com',
+    "/mimo-api/": {
+      target: "https://api.xiaomimimo.com",
       changeOrigin: true,
-      pathRewrite: { '^/mimo-api': '' },
+      pathRewrite: { "^/mimo-api": "" },
     },
   },
   /**
@@ -25,17 +25,17 @@ export default {
    */
   test: {
     // localhost:8000/api/** -> https://preview.pro.ant.design/api/**
-    '/api/': {
-      target: 'https://proapi.azurewebsites.net',
+    "/api/": {
+      target: "https://proapi.azurewebsites.net",
       changeOrigin: true,
-      pathRewrite: { '^': '' },
+      pathRewrite: { "^": "" },
     },
   },
   pre: {
-    '/api/': {
-      target: 'your pre url',
+    "/api/": {
+      target: "your pre url",
       changeOrigin: true,
-      pathRewrite: { '^': '' },
+      pathRewrite: { "^": "" },
     },
   },
 };

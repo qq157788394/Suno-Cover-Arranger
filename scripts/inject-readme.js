@@ -1,5 +1,5 @@
-const fs = require('node:fs');
-const path = require('node:path');
+const fs = require("node:fs");
+const path = require("node:path");
 
 /**
  * 构建时预处理脚本：将README.md和changelog.md内容注入到生产版本中
@@ -7,23 +7,23 @@ const path = require('node:path');
  */
 
 function injectMarkdownContent() {
-  const readmePath = path.join(process.cwd(), 'README.md');
+  const readmePath = path.join(process.cwd(), "README.md");
   const changelogPath = path.join(
     process.cwd(),
-    'src/pages/changelog/changelog.md',
+    "src/pages/changelog/changelog.md",
   );
-  const distPath = path.join(process.cwd(), 'dist');
-  const indexPath = path.join(distPath, 'index.html');
+  const distPath = path.join(process.cwd(), "dist");
+  const indexPath = path.join(distPath, "index.html");
 
   try {
     // 读取README.md内容
-    const readmeContent = fs.readFileSync(readmePath, 'utf-8');
+    const readmeContent = fs.readFileSync(readmePath, "utf-8");
 
     // 读取changelog.md内容
-    const changelogContent = fs.readFileSync(changelogPath, 'utf-8');
+    const changelogContent = fs.readFileSync(changelogPath, "utf-8");
 
     // 读取生成的index.html
-    let indexContent = fs.readFileSync(indexPath, 'utf-8');
+    let indexContent = fs.readFileSync(indexPath, "utf-8");
 
     // 将README和changelog内容作为全局变量注入到HTML中
     const injectScript = `
@@ -36,14 +36,14 @@ function injectMarkdownContent() {
     `;
 
     // 在</body>标签前注入脚本
-    indexContent = indexContent.replace('</body>', `${injectScript}\n</body>`);
+    indexContent = indexContent.replace("</body>", `${injectScript}\n</body>`);
 
     // 写回文件
-    fs.writeFileSync(indexPath, indexContent, 'utf-8');
+    fs.writeFileSync(indexPath, indexContent, "utf-8");
 
-    console.log('✅ README.md和changelog.md内容已成功注入到生产版本中');
+    console.log("✅ README.md和changelog.md内容已成功注入到生产版本中");
   } catch (error) {
-    console.error('❌ 注入markdown内容失败:', error);
+    console.error("❌ 注入markdown内容失败:", error);
     process.exit(1);
   }
 }

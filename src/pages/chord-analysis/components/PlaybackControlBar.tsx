@@ -10,10 +10,10 @@ import {
   CaretRightOutlined,
   PauseOutlined,
   ReloadOutlined,
-} from '@ant-design/icons';
-import { Button, Space } from 'antd';
-import React from 'react';
-import type { PlaybackState } from '@/shared/types/types';
+} from "@ant-design/icons";
+import { Button, Space } from "antd";
+import React from "react";
+import type { PlaybackState } from "@/shared/types/types";
 
 export interface PlaybackControlBarProps {
   /** 当前播放状态 */
@@ -32,7 +32,7 @@ const PlaybackControlBar: React.FC<PlaybackControlBarProps> = ({
   onPause,
   onReupload,
 }) => {
-  const isPlaying = playbackState === 'PLAYING';
+  const isPlaying = playbackState === "PLAYING";
 
   return (
     <Space size={12}>
@@ -52,8 +52,8 @@ const PlaybackControlBar: React.FC<PlaybackControlBarProps> = ({
           onClick={onPlay}
           style={{
             borderRadius: 8,
-            background: '#FF9000',
-            borderColor: '#FF9000',
+            background: "#FF9000",
+            borderColor: "#FF9000",
           }}
         >
           播放
@@ -63,7 +63,7 @@ const PlaybackControlBar: React.FC<PlaybackControlBarProps> = ({
         type="text"
         icon={<ReloadOutlined />}
         onClick={onReupload}
-        style={{ borderRadius: 8, color: '#6B7280' }}
+        style={{ borderRadius: 8, color: "#6B7280" }}
       >
         重新上传
       </Button>

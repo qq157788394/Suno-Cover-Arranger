@@ -1,6 +1,6 @@
-import { useCallback, useState } from 'react';
-import { db } from '@/services/db';
-import type { LyricsRecord } from '@/shared/types/types';
+import { useCallback, useState } from "react";
+import { db } from "@/services/db";
+import type { LyricsRecord } from "@/shared/types/types";
 
 export interface LyricsRecordFilters {
   keyword?: string;
@@ -131,7 +131,7 @@ export const useLyricsRecords = () => {
         setRecords(fetchedRecords);
         return fetchedRecords;
       } catch (error) {
-        console.error('获取歌词记录失败：', error);
+        console.error("获取歌词记录失败：", error);
         setRecords([]);
         return [];
       } finally {
@@ -154,21 +154,21 @@ export const useLyricsRecords = () => {
     try {
       return await db.getLyricsRecord(id);
     } catch (error) {
-      console.error('获取歌词记录失败：', error);
+      console.error("获取歌词记录失败：", error);
       return undefined;
     }
   }, []);
 
   // 创建记录
   const createRecord = useCallback(
-    async (record: Omit<LyricsRecord, 'id'>) => {
+    async (record: Omit<LyricsRecord, "id">) => {
       try {
         const createdRecord = await db.createLyricsRecord(record);
         // 刷新数据
         await fetchRecords({});
         return { success: true, data: createdRecord };
       } catch (error) {
-        console.error('创建歌词记录失败：', error);
+        console.error("创建歌词记录失败：", error);
         return { success: false, error };
       }
     },
@@ -184,7 +184,7 @@ export const useLyricsRecords = () => {
         await fetchRecords();
         return { success: true };
       } catch (error) {
-        console.error('更新歌词记录失败：', error);
+        console.error("更新歌词记录失败：", error);
         return { success: false, error };
       }
     },
@@ -200,7 +200,7 @@ export const useLyricsRecords = () => {
         await fetchRecords({});
         return { success: true };
       } catch (error) {
-        console.error('删除歌词记录失败：', error);
+        console.error("删除歌词记录失败：", error);
         return { success: false, error };
       }
     },
@@ -222,7 +222,7 @@ export const useLyricsRecords = () => {
       setRecords([]);
       return { success: true };
     } catch (error) {
-      console.error('清空歌词记录失败：', error);
+      console.error("清空歌词记录失败：", error);
       return { success: false, error };
     }
   }, []);
@@ -232,7 +232,7 @@ export const useLyricsRecords = () => {
     try {
       return await db.getRecentLyricsRecords(days);
     } catch (error) {
-      console.error('获取最近歌词记录失败：', error);
+      console.error("获取最近歌词记录失败：", error);
       return [];
     }
   }, []);
@@ -242,7 +242,7 @@ export const useLyricsRecords = () => {
     try {
       return await db.searchLyricsRecords(keyword, limit);
     } catch (error) {
-      console.error('搜索歌词记录失败：', error);
+      console.error("搜索歌词记录失败：", error);
       return [];
     }
   }, []);

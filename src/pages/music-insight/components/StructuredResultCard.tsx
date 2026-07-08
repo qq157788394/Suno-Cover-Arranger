@@ -2,11 +2,11 @@
  * 音乐理解 — 多分类结构化结果卡片
  * genre → top 5, 其余 → top 3, 数值以 % 整数展示
  */
-import { ProCard } from '@ant-design/pro-components';
-import { Descriptions, Progress } from 'antd';
-import React from 'react';
-import { getLabels } from '@/services/ml/labels';
-import type { ModelRawOutput } from '@/shared/types/types';
+import { ProCard } from "@ant-design/pro-components";
+import { Descriptions, Progress } from "antd";
+import React from "react";
+import { getLabels } from "@/services/ml/labels";
+import type { ModelRawOutput } from "@/shared/types/types";
 
 interface Props {
   modelName: string;
@@ -54,7 +54,7 @@ const StructuredResultCard: React.FC<Props> = ({ modelName, title, data }) => {
             <Progress
               percent={item.pct}
               strokeColor={
-                item.pct >= 50 ? 'orange' : item.pct >= 30 ? 'gold' : 'pink'
+                item.pct >= 50 ? "orange" : item.pct >= 30 ? "gold" : "pink"
               }
               size="medium"
             />

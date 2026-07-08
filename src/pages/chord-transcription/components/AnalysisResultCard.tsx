@@ -1,12 +1,12 @@
-import { Alert, Button, Card, Flex, Segmented, Tag, Typography } from 'antd';
+import { Alert, Button, Card, Flex, Segmented, Tag, Typography } from "antd";
 
 const { Title } = Typography;
 
-import { ReloadOutlined } from '@ant-design/icons';
-import React, { useState } from 'react';
-import type { TranscriptionResult } from '@/shared/types/types';
-import BeatGrid from './BeatGrid';
-import type { ChordDisplayMode } from './beatGridUtils';
+import { ReloadOutlined } from "@ant-design/icons";
+import React, { useState } from "react";
+import type { TranscriptionResult } from "@/shared/types/types";
+import BeatGrid from "./BeatGrid";
+import type { ChordDisplayMode } from "./beatGridUtils";
 
 /** 分析完成结果卡片：Key/BPM/节奏标签 + 和弦网格 + 分析提示 + 重新上传 */
 export function AnalysisResultCard({
@@ -21,7 +21,7 @@ export function AnalysisResultCard({
   onReupload: () => void;
 }) {
   // 展示模式：和弦名称 or 功能级数（与网页版一致，默认和弦名称）
-  const [displayMode, setDisplayMode] = useState<ChordDisplayMode>('chord');
+  const [displayMode, setDisplayMode] = useState<ChordDisplayMode>("chord");
 
   return (
     <Flex vertical gap="large">
@@ -33,7 +33,7 @@ export function AnalysisResultCard({
             {result.bpm != null && <Tag color="orange">BPM：{result.bpm}</Tag>}
             {result.rhythm && (
               <Tag color="cyan">
-                {result.rhythm.bars} 小节 / {result.rhythm.beats_per_bar ?? '?'}{' '}
+                {result.rhythm.bars} 小节 / {result.rhythm.beats_per_bar ?? "?"}{" "}
                 拍每小节
               </Tag>
             )}
@@ -50,8 +50,8 @@ export function AnalysisResultCard({
         extra={
           <Segmented
             options={[
-              { label: '和弦名称', value: 'chord' },
-              { label: '功能级数', value: 'degree' },
+              { label: "和弦名称", value: "chord" },
+              { label: "功能级数", value: "degree" },
             ]}
             value={displayMode}
             onChange={(v) => setDisplayMode(v as ChordDisplayMode)}
