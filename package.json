@@ -36,7 +36,8 @@
     "tauri:dev": "npx @tauri-apps/cli@2 dev",
     "tauri:build": "npx @tauri-apps/cli@2 build && pnpm deploy",
     "tauri:icon": "npx @tauri-apps/cli@2 icon",
-    "release:mac": "bash scripts/release-mac.sh"
+    "release:mac": "bash scripts/release-mac.sh",
+    "release:win": "pwsh scripts/release-win.ps1"
   },
   "browserslist": [
     "defaults"

@@ -1,0 +1,73 @@
+import { Alert, Button, Card, Flex, Tag, Typography } from 'antd';
+
+const { Title } = Typography;
+
+import { ReloadOutlined } from '@ant-design/icons';
+import React from 'react';
+import type { TranscriptionResult } from '@/shared/types/types';
+import BeatGrid from './BeatGrid';
+
+/** 分析完成结果卡片：Key/BPM/节奏标签 + 和弦网格 + 分析提示 + 重新上传 */
+export function AnalysisResultCard({
+  result,
+  fileName,
+  audioUrl,
+  onReupload,
+}: {
+  result: TranscriptionResult;
+  fileName: string | null;
+  audioUrl: string | null;
+  onReupload: () => void;
+}) {
+  return (
+    <Flex vertical gap="large">
+      <Flex wrap={false} align="center">
+        <Flex vertical flex="auto">
+          <Title level={5}>{result.fileName || fileName}</Title>
+          <Flex gap="small">
+            {result.key != null && <Tag color="magenta">Key: {result.key}</Tag>}
+            {result.bpm != null && <Tag color="orange">BPM：{result.bpm}</Tag>}
+            {result.rhythm && (
+              <Tag color="cyan">
+                {result.rhythm.bars} 小节 / {result.rhythm.beats_per_bar ?? '?'}{' '}
+                拍每小节
+              </Tag>
+            )}
+          </Flex>
+        </Flex>
+        <Flex flex="none">
+          <Button type="primary" icon={<ReloadOutlined />} onClick={onReupload}>
+            重新上传
+          </Button>
+        </Flex>
+      </Flex>
+      <Card title="和弦网格">
+        <BeatGrid
+          chords={result.chords}
+          rhythm={result.rhythm}
+          roman={result.roman}
+          audioUrl={audioUrl}
+        />
+      </Card>
+
+      {result.warnings.length > 0 && (
+        <Alert
+          type="info"
+          showIcon
+          title="分析提示"
+          description={
+            <ul style={{ margin: 0, paddingLeft: 18 }}>
+              {result.warnings.map((w) => (
+                <li key={w} style={{ fontSize: 13 }}>
+                  {w}
+                </li>
+              ))}
+            </ul>
+          }
+        />
+      )}
+    </Flex>
+  );
+}
+
+export default AnalysisResultCard;

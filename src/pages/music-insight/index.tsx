@@ -239,7 +239,7 @@ const MusicInsightPage: React.FC = () => {
   return (
     <PageContainer
       header={{
-        title: '音乐理解',
+        title: '音乐理解·网页版',
         subTitle: '上传歌曲，查看深度学习模型的音频分析结果',
         ghost: true,
       }}

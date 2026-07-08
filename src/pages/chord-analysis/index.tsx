@@ -116,8 +116,9 @@ const ChordAnalysisPage: React.FC = () => {
   return (
     <PageContainer
       header={{
-        title: '大师看和弦',
-        subTitle: '分析音频文件，自动识别调弦、BPM 与和弦进行',
+        title: '大师扒谱·网页版',
+        subTitle:
+          '识别歌曲和弦 / 调性 / BPM / 节奏，浏览器可直接运行，分析精度较低，仅供参考',
         ghost: true,
       }}
     >

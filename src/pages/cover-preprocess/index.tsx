@@ -185,6 +185,7 @@ const CoverPreprocess: React.FC = () => {
                   label="原始音频"
                   rules={[{ required: true, message: '请上传原始音频文件' }]}
                   colProps={{ span: 24 }}
+                  style={{ width: '100%' }}
                 >
                   <AudioUploader disabled={processing} />
                 </ProForm.Item>

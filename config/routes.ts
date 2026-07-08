@@ -41,6 +41,25 @@ export default [
     path: '/cover-preprocess',
     component: './cover-preprocess',
   },
+
+  {
+    name: '大师扒谱·网页版',
+    icon: 'ThunderboltOutlined',
+    path: '/chord-analysis',
+    component: './chord-analysis',
+  },
+  {
+    name: '大师扒谱·引擎版',
+    icon: 'CustomerServiceOutlined',
+    path: '/chord-transcription',
+    component: './chord-transcription',
+  },
+  {
+    name: '音乐理解·简易版',
+    icon: 'BulbOutlined',
+    path: '/music-insight',
+    component: './music-insight',
+  },
   {
     name: 'AI 设置',
     icon: 'SettingOutlined',
@@ -52,24 +71,6 @@ export default [
     icon: 'HistoryOutlined',
     path: '/changelog',
     component: './changelog',
-  },
-  {
-    name: '大师看和弦',
-    icon: 'ThunderboltOutlined',
-    path: '/chord-analysis',
-    component: './chord-analysis',
-  },
-  {
-    name: '大师扒谱',
-    icon: 'AudioOutlined',
-    path: '/chord-transcription',
-    component: './chord-transcription',
-  },
-  {
-    name: '音乐理解',
-    icon: 'BulbOutlined',
-    path: '/music-insight',
-    component: './music-insight',
   },
   {
     name: '项目介绍',
