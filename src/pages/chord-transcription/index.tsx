@@ -14,7 +14,18 @@ import { ReloadOutlined } from '@ant-design/icons';
 import { PageContainer, ProCard } from '@ant-design/pro-components';
 import { invoke } from '@tauri-apps/api/core';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
-import { Alert, Button, message, Space, Spin, Tag, Typography } from 'antd';
+import {
+  Alert,
+  Button,
+  Card,
+  Flex,
+  message,
+  notification,
+  Result,
+  Spin,
+  Tag,
+  Typography,
+} from 'antd';
 import React, {
   useCallback,
   useEffect,
@@ -32,7 +43,7 @@ import {
 } from '@/services/transcription/client';
 import BeatGrid from './components/BeatGrid';
 
-const { Paragraph, Text } = Typography;
+const { Paragraph, Text, Title } = Typography;
 
 // 仅本仓库前缀（用于环境切换 URL 重组，与 GH_PAGES_ORIGIN 配套）。
 const GH_PAGES_REPO = 'Suno-Cover-Arranger';
@@ -244,33 +255,21 @@ function TerminalLog({ lines }: { lines: string[] }) {
 function ClientRequiredPanel() {
   return (
     <ProCard>
-      <div
-        style={{
-          maxWidth: 680,
-          margin: '0 auto',
-          textAlign: 'center',
-          padding: '40px 0',
-        }}
-      >
-        <Alert
-          type="info"
-          showIcon
-          message="本功能需要「大师来了」桌面客户端"
-          description="大师扒谱调用本机 Python 引擎做离线高精度识别，音频不出本机；浏览器无法运行该引擎。请在桌面客户端中打开本功能。"
-        />
-        <Paragraph style={{ marginTop: 16 }}>
-          客户端随安装包分发 Python 引擎与 uv 运行时，首次安装后即可离线使用。
-        </Paragraph>
-        <Paragraph>
-          <a
-            href="https://github.com/qq157788394/Suno-Cover-Arranger"
+      <Result
+        status="403"
+        title="本功能需要「大师来了」桌面客户端"
+        subTitle="大师扒谱功能需安装本地分析模型，浏览器无法运行，请下载安装后试用"
+        extra={
+          <Button
+            type="primary"
+            href="https://github.com/qq157788394/Suno-Cover-Arranger/releases/latest"
             target="_blank"
             rel="noreferrer"
           >
-            前往项目主页下载客户端 →
-          </a>
-        </Paragraph>
-      </div>
+            下载客户端
+          </Button>
+        }
+      ></Result>
     </ProCard>
   );
 }
@@ -517,6 +516,24 @@ const ChordTranscriptionPage: React.FC = () => {
     }
   }, [isClient, detectEngine]);
 
+  useEffect(() => {
+    if (installError) {
+      notification.error({
+        message: '安装失败',
+        description: installError,
+      });
+    }
+  }, [installError]);
+
+  useEffect(() => {
+    if (prefetchError) {
+      notification.error({
+        message: '依赖下载失败',
+        description: prefetchError,
+      });
+    }
+  }, [prefetchError]);
+
   const isIdle = status === 'IDLE';
   const isAnalyzing = status === 'ANALYZING';
   const isReady = status === 'READY';
@@ -555,8 +572,7 @@ const ChordTranscriptionPage: React.FC = () => {
     <PageContainer
       header={{
         title: '大师扒谱',
-        subTitle:
-          '调用本机 Python 引擎，离线识别 SOTA 级和弦 / 调性 / BPM / 节奏',
+        subTitle: '调用模型，识别歌曲和弦 / 调性 / BPM / 节奏',
         ghost: true,
       }}
     >
@@ -575,154 +591,100 @@ const ChordTranscriptionPage: React.FC = () => {
 
             {/* 1) 检测中 */}
             {checking && (
-              <div style={{ padding: '64px 0', textAlign: 'center' }}>
-                <Spin tip="正在检测本地引擎…" size="large">
-                  <div style={{ height: 1 }} />
-                </Spin>
-              </div>
+              <Spin description="正在检测本地引擎…" size="large"></Spin>
             )}
 
             {/* 2) 引擎未就绪：上传前即展示依赖清单 + 安装入口 + 终端日志 */}
             {!checking && !engineReady && (
               <div style={{ maxWidth: 680, margin: '0 auto' }}>
-                <Alert
-                  type="warning"
-                  showIcon
-                  message="本地高精度引擎未就绪"
-                  description="大师扒谱依赖本机运行的 Python 引擎（音频不出本机）。请先安装并启动，或点击下方一键安装。"
-                />
-
-                {/* invoke 失败时的明确报错 */}
-                {detectError && (
-                  <Alert
-                    type="error"
-                    showIcon
-                    style={{ marginTop: 12 }}
-                    message="状态查询异常"
-                    description={detectError}
-                  />
-                )}
-
-                <div
-                  style={{
-                    marginTop: 16,
-                    background: '#FFFFFF',
-                    borderRadius: 12,
-                    border: '1px solid #F3F4F6',
-                    padding: '16px 20px',
-                  }}
+                <Result
+                  status="404"
+                  title="本地引擎未就绪"
+                  subTitle="需先安装并启动，击下方一键安装可自动完成"
+                  extra={[
+                    <Flex key="install" gap="medium">
+                      <Button
+                        type="primary"
+                        loading={installing}
+                        onClick={handleInstallEngine}
+                        style={{ borderRadius: 8 }}
+                      >
+                        {installing ? '正在安装并启动…' : '一键安装 & 启动'}
+                      </Button>
+                      <Button
+                        onClick={detectEngine}
+                        disabled={installing}
+                        style={{ borderRadius: 8 }}
+                      >
+                        重试检测
+                      </Button>
+                    </Flex>,
+                  ]}
                 >
-                  <Text strong style={{ display: 'block', marginBottom: 4 }}>
-                    {'依赖安装情况（哪项通过一目了然）'}
-                  </Text>
-
-                  {engineDetail ? (
-                    <>
-                      <StatusRow
-                        label="uv 运行时"
-                        ok={engineDetail.uv_present}
-                        hint="用于创建隔离 Python 环境"
-                      />
-                      <StatusRow
-                        label="引擎源码（随安装包分发）"
-                        ok={engineDetail.source_present}
-                        hint="local-engine/main.py"
-                      />
-                      <StatusRow
-                        label="依赖环境 (.venv)"
-                        ok={engineDetail.venv_present}
-                        hint="已建则无需重新下载"
-                      />
-                      <StatusRow
-                        label="引擎服务"
-                        ok={engineDetail.running}
-                        port={engineDetail.port}
-                        hint="127.0.0.1"
-                      />
-                      {engineDetail.assets && engineDetail.assets.length > 0 ? (
-                        engineDetail.assets.map((a) => (
-                          <AssetRow
-                            key={a.id}
-                            asset={a}
-                            downloading={prefetchingId === a.id}
-                            onDownload={prefetchAsset}
-                          />
-                        ))
-                      ) : (
+                  <div className="desc">
+                    {/* invoke 失败时的明确报错 */}
+                    {detectError && (
+                      <Paragraph>
+                        <Text>状态查询异常：{detectError}</Text>
+                      </Paragraph>
+                    )}
+                    <Paragraph>
+                      <Text strong>"依赖安装情况（哪项通过一目了然）"</Text>
+                    </Paragraph>
+                    {engineDetail ? (
+                      <>
                         <StatusRow
-                          label="模型与依赖就绪"
-                          ok={engineDetail.model_ready}
-                          hint={modelReadyHint(engineDetail.layers)}
+                          label="uv 运行时"
+                          ok={engineDetail.uv_present}
+                          hint="用于创建隔离 Python 环境"
                         />
-                      )}
-                      <StatusRow
-                        label="端到端分析验证"
-                        ok={engineDetail.analysis_ok}
-                        hint="真实跑一次扒谱，确认和弦/调性/BPM 可产出"
-                      />
-                    </>
-                  ) : (
-                    <div
-                      style={{
-                        padding: '12px 0',
-                        color: '#6B7280',
-                        fontSize: 13,
-                      }}
-                    >
-                      状态查询失败，请点击「重试检测」。
-                    </div>
-                  )}
-                </div>
+                        <StatusRow
+                          label="引擎源码（随安装包分发）"
+                          ok={engineDetail.source_present}
+                          hint="local-engine/main.py"
+                        />
+                        <StatusRow
+                          label="依赖环境 (.venv)"
+                          ok={engineDetail.venv_present}
+                          hint="已建则无需重新下载"
+                        />
+                        <StatusRow
+                          label="引擎服务"
+                          ok={engineDetail.running}
+                          port={engineDetail.port}
+                          hint="127.0.0.1"
+                        />
+                        {engineDetail.assets &&
+                        engineDetail.assets.length > 0 ? (
+                          engineDetail.assets.map((a) => (
+                            <AssetRow
+                              key={a.id}
+                              asset={a}
+                              downloading={prefetchingId === a.id}
+                              onDownload={prefetchAsset}
+                            />
+                          ))
+                        ) : (
+                          <StatusRow
+                            label="模型与依赖就绪"
+                            ok={engineDetail.model_ready}
+                            hint={modelReadyHint(engineDetail.layers)}
+                          />
+                        )}
+                        <StatusRow
+                          label="端到端分析验证"
+                          ok={engineDetail.analysis_ok}
+                          hint="真实跑一次扒谱，确认和弦/调性/BPM 可产出"
+                        />
+                      </>
+                    ) : (
+                      <Text type="secondary">
+                        状态查询失败，请点击「重试检测」。
+                      </Text>
+                    )}
+                  </div>
+                </Result>
 
-                <div
-                  style={{
-                    marginTop: 16,
-                    display: 'flex',
-                    gap: 12,
-                    flexWrap: 'wrap',
-                  }}
-                >
-                  <Button
-                    type="primary"
-                    loading={installing}
-                    onClick={handleInstallEngine}
-                    style={{ borderRadius: 8 }}
-                  >
-                    {installing ? '正在安装并启动…' : '一键安装 & 启动'}
-                  </Button>
-                  <Button
-                    onClick={detectEngine}
-                    disabled={installing}
-                    style={{ borderRadius: 8 }}
-                  >
-                    重试检测
-                  </Button>
-                </div>
-                <Text
-                  type="secondary"
-                  style={{ fontSize: 12, marginTop: 8, display: 'block' }}
-                >
-                  引擎将安装到软件目录（~/Library/Application
-                  Support/大师来了），首次需联网下载依赖（约数十 MB）。
-                </Text>
-                {installError && (
-                  <Alert
-                    type="error"
-                    showIcon
-                    style={{ marginTop: 12 }}
-                    message="安装失败"
-                    description={installError}
-                  />
-                )}
-                {prefetchError && (
-                  <Alert
-                    type="error"
-                    showIcon
-                    style={{ marginTop: 12 }}
-                    message="依赖下载失败"
-                    description={prefetchError}
-                  />
-                )}
                 {(installing || installLog.length > 0) && (
                   <TerminalLog lines={installLog} />
                 )}
@@ -732,18 +694,6 @@ const ChordTranscriptionPage: React.FC = () => {
             {/* 3) 引擎就绪：上传 / 分析 / 结果 / 异常 */}
             {!checking && engineReady && (
               <div>
-                {/* 引擎连接状态横幅：分析正常时显示绿色成功；分析异常（offline/error）时不显示，
-                    避免与下方的错误/离线 Alert 产生矛盾信息 */}
-                {(isIdle || isAnalyzing || isReady) && (
-                  <Alert
-                    type="success"
-                    showIcon
-                    style={{ marginBottom: 16 }}
-                    message={`本地高精度引擎已连接 · localhost:${engineDetail?.port ?? 18741}`}
-                    description="音频仅在本机处理，不离开你的电脑。"
-                  />
-                )}
-
                 {isIdle && (
                   <div style={{ maxWidth: 640, margin: '0 auto' }}>
                     <FileDropZone
@@ -754,29 +704,9 @@ const ChordTranscriptionPage: React.FC = () => {
                 )}
 
                 {isAnalyzing && (
-                  <div
-                    style={{
-                      maxWidth: 640,
-                      margin: '0 auto',
-                      padding: '48px 0',
-                      textAlign: 'center',
-                    }}
-                  >
-                    <Spin tip="正在调用本地高精度引擎分析…" size="large">
-                      <div style={{ height: 1 }} />
-                    </Spin>
-                    {fileName && (
-                      <div
-                        style={{
-                          marginTop: 16,
-                          color: '#6B7280',
-                          fontSize: 13,
-                        }}
-                      >
-                        {fileName}
-                      </div>
-                    )}
-                  </div>
+                  <Spin size="large" percent="auto" spinning={isAnalyzing}>
+                    <Text strong>{fileName}</Text>
+                  </Spin>
                 )}
 
                 {isError && (
@@ -784,22 +714,11 @@ const ChordTranscriptionPage: React.FC = () => {
                     <Alert
                       type="error"
                       showIcon
-                      message="分析失败（引擎返回异常）"
-                      description={
-                        <div>
-                          <p style={{ margin: '0 0 8px' }}>{error}</p>
-                          <Text type="secondary" style={{ fontSize: 12 }}>
-                            若为引擎内部报错，可查看软件目录
-                            <Text code>engine.log</Text>
-                            获取完整堆栈。
-                          </Text>
-                        </div>
-                      }
+                      title="分析失败（引擎返回异常）"
+                      description="若为引擎内部报错，可查看软件目录engine.log获取完整堆栈。"
                     />
                     <div style={{ marginTop: 16 }}>
-                      <Button onClick={handleReset} style={{ borderRadius: 8 }}>
-                        重新上传
-                      </Button>
+                      <Button onClick={handleReset}>重新上传</Button>
                     </div>
                   </div>
                 )}
@@ -809,19 +728,9 @@ const ChordTranscriptionPage: React.FC = () => {
                     <Alert
                       type="warning"
                       showIcon
-                      message="引擎连接中断"
-                      description={
-                        <div>
-                          <p style={{ margin: '0 0 8px' }}>
-                            {error ||
-                              '无法连接到本地引擎（127.0.0.1:18741）。引擎可能已停止运行。'}
-                          </p>
-                          <Text type="secondary" style={{ fontSize: 12 }}>
-                            可点击"重新检测引擎"重新探测，或"一键安装 &
-                            启动"重启。
-                          </Text>
-                        </div>
-                      }
+                      title="引擎连接中断"
+                      description="无法连接到本地引擎。引擎可能已停止运行。可点击重新检测引擎重新探测，或一键安装 &
+                            启动重启。"
                     />
                     <div style={{ marginTop: 16, display: 'flex', gap: 12 }}>
                       <Button
@@ -839,89 +748,49 @@ const ChordTranscriptionPage: React.FC = () => {
                 )}
 
                 {isReady && result && (
-                  <div
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 16,
-                    }}
-                  >
-                    {!hasFullEngine && (
-                      <Alert
-                        type="info"
-                        showIcon
-                        message="当前为精简模式（仅和弦）"
-                        description="安装完整引擎（含 madmom / chord-romanizer）可获取调性、BPM、节奏网格与功能级数。"
-                      />
-                    )}
-
-                    <div
-                      style={{
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        alignItems: 'center',
-                        gap: 12,
-                      }}
-                    >
-                      <Text strong style={{ fontSize: 15 }}>
-                        {result.fileName || fileName}
-                      </Text>
-                      {result.key != null && (
-                        <Tag color="orange" style={{ borderRadius: 8 }}>
-                          Key: {result.key}
-                        </Tag>
-                      )}
-                      {result.bpm != null && (
-                        <Tag color="green" style={{ borderRadius: 8 }}>
-                          {result.bpm} BPM
-                        </Tag>
-                      )}
-                      {result.rhythm && (
-                        <Tag style={{ borderRadius: 8 }}>
-                          {result.rhythm.bars} 小节 /{' '}
-                          {result.rhythm.beats_per_bar ?? '?'} 拍每小节
-                        </Tag>
-                      )}
-                    </div>
-
-                    <Space size={12}>
-                      <Button
-                        type="text"
-                        icon={<ReloadOutlined />}
-                        onClick={handleReupload}
-                        style={{ borderRadius: 8, color: '#6B7280' }}
-                      >
-                        重新上传
-                      </Button>
-                    </Space>
-
-                    <div
-                      style={{
-                        background: '#FFFFFF',
-                        borderRadius: 12,
-                        border: '1px solid #F3F4F6',
-                        padding: '20px 16px',
-                      }}
-                    >
-                      <Text
-                        strong
-                        style={{ display: 'block', marginBottom: 12 }}
-                      >
-                        和弦网格
-                      </Text>
+                  <Flex vertical gap="large">
+                    <Flex wrap={false} align="center">
+                      <Flex vertical flex="auto">
+                        <Title level={5}>{result.fileName || fileName}</Title>
+                        <Flex gap="small">
+                          {result.key != null && (
+                            <Tag color="magenta">Key: {result.key}</Tag>
+                          )}
+                          {result.bpm != null && (
+                            <Tag color="orange">BPM：{result.bpm}</Tag>
+                          )}
+                          {result.rhythm && (
+                            <Tag color="cyan">
+                              {result.rhythm.bars} 小节 /{' '}
+                              {result.rhythm.beats_per_bar ?? '?'} 拍每小节
+                            </Tag>
+                          )}
+                        </Flex>
+                      </Flex>
+                      <Flex flex="none">
+                        <Button
+                          type="primary"
+                          icon={<ReloadOutlined />}
+                          onClick={handleReupload}
+                        >
+                          重新上传
+                        </Button>
+                      </Flex>
+                    </Flex>
+                    <Card title="和弦网格">
                       <BeatGrid
                         chords={result.chords}
                         rhythm={result.rhythm}
                         roman={result.roman}
                         audioUrl={audioUrl}
                       />
-                    </div>
+                    </Card>
 
                     {result.warnings.length > 0 && (
                       <Alert
                         type="info"
                         showIcon
-                        message="分析提示"
+                        title="分析提示"
                         description={
                           <ul style={{ margin: 0, paddingLeft: 18 }}>
                             {result.warnings.map((w) => (
@@ -933,7 +802,7 @@ const ChordTranscriptionPage: React.FC = () => {
                         }
                       />
                     )}
-                  </div>
+                  </Flex>
                 )}
               </div>
             )}
