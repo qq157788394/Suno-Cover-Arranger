@@ -21,6 +21,30 @@ import type {
 /** 每行显示的小节数 */
 export const BARS_PER_ROW = 4;
 
+// ── 展示模式 ───────────────────────────────────────────
+
+/** 和弦网格展示模式：和弦名称 / 功能级数（与网页版一致） */
+export type ChordDisplayMode = 'chord' | 'degree';
+
+/**
+ * 根据展示模式解析单元格主显示文本。
+ * - chord 模式：显示和弦名 (label)
+ * - degree 模式：显示功能级数 (subLabel)；若 subLabel 为空则回退和弦名
+ * - 空格 (isEmpty)：返回空串
+ *
+ * 行为与网页版 ChordGrid 对齐（级数缺省回退和弦名），便于两版体验一致。
+ */
+export function resolveCellDisplay(
+  label: string,
+  subLabel: string,
+  isEmpty: boolean,
+  displayMode: ChordDisplayMode,
+): string {
+  if (isEmpty) return '';
+  if (displayMode === 'degree') return subLabel || label;
+  return label;
+}
+
 // ── 类型 ───────────────────────────────────────────────
 
 /** 单个拍级格子的原始数据 */

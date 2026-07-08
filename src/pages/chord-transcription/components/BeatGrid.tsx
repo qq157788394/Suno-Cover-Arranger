@@ -27,8 +27,10 @@ import type {
 import {
   BARS_PER_ROW,
   buildBeatCells,
+  type ChordDisplayMode,
   findActiveBeatIndex,
   groupBarsIntoRows,
+  resolveCellDisplay,
   splitIntoBars,
 } from './beatGridUtils';
 
@@ -76,6 +78,8 @@ interface BeatGridProps {
   roman?: TranscriptionRomanSegment[] | null;
   /** 上传音频的 blob URL（用于内置播放器） */
   audioUrl?: string | null;
+  /** 展示模式：和弦名称 / 功能级数（默认和弦名称，与网页版一致） */
+  displayMode?: ChordDisplayMode;
 }
 
 const BeatGrid: React.FC<BeatGridProps> = ({
@@ -83,6 +87,7 @@ const BeatGrid: React.FC<BeatGridProps> = ({
   rhythm,
   roman,
   audioUrl,
+  displayMode = 'chord',
 }) => {
   // ── 网格数据 ─────────────────────────────────────
   const gridData = useMemo(() => {
@@ -234,6 +239,13 @@ const BeatGrid: React.FC<BeatGridProps> = ({
                 // 全局拍索引 = (小节号-1) * 每小节拍数 + 格内序号
                 const exactGlobalIdx = (bar.barNumber - 1) * bpb + ci;
                 const active = isActive(exactGlobalIdx);
+                // 按展示模式选主显示文本：功能级数优先，缺失回退和弦名
+                const display = resolveCellDisplay(
+                  cell.label,
+                  cell.subLabel,
+                  cell.isEmpty,
+                  displayMode,
+                );
 
                 return (
                   <Tooltip
@@ -247,24 +259,20 @@ const BeatGrid: React.FC<BeatGridProps> = ({
                     }
                   >
                     <div style={active ? STYLE_ACTIVE_CELL : { ...STYLE_CELL }}>
-                      {cell.isEmpty ? (
-                        ''
-                      ) : (
-                        <span
-                          style={{
-                            fontSize: 11,
-                            fontWeight: 600,
-                            lineHeight: 1.2,
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            maxWidth: CELL_W - 6,
-                            textAlign: 'center',
-                          }}
-                        >
-                          {cell.label}
-                        </span>
-                      )}
+                      <span
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 600,
+                          lineHeight: 1.2,
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          maxWidth: CELL_W - 6,
+                          textAlign: 'center',
+                        }}
+                      >
+                        {display}
+                      </span>
                     </div>
                   </Tooltip>
                 );
