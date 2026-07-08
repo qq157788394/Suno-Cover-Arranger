@@ -8,7 +8,7 @@ export function ClientRequiredPanel() {
     <ProCard>
       <Result
         status="403"
-        title="本功能需要「大师来了」桌面客户端"
+        title="本功能需要「大师扒谱」桌面客户端"
         subTitle="大师扒谱功能需安装本地分析模型，浏览器无法运行，请下载安装后试用"
         extra={
           <Button

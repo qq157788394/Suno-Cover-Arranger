@@ -2,7 +2,7 @@
  * 大师扒谱 — 页面主入口（薄编排层）
  *
  * 形态：Tauri 薄壳远程加载本页（gh-pages）→ 调用本机 Python 引擎（localhost）→ 展示和弦时间轴。
- * 与「大师看和弦」并列、互不影响。
+ * 与「大师扒谱·网页版」并列、互不影响。
  *
  * 本页只做顶层编排：浏览器 → 引导下载客户端；客户端 → ChordTranscriptionClient 容器。
  * 引擎检测 / 安装 / 上传分析等业务逻辑已下沉到 useEngineStatus 与 ChordTranscriptionClient。

@@ -1,6 +1,6 @@
 /**
  * 音乐理解 — 文件上传区域
- * 与「大师看和弦」FileDropZone 保持一致的视觉语言
+ * 与「大师扒谱」FileDropZone 保持一致的视觉语言
  */
 import { SoundOutlined } from '@ant-design/icons';
 import { Typography } from 'antd';
