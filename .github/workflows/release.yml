@@ -23,10 +23,10 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Install frontend deps (for tauri CLI)
-        run: pnpm install --frozen-lockfile
+        run: pnpm install
         env:
           HUSKY: '0'
 
@@ -59,10 +59,10 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Install frontend deps (for tauri CLI)
-        run: pnpm install --frozen-lockfile
+        run: pnpm install
         env:
           HUSKY: '0'
 
