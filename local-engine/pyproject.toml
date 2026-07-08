@@ -14,6 +14,10 @@ dependencies = [
     "uvicorn[standard]>=0.27",
     "python-multipart>=0.0.9",
     "librosa>=0.10",
+    # imageio-ffmpeg：随包下载一个静态 ffmpeg 二进制（一次，缓存到用户 cache 目录）。
+    # 用于解码 mp3/flac/ogg/aac 等非 wav 格式——madmom 与 lv_chordia 的音频加载最终都依赖 ffmpeg。
+    # 没有它，仅 wav 可用；有了它，检测面板声明的 MP3/FLAC/OGG/AAC 才真能生成和弦。
+    "imageio-ffmpeg>=0.5",
     # 不锁 numpy<1.24：1.23.5 在 Python 3.12 上无可用 wheel，无法安装。
     # ragged 数组兼容性问题改由 local-engine/numpy_ragged_shim.py 在运行时还原 1.23 行为解决。
     # 锁 <2 以兼容 torch 2.x（torch 官方亦建议 numpy<2）。

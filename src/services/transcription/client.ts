@@ -50,6 +50,24 @@ export function normalizeChordLabel(jams: string): string {
     .replace(/min/g, 'm');
 }
 
+/** 将音频文件读为 base64 字符串，供 Tauri 命令 analyze_local_engine 接收。
+ *  用 base64 而非 Uint8Array，是因为当前 tauri-build 的命令权限代码生成
+ *  会跳过含 Vec<u8> 参数的命令，导致该命令的 allow-* 权限无法生成。 */
+export function fileToBase64(file: File): Promise<string> {
+  return file.arrayBuffer().then((buf) => {
+    const bytes = new Uint8Array(buf);
+    let binary = '';
+    const chunk = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunk) {
+      binary += String.fromCharCode.apply(
+        null,
+        Array.from(bytes.subarray(i, i + chunk)),
+      );
+    }
+    return btoa(binary);
+  });
+}
+
 /** 探测本机引擎：扫候选端口 /api/health，返回可用 base URL 或 null */
 export async function discoverEngine(): Promise<string | null> {
   for (const port of CANDIDATE_PORTS) {
@@ -67,7 +85,7 @@ export async function discoverEngine(): Promise<string | null> {
   return null;
 }
 
-function normalizeRaw(raw: any, fileName?: string): TranscriptionResult {
+export function normalizeRaw(raw: any, fileName?: string): TranscriptionResult {
   const chords: TranscriptionChordSegment[] = Array.isArray(raw?.chords)
     ? raw.chords.map((c: any) => {
         const rawChord = String(c?.chord ?? '');

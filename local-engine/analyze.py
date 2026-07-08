@@ -15,6 +15,8 @@ import re
 import tempfile
 from typing import Any
 
+import numpy as np
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("local-engine")
 
@@ -54,6 +56,34 @@ for _np_alias, _np_real in (
 import numpy_ragged_shim  # noqa: F401  (side-effect: patches numpy.asarray/array/asanyarray)
 
 
+# ── ffmpeg 可用性（imageio-ffmpeg 随包静态二进制，首次调用下载并缓存到用户 cache）──
+#    madmom 与 lv_chordia 的音频加载最终都依赖 ffmpeg 才能解 mp3/flac/ogg/aac。
+#    没有它，仅 wav 可用；有了它，检测面板声明的 MP3/FLAC/OGG/AAC 才真能生成和弦。
+#    把 ffmpeg 所在目录加进 PATH，使 librosa/audioread/ffmpeg CLI 都能找到它。
+FFMPEG_AVAILABLE = False
+
+
+def _init_ffmpeg() -> None:
+    global FFMPEG_AVAILABLE
+    try:
+        import imageio_ffmpeg
+
+        exe = imageio_ffmpeg.get_ffmpeg_exe()  # 首次会下载静态二进制（需联网一次）
+        if exe and os.path.exists(exe):
+            d = os.path.dirname(exe)
+            if d and d not in os.environ.get("PATH", ""):
+                os.environ["PATH"] = d + os.pathsep + os.environ.get("PATH", "")
+            FFMPEG_AVAILABLE = True
+        else:
+            FFMPEG_AVAILABLE = False
+    except Exception as e:
+        logger.info("ffmpeg 不可用（仅 wav 可分析）：%s", e)
+        FFMPEG_AVAILABLE = False
+
+
+_init_ffmpeg()
+
+
 def normalize_chord_label(jams: str) -> str:
     """JAMS 和弦标签 -> 标准展示/解析标签，与前端 normalizeChordLabel 保持一致。
 
@@ -70,27 +100,78 @@ def normalize_chord_label(jams: str) -> str:
     return s
 
 
-def _to_wav_for_madmom(audio_path: str) -> tuple[str, bool]:
-    """madmom 的 audioread 后端在缺 ffmpeg 时解不出 mp3。
-
-    用已装的 librosa 预解码成 wav（soundfile 原生可读，无需 ffmpeg），再喂给 madmom。
-    返回 (实际传给 madmom 的路径, 是否为本函数新建的临时文件)。
-    """
-    if audio_path.lower().endswith(".wav"):
-        return audio_path, False
+def _ffmpeg_exe() -> str | None:
+    """返回可用的 ffmpeg 二进制路径（依赖 imageio-ffmpeg 已初始化）。"""
+    if not FFMPEG_AVAILABLE:
+        return None
     try:
-        import librosa
-        import soundfile as sf
+        import imageio_ffmpeg
 
-        y, sr = librosa.load(audio_path, sr=44100, mono=True)
-        wav_path = tempfile.mktemp(suffix=".wav")
-        sf.write(wav_path, y, sr)
-        return wav_path, True
-    except Exception as e:
-        logger.warning(
-            "mp3->wav 预解码失败，回退原路径（madmom 可能仍报错）：%s", e
+        exe = imageio_ffmpeg.get_ffmpeg_exe()
+        return exe if exe and os.path.exists(exe) else None
+    except Exception:
+        return None
+
+
+def to_standard_wav(audio_path: str) -> str:
+    """把【任意】输入音频统一转成 madmom / lv_chordia 都能直接读的 44100Hz 16-bit PCM WAV。
+
+    这是「检测通过就一定能生成和弦」的关键一环：无论用户上传 wav/mp3/flac/ogg/aac，
+    本函数都产出一份标准 wav，使下游两个模型都不再依赖格式/采样率、也不再触发
+    madmom 内部的 ffmpeg 重采样崩溃。
+
+    - ffmpeg 可用时：直接用它转码到 44100/单声道/16-bit（覆盖所有 ffmpeg 支持的格式）。
+    - 否则回退 soundfile 直接读（仅 wav / libsndfile 支持的少数格式）。
+
+    返回新建的临时 wav 路径（调用方负责删除）。解码失败时抛出明确异常，
+    让上层返回 500 + 清晰错误信息，而非静默产出空和弦。
+    """
+    import soundfile as sf
+
+    wav_path = tempfile.mktemp(suffix=".wav")
+    exe = _ffmpeg_exe()
+    if exe:
+        import subprocess
+
+        r = subprocess.run(
+            [
+                exe,
+                "-y",
+                "-i",
+                audio_path,
+                "-ar",
+                "44100",
+                "-ac",
+                "1",
+                "-sample_fmt",
+                "s16",
+                "-f",
+                "wav",
+                wav_path,
+            ],
+            capture_output=True,
+            text=True,
         )
-        return audio_path, False
+        if r.returncode == 0 and os.path.exists(wav_path) and os.path.getsize(wav_path) > 0:
+            return wav_path
+        # ffmpeg 失败：清理并尝试 soundfile 兜底
+        try:
+            os.unlink(wav_path)
+        except OSError:
+            pass
+        raise RuntimeError(
+            f"ffmpeg 转码失败（音频可能损坏或格式不支持）：{r.stderr.strip()[-200:]}"
+        )
+
+    # 无 ffmpeg：仅能读 wav / libsndfile 支持的格式
+    import librosa
+
+    y, sr = sf.read(audio_path, dtype="float32")
+    if sr != 44100:
+        y = librosa.resample(y, orig_sr=sr, target_sr=44100)
+    wav_path = tempfile.mktemp(suffix=".wav")
+    sf.write(wav_path, (np.clip(y, -1.0, 1.0) * 32767).astype(np.int16), 44100)
+    return wav_path
 
 
 def analyze_chords(audio_path: str, chord_dict_name: str = "submission") -> list[dict]:
@@ -115,6 +196,8 @@ def analyze_key_bpm_rhythm(
 ) -> tuple[str | None, float | None, dict | None]:
     """madmom 出 调性 / BPM / 节奏网格。
 
+    入参 audio_path 应为 44100Hz 16-bit PCM WAV（由 analyze_all 经 to_standard_wav 预处理），
+    因此这里直接喂给 madmom，不再做格式/采样率相关转换。
     未安装或失败时返回 (None, None, None)。API 依据 madmom 0.16 官方文档源码校准。
     """
     try:
@@ -132,15 +215,13 @@ def analyze_key_bpm_rhythm(
         logger.warning("madmom 不可用，跳过 key/bpm/rhythm：%s", e)
         return None, None, None
 
-    # mp3 需先经 librosa 预解码成 wav（madmom 的 audioread 后端缺 ffmpeg 时解不出 mp3）
-    audio_for_madmom, _is_tmp = _to_wav_for_madmom(audio_path)
     try:
         # --- key（返回 "C major" / "A minor" 之类标签）---
-        key_pred = CNNKeyRecognitionProcessor()(audio_for_madmom)
+        key_pred = CNNKeyRecognitionProcessor()(audio_path)
         key_label = key_prediction_to_label(key_pred)
 
         # --- beat activation（tempo 与 beats 复用同一份）---
-        beat_act = RNNBeatProcessor()(audio_for_madmom)
+        beat_act = RNNBeatProcessor()(audio_path)
 
         # --- tempo ---
         tempi = TempoEstimationProcessor(fps=100)(beat_act)  # (N,2): (bpm, strength)
@@ -150,7 +231,7 @@ def analyze_key_bpm_rhythm(
         beats = [float(t) for t in BeatTrackingProcessor(fps=100)(beat_act)]
 
         # --- downbeats / 小节 ---
-        db_act = RNNDownBeatProcessor()(audio_for_madmom)
+        db_act = RNNDownBeatProcessor()(audio_path)
         db_raw = DBNDownBeatTrackingProcessor(beats_per_bar=[3, 4], fps=100)(db_act)
         # db_raw: (n,2) 每行为 (时间秒, 小节内拍序 从1起)。整段返回的是【所有拍】，
         # 其中拍序==1 的才是强拍(downbeat)。
@@ -167,12 +248,6 @@ def analyze_key_bpm_rhythm(
     except Exception as e:
         logger.warning("madmom 分析失败：%s", e)
         return None, None, None
-    finally:
-        if _is_tmp and os.path.exists(audio_for_madmom):
-            try:
-                os.remove(audio_for_madmom)
-            except OSError:
-                pass
 
 
 def analyze_roman(chords: list[dict], key_label: str | None) -> list[dict] | None:
@@ -237,21 +312,35 @@ def analyze_roman(chords: list[dict], key_label: str | None) -> list[dict] | Non
 
 
 def analyze_all(audio_path: str, chord_dict_name: str = "submission") -> dict:
-    """端到端离线分析，返回 spec 定义的 result JSON。"""
-    warnings: list[str] = []
-    chords = analyze_chords(audio_path, chord_dict_name)
-    key, bpm, rhythm = analyze_key_bpm_rhythm(audio_path)
-    if key is None:
-        warnings.append("madmom 未提供 key/bpm/rhythm（可能未安装或分析失败）")
-    roman = analyze_roman(chords, key)
-    if roman is None and key is not None:
-        warnings.append("chord-romanizer 未提供级数")
+    """端到端离线分析，返回 spec 定义的 result JSON。
 
-    return {
-        "chords": chords,
-        "key": key,
-        "bpm": bpm,
-        "rhythm": rhythm,
-        "roman": roman,
-        "warnings": warnings,
-    }
+    先把任意输入统一转成 44100Hz 16-bit PCM WAV（to_standard_wav），
+    再交给 lv_chordia（和弦）与 madmom（调性/BPM/节奏）。
+    这样无论 wav/mp3/flac/ogg/aac，下游模型都拿到标准 wav，避免格式/采样率导致的静默失败。
+    """
+    warnings: list[str] = []
+    # 统一转码：解码失败（损坏/不支持格式）会抛 RuntimeError -> 端点返回 500 + 清晰错误，
+    # 而不是静默返回空和弦。临时 wav 在 finally 清理。
+    wav = to_standard_wav(audio_path)
+    try:
+        chords = analyze_chords(wav, chord_dict_name)
+        key, bpm, rhythm = analyze_key_bpm_rhythm(wav)
+        if key is None:
+            warnings.append("madmom 未提供 key/bpm/rhythm（可能未安装或分析失败）")
+        roman = analyze_roman(chords, key)
+        if roman is None and key is not None:
+            warnings.append("chord-romanizer 未提供级数")
+
+        return {
+            "chords": chords,
+            "key": key,
+            "bpm": bpm,
+            "rhythm": rhythm,
+            "roman": roman,
+            "warnings": warnings,
+        }
+    finally:
+        try:
+            os.unlink(wav)
+        except OSError:
+            pass

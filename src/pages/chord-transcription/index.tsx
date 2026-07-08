@@ -67,12 +67,37 @@ function buildEnvUrl(target: EnvKind): string {
   return GH_PAGES_ORIGIN + withPrefix;
 }
 
+/** 单条本地资产就绪状态（来自 Rust get_engine_status.assets / 引擎 /api/assets） */
+type AssetItem = {
+  id: string;
+  name: string;
+  present: boolean;
+  detail?: string;
+  /** 修复方式：uv_sync=重新 uv sync 对应包；fetch_ffmpeg=经 imageio 下载 ffmpeg */
+  action?: string;
+};
+
 /** 引擎依赖清单状态（来自 Rust get_engine_status；浏览器模式下 uv/源码/.venv 为 null） */
 type EngineStatusDetail = {
   uv_present: boolean | null;
   source_present: boolean | null;
   venv_present: boolean | null;
   running: boolean;
+  /** 三层依赖（lv-chordia / madmom / chord-romanizer）是否皆可用，缺一不可；null=未知（旧引擎无此字段） */
+  model_ready: boolean | null;
+  /** 端到端自检：真实跑一遍扒谱，确认和弦/调性/BPM 可产出（含权重下载）；null=未知（旧引擎无此端点） */
+  analysis_ok: boolean | null;
+  /** ffmpeg 是否可用（决定 MP3/FLAC/OGG/AAC 能否解码）；null=未知 */
+  ffmpeg_available: boolean | null;
+  /** 压缩格式（MP3）端到端是否验证通过；null=未验证（ffmpeg 不可用） */
+  compress_ok: boolean | null;
+  /** 逐条资产就绪状态（lv 权重 / madmom 模型 / chord-romanizer / ffmpeg）；null=旧引擎无此端点 */
+  assets: AssetItem[] | null;
+  layers: {
+    lv_chordia: boolean | null;
+    madmom: boolean | null;
+    chord_romanizer: boolean | null;
+  } | null;
   port: number | null;
 };
 
@@ -113,6 +138,64 @@ function StatusRow({
       </span>
     </div>
   );
+}
+
+/** 单条资产状态 + 缺失时「下载」按钮（触发 Rust prefetch_asset 本地拉取） */
+function AssetRow({
+  asset,
+  downloading,
+  onDownload,
+}: {
+  asset: AssetItem;
+  downloading: boolean;
+  onDownload: (id: string) => void;
+}) {
+  const mark = asset.present ? '✅' : '❌';
+  return (
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '8px 0',
+        borderBottom: '1px solid #F3F4F6',
+      }}
+    >
+      <span style={{ fontSize: 14 }}>
+        {asset.name}
+        {asset.detail && (
+          <Text type="secondary" style={{ fontSize: 12, marginLeft: 8 }}>
+            {asset.detail}
+          </Text>
+        )}
+      </span>
+      <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ fontFamily: 'monospace', fontSize: 13 }}>{mark}</span>
+        {!asset.present && (
+          <Button
+            size="small"
+            loading={downloading}
+            onClick={() => onDownload(asset.id)}
+            style={{ borderRadius: 6 }}
+          >
+            下载
+          </Button>
+        )}
+      </span>
+    </div>
+  );
+}
+
+/** 根据三层依赖探测结果，生成「模型与依赖就绪」行的提示文案。 */
+function modelReadyHint(layers: EngineStatusDetail['layers']): string {
+  if (!layers) return '（未知）';
+  const miss: string[] = [];
+  if (!layers.lv_chordia) miss.push('lv-chordia');
+  if (!layers.madmom) miss.push('madmom');
+  if (!layers.chord_romanizer) miss.push('chord-romanizer');
+  return miss.length
+    ? `缺失：${miss.join(' / ')}`
+    : 'lv-chordia / madmom / chord-romanizer 均已就位';
 }
 
 /** 把安装日志渲染成终端式面板，报错行标红 */
@@ -281,11 +364,46 @@ const ChordTranscriptionPage: React.FC = () => {
     null,
   );
 
+  // 资产「下载/修复」状态
+  const [prefetchingId, setPrefetchingId] = useState<string | null>(null);
+  const [prefetchError, setPrefetchError] = useState<string | null>(null);
+  // 仅自动触发一次 ffmpeg 预拉取（检测时备好，避免引擎启动时的运行时下载），防止与重检测死循环
+  const autoFfmpegRef = useRef(false);
+
+  // 两个回调互相引用，用 ref 解耦，避免 useCallback 初始化器循环推导导致 TS 报错
+  const detectEngineRef = useRef<() => Promise<void>>(async () => {});
+  const prefetchAssetRef = useRef<(id: string) => void>(() => {});
+
+  /**
+   * 资产「下载/修复」按钮：触发 Rust prefetch_asset 在本地拉取缺失依赖（ffmpeg→imageio；
+   * Python 类→重新 uv sync）。按用户选择「自动拉取 + 失败给说明」实现。完成后重新检测。
+   */
+  const prefetchAsset = useCallback(
+    async (assetId: string) => {
+      if (!isClient) return;
+      setPrefetchingId(assetId);
+      setPrefetchError(null);
+      try {
+        const msg = await invoke<string>('prefetch_asset', { assetId });
+        message.success(msg || '已下载并缓存');
+      } catch (err) {
+        const reason = String(err);
+        setPrefetchError(reason);
+        message.error(`下载失败：${reason}（若离线请联网后重试）`);
+      } finally {
+        setPrefetchingId(null);
+        detectEngineRef.current();
+      }
+    },
+    [isClient],
+  );
+
   /**
    * 引擎状态检测 — 仅客户端路径（浏览器在渲染层直接走面板A，永不调用本函数）。
    *
-   * 调用 Rust get_engine_status 获取 uv / 源码 / .venv / 服务 四项布尔状态；
-   * 网关 = 四项全部通过（用户决策）才允许上传。invoke 失败时设置 detectError，UI 明确报错。
+   * 调用 Rust get_engine_status 获取 uv / 源码 / .venv / 服务 / 逐条资产 状态；
+   * 网关 = 全部通过（含每条资产 present）才允许上传。invoke 失败时设置 detectError，UI 明确报错。
+   * 检测时若 ffmpeg 缺失，自动触发一次预拉取（消除引擎启动时的运行时下载）。
    */
   const detectEngine = useCallback(async () => {
     if (!isClient) return;
@@ -294,12 +412,26 @@ const ChordTranscriptionPage: React.FC = () => {
     try {
       const detail = (await invoke('get_engine_status')) as EngineStatusDetail;
       setEngineDetail(detail);
+      const assetsAll = detail.assets
+        ? detail.assets.every((a) => a.present)
+        : false;
       setEngineReady(
         !!detail.uv_present &&
           !!detail.source_present &&
           !!detail.venv_present &&
-          !!detail.running,
+          !!detail.running &&
+          !!detail.model_ready &&
+          !!detail.analysis_ok &&
+          assetsAll,
       );
+      // 检测时就把 ffmpeg 备好（消除引擎启动时的运行时下载）；仅自动触发一次，避免重检测死循环。
+      if (detail.running && detail.assets && !autoFfmpegRef.current) {
+        const ff = detail.assets.find((a) => a.id === 'ffmpeg');
+        if (ff && !ff.present) {
+          autoFfmpegRef.current = true;
+          prefetchAssetRef.current('ffmpeg');
+        }
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setDetectError(`查询引擎状态失败: ${msg}`);
@@ -309,6 +441,10 @@ const ChordTranscriptionPage: React.FC = () => {
       setChecking(false);
     }
   }, [isClient]);
+
+  // 解耦互相引用：把最新回调挂到 ref 上，供对方在闭包内调用
+  detectEngineRef.current = detectEngine;
+  prefetchAssetRef.current = prefetchAsset;
 
   useEffect(() => {
     if (isClient) detectEngine();
@@ -330,21 +466,6 @@ const ChordTranscriptionPage: React.FC = () => {
           if (active) setInstallLog((prev) => [...prev, e.payload]);
         },
       );
-      const offDone = await listen<{ ok: boolean; msg: string }>(
-        'engine-install-done',
-        (e) => {
-          if (!active) return;
-          setInstalling(false);
-          if (e.payload.ok) {
-            setInstallError(null);
-            message.success('本地引擎安装完成，正在检测…');
-            detectEngine();
-          } else {
-            setInstallError(e.payload.msg);
-            message.error(`安装失败：${e.payload.msg}`);
-          }
-        },
-      );
       // 壳层上报引擎真实端口（自动启动或安装后）
       const offReady = await listen<{ port: number; msg: string }>(
         'engine-ready',
@@ -354,7 +475,7 @@ const ChordTranscriptionPage: React.FC = () => {
           detectEngine();
         },
       );
-      unlisten.push(offProgress, offDone, offReady);
+      unlisten.push(offProgress, offReady);
     })();
     return () => {
       active = false;
@@ -370,12 +491,19 @@ const ChordTranscriptionPage: React.FC = () => {
     setInstallLog([]);
     setInstallError(null);
     try {
-      await invoke('install_local_engine');
+      // 命令会阻塞到后台真正干完才返回：ok 字符串=成功消息，reject=失败原因
+      const msg = await invoke<string>('install_local_engine');
+      setInstallError(null);
+      message.success(msg || '本地引擎安装并启动成功');
+      detectEngine();
     } catch (err) {
+      const reason = String(err);
+      setInstallError(reason);
+      message.error(`安装失败：${reason}`);
+    } finally {
       setInstalling(false);
-      message.error(`调用安装命令失败：${String(err)}`);
     }
-  }, [isClient]);
+  }, [isClient, detectEngine]);
 
   const isIdle = status === 'IDLE';
   const isAnalyzing = status === 'ANALYZING';
@@ -493,6 +621,27 @@ const ChordTranscriptionPage: React.FC = () => {
                         port={engineDetail.port}
                         hint="127.0.0.1"
                       />
+                      {engineDetail.assets && engineDetail.assets.length > 0 ? (
+                        engineDetail.assets.map((a) => (
+                          <AssetRow
+                            key={a.id}
+                            asset={a}
+                            downloading={prefetchingId === a.id}
+                            onDownload={prefetchAsset}
+                          />
+                        ))
+                      ) : (
+                        <StatusRow
+                          label="模型与依赖就绪"
+                          ok={engineDetail.model_ready}
+                          hint={modelReadyHint(engineDetail.layers)}
+                        />
+                      )}
+                      <StatusRow
+                        label="端到端分析验证"
+                        ok={engineDetail.analysis_ok}
+                        hint="真实跑一次扒谱，确认和弦/调性/BPM 可产出"
+                      />
                     </>
                   ) : (
                     <div
@@ -547,6 +696,15 @@ const ChordTranscriptionPage: React.FC = () => {
                     description={installError}
                   />
                 )}
+                {prefetchError && (
+                  <Alert
+                    type="error"
+                    showIcon
+                    style={{ marginTop: 12 }}
+                    message="依赖下载失败"
+                    description={prefetchError}
+                  />
+                )}
                 {(installing || installLog.length > 0) && (
                   <TerminalLog lines={installLog} />
                 )}
@@ -556,13 +714,17 @@ const ChordTranscriptionPage: React.FC = () => {
             {/* 3) 引擎就绪：上传 / 分析 / 结果 / 异常 */}
             {!checking && engineReady && (
               <div>
-                <Alert
-                  type="success"
-                  showIcon
-                  style={{ marginBottom: 16 }}
-                  message={`本地高精度引擎已连接 · localhost:${engineDetail?.port ?? 18741}`}
-                  description="音频仅在本机处理，不离开你的电脑。"
-                />
+                {/* 引擎连接状态横幅：分析正常时显示绿色成功；分析异常（offline/error）时不显示，
+                    避免与下方的错误/离线 Alert 产生矛盾信息 */}
+                {(isIdle || isAnalyzing || isReady) && (
+                  <Alert
+                    type="success"
+                    showIcon
+                    style={{ marginBottom: 16 }}
+                    message={`本地高精度引擎已连接 · localhost:${engineDetail?.port ?? 18741}`}
+                    description="音频仅在本机处理，不离开你的电脑。"
+                  />
+                )}
 
                 {isIdle && (
                   <div style={{ maxWidth: 640, margin: '0 auto' }}>

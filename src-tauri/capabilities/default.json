@@ -7,7 +7,9 @@
     "core:default",
     "core:event:default",
     "allow-install-local-engine",
-    "allow-get-engine-status"
+    "allow-get-engine-status",
+    "allow-analyze-local-engine",
+    "allow-prefetch-asset"
   ],
   "remote": { "urls": ["https://*.github.io"] }
 }
