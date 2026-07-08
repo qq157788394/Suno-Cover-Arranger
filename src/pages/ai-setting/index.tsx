@@ -4,7 +4,7 @@ import {
   ProForm,
   ProFormText,
 } from '@ant-design/pro-components';
-import { Alert, Form, message, Radio, Space, Typography } from 'antd';
+import { Alert, Flex, Form, message, Radio, Typography } from 'antd';
 import React, { useEffect } from 'react';
 
 import { useApiKey } from '@/hooks/useApiKey';
@@ -83,7 +83,7 @@ const AISettingPage: React.FC = () => {
 
   return (
     <PageContainer>
-      <Space orientation="vertical" size="large">
+      <Flex orientation="vertical" gap="medium">
         <ProCard>
           <ProForm
             layout="vertical"
@@ -325,7 +325,7 @@ const AISettingPage: React.FC = () => {
             </Paragraph>
           </ProCard> */}
         </ProCard>
-      </Space>
+      </Flex>
     </PageContainer>
   );
 };

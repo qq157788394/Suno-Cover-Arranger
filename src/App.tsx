@@ -7,6 +7,7 @@ import { ConfigProvider, Typography, theme } from 'antd';
 const { Link } = Typography;
 
 import React from 'react';
+import EnvSwitchTrigger from '@/components/EnvSwitchTrigger';
 // 导入合并后的全局样式文件
 import './index.css';
 
@@ -72,6 +73,7 @@ export const layout: RunTimeLayoutConfig = ({
     ],
     actionsRender: () => {
       return [
+        <EnvSwitchTrigger key="env-switch" />,
         <Link
           key="bilibili"
           target="_blank"

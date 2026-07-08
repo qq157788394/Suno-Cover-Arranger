@@ -25,7 +25,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["dmg"],
+    "targets": ["dmg", "nsis"],
     "resources": {
       "Resources/local-engine": "local-engine",
       "Resources/uv": "uv"

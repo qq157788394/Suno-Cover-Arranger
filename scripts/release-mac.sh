@@ -5,7 +5,7 @@
 #
 # 行为:
 #   1. 读取 src-tauri/tauri.conf.json 的 version 作为发布版本
-#   2. 若未构建 dmg，则先 pnpm tauri:build
+#   2. 若未构建 universal dmg，则先 pnpm tauri build --target universal-apple-darwin
 #   3. 发布到 GitHub Releases:
 #      - 优先用 gh CLI (需 gh auth login)
 #      - 否则回退到 GitHub REST API (需设置 GITHUB_TOKEN 环境变量, 含 repo 权限)
@@ -29,14 +29,14 @@ TAG="v$VERSION"
 
 # ── 查找 / 构建 dmg ──────────────────────────────────
 shopt -s nullglob
-DMGS=(src-tauri/target/release/bundle/macos/*.dmg)
+DMGS=(src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg)
 shopt -u nullglob
 
 if [[ ${#DMGS[@]} -eq 0 ]]; then
-  echo "→ 未找到 dmg，先执行 pnpm tauri:build ..."
-  pnpm tauri:build
+  echo "→ 未找到 universal dmg，先执行 pnpm tauri build --target universal-apple-darwin ..."
+  pnpm tauri build --target universal-apple-darwin --bundles dmg
   shopt -s nullglob
-  DMGS=(src-tauri/target/release/bundle/macos/*.dmg)
+  DMGS=(src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg)
   shopt -u nullglob
 fi
 
