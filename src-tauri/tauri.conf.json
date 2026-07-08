@@ -2,21 +2,21 @@
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "大师来了",
   "version": "0.1.0",
-  "identifier": "com.dashi.app",
+  "identifier": "com.dashi",
   "build": {
     "beforeBuildCommand": "echo 'remote-loaded: no local frontend build'",
     "beforeDevCommand": "echo 'remote-loaded: no local frontend build'",
-    "devUrl": "http://localhost:8000/chord-transcription",
-    "frontendDist": "frontend-dist"
+    "devUrl": "http://localhost:8000",
+    "frontendDist": "https://qq157788394.github.io/Suno-Cover-Arranger/"
   },
   "app": {
     "windows": [
       {
         "label": "main",
         "title": "大师来了",
-        "url": "https://qq157788394.github.io/Suno-Cover-Arranger/",
         "width": 1280,
-        "height": 800
+        "height": 800,
+        "maximized": true
       }
     ],
     "security": {
