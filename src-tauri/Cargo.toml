@@ -13,4 +13,8 @@ tauri = { version = "2", features = [] }
 serde_json = "1"
 # 仅用于本地引擎的 http://127.0.0.1 调用（纯 HTTP，无需 TLS 后端），
 # 替代原 curl 子进程转发，并支持 multipart 直发（ADR-6）。
-reqwest = { version = "0.13", features = ["multipart"] }
+# stream：热更新下载大体积引擎包时分块落盘，避免整包驻留内存。
+reqwest = { version = "0.13", features = ["multipart", "stream"] }
+# 热更新引擎包校验（sha256）与解压（zip），均为纯 Rust 实现、无系统依赖。
+sha2 = "0.10"
+zip = "2"

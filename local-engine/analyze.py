@@ -177,6 +177,117 @@ def analyze_chords(audio_path: str, chord_dict_name: str = "submission") -> list
     return out
 
 
+def build_meter_label(max_pos: int) -> str:
+    """由「小节内最大拍序」推导拍号标签。
+
+    - 6 → "6/8"（madmom 按 6 拍/小节建模，无法区分 6/8 与 6/4，按 6/8 标注）
+    - 2/3/4 → "2/4"/"3/4"/"4/4"
+    - 其他 → "{n}/4"
+    max_pos < 2 视为无效，回退 "4/4"。
+    """
+    if not max_pos or max_pos < 2:
+        return "4/4"
+    if max_pos == 6:
+        return "6/8"
+    return f"{max_pos}/4"
+
+
+def derive_rhythm(db_raw: list) -> dict:
+    """由 DBN 原始输出 [(time, position), ...] 推导 rhythm 网格。
+
+    退化处理：当模型未能识别拍号（max_pos < 2，所有拍都被标为强拍 position==1）
+    时，按最通用的 4/4 兜底——把 beat_positions 循环重排为 1,2,3,4,...，
+    meter="4/4" 并置 meter_estimated=True。这与前端 beat_positions 缺失时的
+    默认 ?? (i%4)+1 行为一致，避免把「拍数」误当「小节数」。
+    """
+    beats = [float(t) for t, _ in db_raw]
+    if not beats:
+        return {
+            "beats": [],
+            "beat_positions": [],
+            "downbeats": [],
+            "meter": None,
+            "meter_estimated": False,
+            "bars": 0,
+        }
+
+    max_pos = max((int(b) for _, b in db_raw), default=0)
+    if max_pos < 2:
+        # 拍号识别失败：按 4/4 兜底（position 循环 1-4）
+        beat_positions = [(i % 4) + 1 for i in range(len(beats))]
+        meter = "4/4"
+        meter_estimated = True
+    else:
+        beat_positions = [int(b) for _, b in db_raw]
+        meter = build_meter_label(max_pos)
+        meter_estimated = False
+
+    downbeats = [beats[i] for i, p in enumerate(beat_positions) if p == 1]
+    return {
+        "beats": beats,
+        "beat_positions": beat_positions,
+        "downbeats": downbeats,
+        "meter": meter,
+        "meter_estimated": meter_estimated,
+        "bars": len(downbeats),
+    }
+
+
+# ── 音名转调（关系大调）──
+# 复刻前端 useChordAnalysis.ts 的 transposeSemitones：小调上移小三度（+3 半音）即关系大调，
+# 拼写规则逐字符对齐前端，避免引擎版与网页版对同一首歌显示不同调名。
+_NOTE_SEMITONES_MAP = {
+    "C": 0,
+    "D": 2,
+    "E": 4,
+    "F": 5,
+    "G": 7,
+    "A": 9,
+    "B": 11,
+}
+_NOTE_LETTERS_ARR = ["C", "D", "E", "F", "G", "A", "B"]
+
+
+def transpose_semitones(note: str, semitones: int) -> str:
+    """音名上行指定半音数（用于 Minor -> 相对大调）。
+
+    与前端 useChordAnalysis.ts 的 transposeSemitones 完全一致：
+    - 找到目标字母（上移 steps = round(semitones*7/12) 个字母）
+    - 按目标 pitch class 与字母自然音的差补 #/b。
+    """
+    if not note:
+        return "C"
+    letter = note[0].upper()
+    acc = (note.count("#") or 0) - (note.count("b") or 0)
+    base_pc = _NOTE_SEMITONES_MAP.get(letter, 0)
+    target_pc = (((base_pc + acc + semitones) % 12) + 12) % 12
+    steps = round((semitones * 7) / 12)
+    idx = (_NOTE_LETTERS_ARR.index(letter) + steps) % 7
+    target_letter = _NOTE_LETTERS_ARR[idx]
+    natural_pc = _NOTE_SEMITONES_MAP.get(target_letter, 0)
+    diff = (((target_pc - natural_pc) % 12) + 12) % 12
+    if diff > 6:
+        diff -= 12
+    return target_letter + ("" if diff == 0 else "#" * diff if diff > 0 else "b" * -diff)
+
+
+def resolve_roman_tonic(key_label: str | None) -> str:
+    """由 madmom 调性标签（"C major" / "A minor"）解析级数换算用的 tonic。
+
+    - 小调：返回关系大调主音（上移小三度 +3 半音），如 "A minor" -> "C"。
+    - 大调：原样返回主音，如 "C major" -> "C"。
+    - 非法/缺省：返回 "C"。
+    """
+    if not key_label:
+        return "C"
+    parts = key_label.strip().split()
+    if not parts:
+        return "C"
+    tonic = parts[0]
+    is_minor = len(parts) > 1 and parts[1].lower() == "minor"
+    return transpose_semitones(tonic, 3) if is_minor else tonic
+
+
 def analyze_key_bpm_rhythm(
     audio_path: str,
 ) -> tuple[str | None, float | None, dict | None]:
@@ -192,7 +303,7 @@ def analyze_key_bpm_rhythm(
             key_prediction_to_label,
         )
         from madmom.features.tempo import TempoEstimationProcessor
-        from madmom.features.beats import RNNBeatProcessor, BeatTrackingProcessor
+        from madmom.features.beats import RNNBeatProcessor
         from madmom.features.downbeats import (
             RNNDownBeatProcessor,
             DBNDownBeatTrackingProcessor,
@@ -213,23 +324,14 @@ def analyze_key_bpm_rhythm(
         tempi = TempoEstimationProcessor(fps=100)(beat_act)  # (N,2): (bpm, strength)
         bpm = float(tempi[0][0]) if len(tempi) else None
 
-        # --- beats（秒）---
-        beats = [float(t) for t in BeatTrackingProcessor(fps=100)(beat_act)]
-
-        # --- downbeats / 小节 ---
+        # --- beats / downbeats / 拍号（统一用 DBN 全量拍，避免两套处理器时间漂移）---
         db_act = RNNDownBeatProcessor()(audio_path)
-        db_raw = DBNDownBeatTrackingProcessor(beats_per_bar=[3, 4], fps=100)(db_act)
-        # db_raw: (n,2) 每行为 (时间秒, 小节内拍序 从1起)。整段返回的是【所有拍】，
-        # 其中拍序==1 的才是强拍(downbeat)。
-        downbeats = [float(t) for t, b in db_raw if int(b) == 1]
-        beats_per_bar = int(max((int(b) for _, b in db_raw), default=0)) or None
-
-        rhythm = {
-            "beats": beats,
-            "downbeats": downbeats,
-            "beats_per_bar": beats_per_bar,
-            "bars": len(downbeats),
-        }
+        # beats_per_bar=[2,3,4,6]：覆盖 2/4、3/4、4/4、6/8。madmom 逐拍输出
+        # (时间秒, 小节内拍序 从1起)，拍序==1 即强拍。
+        db_raw = DBNDownBeatTrackingProcessor(beats_per_bar=[2, 3, 4, 6], fps=100)(
+            db_act
+        )
+        rhythm = derive_rhythm(db_raw)
         return key_label, bpm, rhythm
     except Exception as e:
         logger.warning("madmom 分析失败：%s", e)
@@ -251,8 +353,10 @@ def analyze_roman(chords: list[dict], key_label: str | None) -> list[dict] | Non
         return None
 
     try:
-        # key_label 形如 "C major" -> 取 tonic 作为 default_tonic
-        tonic = key_label.split()[0]
+        # 小调歌按关系大调换算级数（如 A minor -> C major），与网页版行为一致；
+        # 大调歌 tonic 不变。chord-romanizer 原生输出已是大写罗马数字+性质后缀（VIm/IIIm/IVM7），
+        # 仅把 M7 替成更易读的 maj7（贴合 IVmaj7 风格）。
+        tonic = resolve_roman_tonic(key_label)
         romanizer = Romanizer(default_tonic=tonic)
 
         # 收集可解析的和弦（非 N、非异常、且 ChordParser.parse 非 None）。
@@ -280,7 +384,8 @@ def analyze_roman(chords: list[dict], key_label: str | None) -> list[dict] | Non
 
         results = romanizer.annotate_progression(parsed)
         # results 与 parsed 同序（annotate_progression 仅跳过 None，而 parsed 已无 None）
-        roman_map = {valid_idx[k]: r.roman for k, r in enumerate(results)}
+        # M7 -> maj7：库输出 IVM7，用户期望 IVmaj7（更易读）
+        roman_map = {valid_idx[k]: r.roman.replace("M7", "maj7") for k, r in enumerate(results)}
 
         out = []
         for i, c in enumerate(chords):
@@ -313,6 +418,9 @@ def analyze_all(audio_path: str, chord_dict_name: str = "submission") -> dict:
         key, bpm, rhythm = analyze_key_bpm_rhythm(wav)
         if key is None:
             warnings.append("madmom 未提供 key/bpm/rhythm（可能未安装或分析失败）")
+        # 拍号识别失败、已按 4/4 兜底估算时，给出明确提示（不污染前端类型）
+        if rhythm and rhythm.pop("meter_estimated", False):
+            warnings.append("未能可靠识别拍号，已按 4/4 拍估算小节")
         roman = analyze_roman(chords, key)
         if roman is None and key is not None:
             warnings.append("chord-romanizer 未提供级数")

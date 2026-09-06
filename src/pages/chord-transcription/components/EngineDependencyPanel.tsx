@@ -1,6 +1,5 @@
 import React from "react";
 import type { EngineStatusDetail } from "../types";
-import AssetRow from "./AssetRow";
 import StatusRow from "./StatusRow";
 
 /** 根据三层依赖探测结果，生成「模型与依赖就绪」行的提示文案。 */
@@ -15,32 +14,31 @@ export function modelReadyHint(layers: EngineStatusDetail["layers"]): string {
     : "lv-chordia / madmom / chord-romanizer 均已就位";
 }
 
-/** 引擎依赖清单：uv / 源码 / .venv / 服务 + 逐条资产（或 model_ready 兜底）+ 端到端分析验证 */
+/**
+ * 引擎依赖清单（方案 A 自包含 runtime）：
+ * 内置引擎包 (runtime) / 引擎代码 / 引擎服务 / 模型与依赖就绪 / 端到端分析验证。
+ * 不再展示 uv / .venv / 逐条资产——引擎整体打包随 .app 分发，运行时不再逐项下载。
+ */
 export function EngineDependencyPanel({
   detail,
-  prefetchingId,
-  onPrefetch,
 }: {
   detail: EngineStatusDetail;
-  prefetchingId: string | null;
-  onPrefetch: (id: string) => void;
 }) {
   return (
     <>
       <StatusRow
-        label="uv 运行时"
-        ok={detail.uv_present}
-        hint="用于创建隔离 Python 环境"
+        label="内置引擎包 (runtime)"
+        ok={detail.bundled_ok}
+        hint={
+          detail.engine_version
+            ? `python-build-standalone 自包含解释器 · v${detail.engine_version}`
+            : "runtime/bin/python3 缺失，引擎未随包分发"
+        }
       />
       <StatusRow
-        label="引擎源码（随安装包分发）"
+        label="引擎代码（随安装包分发）"
         ok={detail.source_present}
         hint="local-engine/main.py"
-      />
-      <StatusRow
-        label="依赖环境 (.venv)"
-        ok={detail.venv_present}
-        hint="已建则无需重新下载"
       />
       <StatusRow
         label="引擎服务"
@@ -48,22 +46,11 @@ export function EngineDependencyPanel({
         port={detail.port}
         hint="127.0.0.1"
       />
-      {detail.assets && detail.assets.length > 0 ? (
-        detail.assets.map((a) => (
-          <AssetRow
-            key={a.id}
-            asset={a}
-            downloading={prefetchingId === a.id}
-            onDownload={onPrefetch}
-          />
-        ))
-      ) : (
-        <StatusRow
-          label="模型与依赖就绪"
-          ok={detail.model_ready}
-          hint={modelReadyHint(detail.layers)}
-        />
-      )}
+      <StatusRow
+        label="模型与依赖就绪"
+        ok={detail.model_ready}
+        hint={modelReadyHint(detail.layers)}
+      />
       <StatusRow
         label="端到端分析验证"
         ok={detail.analysis_ok}

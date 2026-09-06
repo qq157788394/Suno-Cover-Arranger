@@ -24,12 +24,12 @@ export function ChordTranscriptionClient() {
     detectError,
     engineReady,
     detail,
-    prefetchingId,
-    installing,
-    installLog,
+    updateAvailable,
+    updating,
+    updateLog,
     detectEngine,
-    installEngine,
-    prefetchAsset,
+    updateEngine,
+    checkUpdate,
   } = useEngineStatus();
 
   const { status, result, fileName, handleFileSelect, reset } =
@@ -129,13 +129,13 @@ export function ChordTranscriptionClient() {
         <EngineSetupPanel
           detail={detail}
           detectError={detectError}
-          installing={installing}
-          installLog={installLog}
+          updating={updating}
+          updateLog={updateLog}
+          updateAvailable={updateAvailable}
           offline={isEngineOffline}
-          prefetchingId={prefetchingId}
           onDetect={detectEngine}
-          onInstall={installEngine}
-          onPrefetch={prefetchAsset}
+          onUpdate={updateEngine}
+          onCheckUpdate={checkUpdate}
         />
       ) : (
         <AnalysisWorkspace

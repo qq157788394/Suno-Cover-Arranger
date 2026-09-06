@@ -2,7 +2,8 @@
  * BeatGrid — 拍级和弦网格（弹唱视图）
  *
  * 核心展示逻辑：
- * - 每格 = 一拍，每行 = 4 小节（16 拍，4/4 拍号）
+ * - 每格 = 一拍，每行约 16 拍（按拍号自适应小节数，支持 2/4/3/4/4/4/6/8）
+ * - 小节由逐拍 position 驱动（position==1 为强拍），天然支持弱起与变拍
  * - 小节间间隔 > 拍间间隔
  * - 不做格子合并：每个拍级格子独立显示和弦名（弹唱者需看到"第几拍换和弦"）
  * - 内置 HTML5 Audio 播放器，实时高亮当前播放位置
@@ -25,7 +26,6 @@ import type {
   TranscriptionRomanSegment,
 } from "@/shared/types/types";
 import {
-  BARS_PER_ROW,
   buildBeatCells,
   type ChordDisplayMode,
   findActiveBeatIndex,
@@ -93,12 +93,12 @@ const BeatGrid: React.FC<BeatGridProps> = ({
   const gridData = useMemo(() => {
     if (!rhythm?.beats || rhythm.beats.length === 0) return null;
 
-    const bpb = rhythm.beats_per_bar ?? 4;
+    const meter = rhythm.meter ?? "4/4";
     const beatCells = buildBeatCells(chords, rhythm.beats, roman ?? undefined);
-    const bars = splitIntoBars(beatCells, bpb);
-    const rows = groupBarsIntoRows(bars, BARS_PER_ROW);
+    const bars = splitIntoBars(beatCells, rhythm.beat_positions ?? []);
+    const rows = groupBarsIntoRows(bars);
 
-    return { rows, bpb, totalBeats: rhythm.beats.length, bars };
+    return { rows, meter, totalBeats: rhythm.beats.length, bars };
   }, [chords, rhythm, roman]);
 
   // ── 音频播放状态 ─────────────────────────────────
@@ -198,18 +198,12 @@ const BeatGrid: React.FC<BeatGridProps> = ({
     );
   }
 
-  const { rows, bpb, totalBeats, bars } = gridData;
+  const { rows, meter, totalBeats, bars } = gridData;
 
-  // ── 渲染一行小节（4 个 bar 并排）───────────────────
+  // ── 渲染一行小节（按拍号自适应小节数）──────────────
   const renderRow = (row: (typeof rows)[0], rowIndex: number) => (
     <div key={`row-${rowIndex}`} style={{ marginBottom: BAR_GAP }}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "stretch",
-        }}
-      >
-        {/* 该行所有小节 */}
+      <div style={{ display: "flex", alignItems: "stretch" }}>
         {row.barRows.map((bar) => (
           <div key={bar.barNumber}>
             {/* 小节序号 */}
@@ -226,19 +220,41 @@ const BeatGrid: React.FC<BeatGridProps> = ({
               {bar.barNumber}
             </div>
 
-            {/* 一小节的格子 */}
+            {/* 拍号表头（小节内拍序） */}
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: `repeat(${bpb}, ${CELL_W}px)`,
+                gridTemplateColumns: `repeat(${bar.cells.length}, ${CELL_W}px)`,
                 gap: `${BEAT_GAP}px`,
                 marginRight: BAR_GAP,
               }}
             >
-              {bar.cells.map((cell, ci) => {
-                // 全局拍索引 = (小节号-1) * 每小节拍数 + 格内序号
-                const exactGlobalIdx = (bar.barNumber - 1) * bpb + ci;
-                const active = isActive(exactGlobalIdx);
+              {bar.cells.map((cell) => (
+                <div
+                  key={`h-${cell.beatIndex}`}
+                  style={{
+                    textAlign: "center",
+                    fontSize: 9,
+                    color: "#C4C4C4",
+                    lineHeight: 1,
+                  }}
+                >
+                  {cell.beatPosition}
+                </div>
+              ))}
+            </div>
+
+            {/* 一小节的格子 */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: `repeat(${bar.cells.length}, ${CELL_W}px)`,
+                gap: `${BEAT_GAP}px`,
+                marginRight: BAR_GAP,
+              }}
+            >
+              {bar.cells.map((cell) => {
+                const active = isActive(cell.beatIndex);
                 // 按展示模式选主显示文本：功能级数优先，缺失回退和弦名
                 const display = resolveCellDisplay(
                   cell.label,
@@ -249,7 +265,7 @@ const BeatGrid: React.FC<BeatGridProps> = ({
 
                 return (
                   <Tooltip
-                    key={exactGlobalIdx}
+                    key={cell.beatIndex}
                     title={
                       cell.subLabel && cell.label !== "N"
                         ? `${cell.label} (${cell.subLabel})`
@@ -352,49 +368,7 @@ const BeatGrid: React.FC<BeatGridProps> = ({
         </Text>
       </div>
 
-      {/* 表头：每拍的编号（重复 4 组对应 4 小节） */}
-      <div
-        style={{
-          display: "flex",
-          marginBottom: 6,
-        }}
-      >
-        {/* 左侧占位对齐小节序号列 */}
-        <div style={{ width: 16 }} />
-
-        {Array.from({ length: BARS_PER_ROW }, (_, bi) => {
-          const headerRowKey = `header-${bi}`;
-          const beatCells = Array.from({ length: bpb }, (_, i) => {
-            const beatKey = `${bi}-${i}`;
-            return (
-              <div
-                key={beatKey}
-                style={{
-                  textAlign: "center",
-                  fontSize: 9,
-                  color: "#C4C4C4",
-                  lineHeight: 1,
-                }}
-              >
-                {i + 1}
-              </div>
-            );
-          });
-          return (
-            <div
-              key={headerRowKey}
-              style={{
-                display: "grid",
-                gridTemplateColumns: `repeat(${bpb}, ${CELL_W}px)`,
-                gap: `${BEAT_GAP}px`,
-                marginRight: BAR_GAP,
-              }}
-            >
-              {beatCells}
-            </div>
-          );
-        })}
-      </div>
+      {/* 拍号表头已移入每个小节内（renderRow），此处不再单独渲染 */}
 
       {/* 网格主体：逐行渲染 */}
       <div>{rows.map((row, ri) => renderRow(row, ri))}</div>
@@ -411,7 +385,7 @@ const BeatGrid: React.FC<BeatGridProps> = ({
       >
         <span>{bars.length} 小节</span>
         <span>{totalBeats} 拍</span>
-        <span>{bpb}/4</span>
+        <span>{meter}</span>
         {activeBeatIdx >= 0 && <span>第 {activeBeatIdx + 1} 拍</span>}
       </div>
     </div>

@@ -1,0 +1,4 @@
+# 传递依赖版本约束（pip -c）：覆盖上游硬钉，确保有 cp312 wheel
+# jams 0.3.5 对 Python>=3.12 硬钉 pandas==2.1.0，而 2.1.0 无 cp312 预编译 wheel。
+# 拉到有 3.12 wheel 的 2.2/2.3（jams 运行时用到的 pandas API 向后兼容），绕开该硬钉。
+pandas>=2.2,<3

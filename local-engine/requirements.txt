@@ -1,0 +1,17 @@
+# 大师扒谱本地引擎运行时依赖
+# 这是构建脚本（scripts/build-engine.sh / setup-engine.sh）读取的唯一依赖来源。
+# 构建时使用 python-build-standalone 3.12 + `pip install --target runtime/lib -r requirements.txt -c constraints.txt`
+
+# ---- build 依赖：madmom 编译 .pyx 需要 Cython + numpy，且 madmom setup.py 未声明它们 ----
+Cython>=3.0
+numpy>=1.26,<2
+
+# ---- 运行时依赖 ----
+lv-chordia
+madmom
+chord-romanizer
+fastapi>=0.110
+uvicorn[standard]>=0.27
+python-multipart>=0.0.9
+librosa>=0.10
+imageio-ffmpeg>=0.5

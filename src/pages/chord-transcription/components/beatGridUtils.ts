@@ -3,11 +3,12 @@
  *
  * 从 BeatGrid 组件中抽离的纯函数：
  * - buildBeatCells：变长和弦段 → 拍级映射
- * - splitIntoBars：按小节切分（每个 BarRow = 一小节的格子）
- * - groupBarsIntoRows：把多个 BarRow 按 BARS_PER_ROW 分组为大行
+ * - splitIntoBars：按「强拍(position==1)」切分小节（支持弱起与变拍）
+ * - groupBarsIntoRows：按目标拍数/行分组（恒定行宽，适配 2/4/3/4/4/4/6/8）
  *
  * 设计原则：
  * - 每个拍级格子独立显示，不做 colSpan 合并（弹唱者需要看到"第几拍换和弦"）
+ * - 小节长度由逐拍 position 决定，天然支持弱起与中部变拍
  * - 可独立单元测试
  */
 
@@ -18,8 +19,8 @@ import type {
 
 // ── 常量 ───────────────────────────────────────────────
 
-/** 每行显示的小节数 */
-export const BARS_PER_ROW = 4;
+/** 每行目标拍数（恒定行宽，按拍号自适应小节数） */
+const TARGET_BEATS_PER_ROW = 16;
 
 // ── 展示模式 ───────────────────────────────────────────
 
@@ -45,6 +46,19 @@ export function resolveCellDisplay(
   return label;
 }
 
+/**
+ * 由「小节内最大拍序」推导拍号标签。
+ * - 6 → "6/8"（madmom 把 6/8 当 6 拍/小节建模，无法区分 6/8 与 6/4，按 6/8 标注）
+ * - 2/3/4 → "2/4"/"3/4"/"4/4"
+ * - 其他 → "${n}/4"
+ * maxPos < 2 视为无效，回退 "4/4"。
+ */
+export function buildMeterLabel(maxPos: number): string {
+  if (!maxPos || maxPos < 2) return "4/4";
+  if (maxPos === 6) return "6/8";
+  return `${maxPos}/4`;
+}
+
 // ── 类型 ───────────────────────────────────────────────
 
 /** 单个拍级格子的原始数据 */
@@ -59,6 +73,10 @@ export interface GridCell {
   label: string;
   subLabel: string;
   isEmpty: boolean;
+  /** 全局拍索引（用于播放高亮，与 rhythm.beats 对齐） */
+  beatIndex: number;
+  /** 该拍在小节内的序号（1 起，用于表头） */
+  beatPosition: number;
 }
 
 /** 一行（一个小节）的原始格子数据 */
@@ -67,7 +85,7 @@ export interface BarRow {
   cells: GridCell[];
 }
 
-/** 多个小节组成的"大行"（页面上的一行 = BARS_PER_ROW 个小节） */
+/** 多个小节组成的"大行"（页面上的一行 = 约 TARGET_BEATS_PER_ROW 拍） */
 export interface GridRow {
   barRows: BarRow[];
 }
@@ -148,49 +166,77 @@ export function buildBeatCells(
   return cells;
 }
 
-// ── 核心：拆分为小节行（每格独立，不合并） ─────────────
+// ── 核心：按强拍切分为小节（支持弱起/变拍） ────────────
 
 /**
- * 把一维的 BeatCell 数组按 beatsPerBar 切成 BarRow[]。
- * 每个 BarRow.cells 长度 = beatsPerBar（通常 4），每格独立不合并。
+ * 把一维 BeatCell 数组按逐拍 position 切分为 BarRow[]。
+ * - 在 position === 1（且非首拍）处开新小节 → 强拍对齐。
+ * - 首拍 position 若不为 1（弱起），首小节自然为短小节。
+ * - 中部变拍（position 序列长度变化）天然支持，小节长度随之变化。
+ * - 每个 GridCell 携带 beatIndex（全局）与 beatPosition（小节内）。
+ *
+ * beatPositions 应与 cells 等长；缺失时按 4/4 兜底（position = (i%4)+1）。
  */
 export function splitIntoBars(
   cells: BeatCell[],
-  beatsPerBar: number,
+  beatPositions: number[],
 ): BarRow[] {
   const bars: BarRow[] = [];
-  for (let i = 0; i < cells.length; i += beatsPerBar) {
-    const chunk = cells.slice(i, i + beatsPerBar);
-    // 填充末尾不足一拍的空格
-    while (chunk.length < beatsPerBar) {
-      chunk.push({ chordLabel: "N", romanLabel: "", isEmpty: true });
+  let current: GridCell[] = [];
+  let barNumber = 0;
+
+  for (let i = 0; i < cells.length; i++) {
+    const pos = beatPositions[i] ?? (i % 4) + 1;
+    // 遇到新的强拍：收尾当前小节，开新小节（首拍不切，避免空小节）
+    if (i > 0 && pos === 1) {
+      bars.push({ barNumber: ++barNumber, cells: current });
+      current = [];
     }
-    bars.push({
-      barNumber: Math.floor(i / beatsPerBar) + 1,
-      cells: chunk.map((c) => ({
-        label: c.chordLabel,
-        subLabel: c.romanLabel,
-        isEmpty: c.isEmpty,
-      })),
+    const c = cells[i];
+    current.push({
+      label: c.chordLabel,
+      subLabel: c.romanLabel,
+      isEmpty: c.isEmpty,
+      beatIndex: i,
+      beatPosition: pos,
     });
+  }
+  if (current.length > 0) {
+    bars.push({ barNumber: ++barNumber, cells: current });
   }
   return bars;
 }
 
-// ── 核心：按 BARS_PER_ROW 分组为大行 ───────────────────
+// ── 核心：按目标拍数/行分组为大行（恒定行宽） ─────────
 
 /**
- * 将 BarRow[] 按每行 N 个小节分组为 GridRow[]。
- * 用于页面渲染时一行显示多小节。
+ * 将 BarRow[] 按每行目标拍数分组为 GridRow[]。
+ * 累加当前行的拍数，超过 targetBeatsPerRow 则换行。
+ * - 6/8（6 拍/小节）→ 2 小节/行（12 拍）
+ * - 4/4（4 拍/小节）→ 4 小节/行（16 拍）
+ * - 3/4（3 拍/小节）→ 5 小节/行（15 拍）
+ * - 2/4（2 拍/小节）→ 8 小节/行（16 拍）
+ * 行宽恒定，避免 6/8 撑爆或 2/4 过空。
  */
 export function groupBarsIntoRows(
   bars: BarRow[],
-  barsPerRow: number = BARS_PER_ROW,
+  targetBeatsPerRow: number = TARGET_BEATS_PER_ROW,
 ): GridRow[] {
   const rows: GridRow[] = [];
-  for (let i = 0; i < bars.length; i += barsPerRow) {
-    rows.push({ barRows: bars.slice(i, i + barsPerRow) });
+  let current: BarRow[] = [];
+  let currentBeats = 0;
+
+  for (const bar of bars) {
+    const barBeats = bar.cells.length;
+    if (current.length > 0 && currentBeats + barBeats > targetBeatsPerRow) {
+      rows.push({ barRows: current });
+      current = [];
+      currentBeats = 0;
+    }
+    current.push(bar);
+    currentBeats += barBeats;
   }
+  if (current.length > 0) rows.push({ barRows: current });
   return rows;
 }
 

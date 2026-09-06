@@ -381,7 +381,11 @@ async def analyze(request: Request, file: UploadFile = File(...)) -> JSONRespons
     # 与前端 50MB 上限一致；超限直接 413，不进入分析管线。
     MAX_UPLOAD_BYTES = 50 * 1024 * 1024
     content = b""
-    async for chunk in file.stream():
+    # Starlette 0.37+ 移除了 UploadFile.stream()，改用 read() 循环（全版本兼容）。
+    while True:
+        chunk = await file.read(8192)
+        if not chunk:
+            break
         content += chunk
         if len(content) > MAX_UPLOAD_BYTES:
             return JSONResponse(

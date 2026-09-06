@@ -4,8 +4,8 @@
   "version": "0.1.0",
   "identifier": "com.dashi",
   "build": {
-    "beforeBuildCommand": "echo 'remote-loaded: no local frontend build'",
-    "beforeDevCommand": "echo 'remote-loaded: no local frontend build'",
+    "beforeBuildCommand": "bash ../scripts/build-engine.sh macos-aarch64 && bash ../scripts/prepare-tauri-resources.sh",
+    "beforeDevCommand": "bash ../scripts/setup-engine.sh",
     "devUrl": "http://localhost:8000",
     "frontendDist": "https://qq157788394.github.io/Suno-Cover-Arranger/"
   },

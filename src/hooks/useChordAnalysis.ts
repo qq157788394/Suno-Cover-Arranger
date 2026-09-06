@@ -17,35 +17,7 @@ import type {
   PlaybackState,
   SongAnalysis,
 } from "@/shared/types/types";
-
-/** 音名上行指定半音数（用于 Minor → 相对大调显示） */
-const NOTE_SEMITONES_MAP: Record<string, number> = {
-  C: 0,
-  D: 2,
-  E: 4,
-  F: 5,
-  G: 7,
-  A: 9,
-  B: 11,
-};
-const NOTE_LETTERS_ARR = ["C", "D", "E", "F", "G", "A", "B"];
-function transposeSemitones(note: string, semitones: number): string {
-  if (!note) return "C";
-  const letter = note.charAt(0).toUpperCase();
-  const acc = (note.match(/#/g) || []).length - (note.match(/b/g) || []).length;
-  const basePc = NOTE_SEMITONES_MAP[letter] ?? 0;
-  const targetPc = (((basePc + acc + semitones) % 12) + 12) % 12;
-  const steps = Math.round((semitones * 7) / 12);
-  const idx = (NOTE_LETTERS_ARR.indexOf(letter) + steps) % 7;
-  const targetLetter = NOTE_LETTERS_ARR[idx >= 0 ? idx : idx + 7];
-  const naturalPc = NOTE_SEMITONES_MAP[targetLetter] ?? 0;
-  let diff = (((targetPc - naturalPc) % 12) + 12) % 12;
-  if (diff > 6) diff -= 12;
-  return (
-    targetLetter +
-    (diff === 0 ? "" : diff > 0 ? "#".repeat(diff) : "b".repeat(-diff))
-  );
-}
+import { transposeSemitones } from "@/shared/utils/note";
 
 export interface UseChordAnalysisReturn {
   /** 当前分析状态 */
@@ -213,7 +185,7 @@ export function useChordAnalysis(): UseChordAnalysisReturn {
           )
             ? "/Suno-Cover-Arranger/"
             : "/";
-          const workerUrl = baseUrl + "chord-analysis.worker.js";
+          const workerUrl = `${baseUrl}chord-analysis.worker.js`;
           const w = new Worker(workerUrl);
           workerRef.current = w;
           const timeout = setTimeout(() => {

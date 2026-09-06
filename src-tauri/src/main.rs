@@ -1,10 +1,10 @@
 // 大师来了 —— Tauri v2 薄壳
 // 职责极薄：① 加载远程/本地页面（见 tauri.conf.json 的 url）
-//            ② 启动时自动拉起本地 Python 引擎（uv run python main.py）
-//            ③ 未安装时，用户点击"安装本地引擎"按钮，把随包附带的引擎源码
-//               部署到软件目录（~/Library/Application Support/<id>/local-engine）并 uv sync
+//            ② 启动时自动拉起本地 Python 引擎（runtime 内自包含 Python 直启）
+//            ③ 引擎以「自包含 runtime」（python-build-standalone + 依赖 + 模型 + 代码）
+//               形式随 .app 分发（Resources/local-engine），无需 uv、无需运行时联网装依赖
 //            ④ 退出时回收引擎子进程
-// 不打包前端；引擎以"源码 + 便携 uv"形式随 .app 分发（Resources 目录）。
+// 运行时只管启动，不碰 uv、不联网装东西；新版本经签名引擎包热更新（失败回退内置版）。
 
 use std::fs;
 use std::io::{BufRead, BufReader, Write};
@@ -15,6 +15,10 @@ use std::sync::{Arc, Mutex, OnceLock};
 use std::time::{Duration, Instant};
 
 use tauri::{Emitter, Manager};
+
+/// 引擎热更新模块：比对 engine-manifest.json，下载签名引擎包并原子替换 runtime，失败回退内置基线。
+mod engine_update;
+use engine_update::{check_engine_update, update_engine};
 
 /// 全局持有引擎子进程句柄，供退出时回收、安装线程回填。
 struct EngineState(pub Arc<Mutex<Option<Child>>>);
@@ -52,39 +56,7 @@ fn log(msg: &str) {
     }
 }
 
-/// 定位 uv：优先级 PATH → 常见安装位置 → 随包附带的 uv（Contents/Resources/uv）
-/// → 已部署到软件目录的 uv（app_data_dir/local-engine/uv，避免包内二进制被 quarantine 拦截）。
-/// Tauri 起的二进制不一定继承用户 shell 的 PATH（uv 在 ~/.local/bin），必须显式探测。
-fn find_uv(app: &tauri::AppHandle) -> Option<PathBuf> {
-    if Command::new("uv").arg("--version").output().is_ok() {
-        return Some(PathBuf::from("uv"));
-    }
-    let home = std::env::var("HOME").unwrap_or_default();
-    let candidates = [
-        format!("{}/.local/bin/uv", home),
-        format!("{}/.cargo/bin/uv", home),
-        "/usr/local/bin/uv".to_string(),
-        "/opt/homebrew/bin/uv".to_string(),
-    ];
-    for c in candidates {
-        if Path::new(&c).exists() {
-            return Some(PathBuf::from(c));
-        }
-    }
-    if let Ok(rd) = app.path().resource_dir() {
-        let bundled = rd.join("uv");
-        if bundled.exists() {
-            return Some(bundled);
-        }
-    }
-    if let Ok(data) = app.path().app_data_dir() {
-        let deployed = data.join("local-engine").join("uv");
-        if deployed.exists() {
-            return Some(deployed);
-        }
-    }
-    None
-}
+// （已移除 uv 依赖：运行时改用 python-build-standalone 自包含解释器，不再探测/调用 uv）
 
 /// 极小 HTTP GET 探测引擎健康检查是否就绪（仅本机 127.0.0.1）。
 fn engine_health_ok(port: u16) -> bool {
@@ -151,10 +123,7 @@ fn engine_selfcheck_json(port: u16) -> Option<serde_json::Value> {
     engine_get_json(port, "/api/selfcheck")
 }
 
-/// 读取 /api/assets：逐条资产就绪状态，供检测面板列出缺失项并触发下载。
-fn engine_assets_json(port: u16) -> Option<serde_json::Value> {
-    engine_get_json(port, "/api/assets")
-}
+// （已移除 engine_assets_json：逐资产下载模式废弃，引擎改为构建期自包含 runtime 整体分发）
 
 /// 端到端自检结果进程内缓存（审查 #6）。
 /// 自检会真实跑整条 ML 管线（含首次权重下载），耗时可观；但同一引擎进程生命周期内结果稳定，
@@ -178,6 +147,10 @@ fn store_selfcheck(port: u16, val: serde_json::Value) {
     }
 }
 
+/// 热更新可用性进程内缓存：check_engine_update 拉取清单比对后写入，
+/// get_engine_status 读取以展示「是否有可用更新」，避免每次检测都联网拉清单。
+static ENGINE_UPDATE_CACHE: OnceLock<Mutex<Option<bool>>> = OnceLock::new();
+
 /// 轮询引擎健康检查，直到就绪或超时。
 fn wait_engine_ready(port: u16, timeout: Duration) -> bool {
     let start = Instant::now();
@@ -199,8 +172,29 @@ fn engine_log_path(app: &tauri::AppHandle) -> PathBuf {
 }
 
 /// 启动引擎进程；stdout/stderr 重定向到 engine.log 便于排查。
-/// 返回子进程句柄（便于退出时回收）；uv 缺失或启动失败返回 None 并写日志。
-fn start_engine_process(app: &tauri::AppHandle, uv: &Path, dir: &Path) -> Option<Child> {
+/// 返回子进程句柄（便于退出时回收）；runtime 缺失或启动失败返回 None 并写日志。
+///
+/// 运行时**直接调用 runtime 内的自包含 Python**（python-build-standalone），
+/// 完全绕过 `uv`、不触发 uv sync、不联网装依赖。
+/// - 解释器：`<dir>/runtime/bin/python3`（构建期生成，uv 管不到）
+/// - 代码：`<dir>/main.py`（dev 用源码；prod 用同步到 app_data_dir 的副本）
+/// - 依赖：`<dir>/runtime/lib/python3.12/site-packages`（pip install --target 产物）
+/// - 模型缓存：HOME 重定向到 `<dir>/runtime/models/home`（构建期已预热，离线可用）
+fn start_engine_process(app: &tauri::AppHandle, dir: &Path) -> Option<Child> {
+    let rt = dir.join("runtime");
+    let py = rt.join("bin").join("python3");
+    if !py.exists() {
+        log(&format!("runtime 缺失解释器：{:?}（引擎未打包或构建失败）", py));
+        return None;
+    }
+    let main_py = dir.join("main.py");
+    if !main_py.exists() {
+        log(&format!("引擎目录无 main.py：{:?}", dir));
+        return None;
+    }
+    let models_home = rt.join("models").join("home");
+    let site_pkg = rt.join("lib").join("python3.12").join("site-packages");
+
     let log_path = engine_log_path(app);
     let log_file = fs::OpenOptions::new()
         .create(true)
@@ -208,10 +202,14 @@ fn start_engine_process(app: &tauri::AppHandle, uv: &Path, dir: &Path) -> Option
         .open(&log_path)
         .ok();
     let stderr_file = log_file.as_ref().and_then(|f| f.try_clone().ok());
-    match Command::new(uv)
-        .args(["run", "python", "main.py"])
+
+    match Command::new(&py)
+        .arg(&main_py)
         .current_dir(dir)
         .env("LOCAL_ENGINE_PORT", ENGINE_PORT.to_string())
+        .env("HOME", &models_home)
+        .env("PYTHONPATH", &site_pkg)
+        .env("HF_HUB_OFFLINE", "1")
         .stdout(log_file.map(Stdio::from).unwrap_or(Stdio::null()))
         .stderr(stderr_file.map(Stdio::from).unwrap_or(Stdio::null()))
         .spawn()
@@ -224,9 +222,14 @@ fn start_engine_process(app: &tauri::AppHandle, uv: &Path, dir: &Path) -> Option
     }
 }
 
+// （已移除 venv 概念：运行时改用 runtime/bin/python3 自包含解释器，见 start_engine_process）
+
 /// 解析 local-engine 运行目录（按优先级）：
-/// 1. DASHI_ENGINE_DIR 环境变量（高级用户/启动器设置绝对路径）
-/// 2. 已安装的引擎：软件目录下的 local-engine（首次安装后落此处，最高优先）
+/// 1. DASHI_ENGINE_DIR 环境变量（高级用户/启动器设置绝对路径，最高优先）
+/// dev 构建（debug_assertions）：优先项目源码 local-engine（CWD / exe 向上），
+///   确保「改源码即见效」，不再被软件目录里可能陈旧的拷贝截胡。
+/// release 构建：优先已安装的软件目录（随 .app 分发），源码仅作兜底。
+/// 2. 已安装的引擎：软件目录下的 local-engine（首次安装后落此处）
 /// 3. 当前工作目录下的 local-engine（tauri:dev 时 CWD=项目根）
 /// 4. 从可执行文件位置向上查找 local-engine（dev 时二进制在 src-tauri/target/debug）
 /// 5. .app 同级目录的 local-engine（分发时 .app 与引擎放同文件夹）
@@ -239,31 +242,52 @@ fn resolve_engine_dir(app: &tauri::AppHandle) -> PathBuf {
         }
         log(&format!("DASHI_ENGINE_DIR={} 不存在，回退其他位置", dir));
     }
-    // ── 策略 2：已安装的引擎（软件目录）──
+
+    let is_dev = cfg!(debug_assertions);
+
+    // 项目源码探测（CWD + 从 exe 向上遍历）
+    let find_source = || -> Option<PathBuf> {
+        if let Ok(cwd) = std::env::current_dir() {
+            let cand = cwd.join("local-engine");
+            if cand.exists() {
+                return Some(cand);
+            }
+        }
+        if let Ok(exe) = std::env::current_exe() {
+            let mut p = exe.parent();
+            while let Some(dir) = p {
+                let cand = dir.join("local-engine");
+                if cand.exists() {
+                    return Some(cand);
+                }
+                p = dir.parent();
+            }
+        }
+        None
+    };
+
+    // dev：源码优先于软件目录陈旧拷贝
+    if is_dev {
+        if let Some(src) = find_source() {
+            return src;
+        }
+    }
+
+    // ── 策略 2：已安装的引擎（软件目录，含自包含 runtime）──
     if let Ok(data) = app.path().app_data_dir() {
         let installed = data.join("local-engine");
-        if installed.join(".venv").exists() || installed.join("main.py").exists() {
+        if installed.join("runtime").exists() || installed.join("main.py").exists() {
             return installed;
         }
     }
-    // ── 策略 3：CWD ──
-    if let Ok(cwd) = std::env::current_dir() {
-        let cand = cwd.join("local-engine");
-        if cand.exists() {
-            return cand;
+
+    // release：源码兜底
+    if !is_dev {
+        if let Some(src) = find_source() {
+            return src;
         }
     }
-    // ── 策略 4：从 exe 向上遍历 ──
-    if let Ok(exe) = std::env::current_exe() {
-        let mut p = exe.parent();
-        while let Some(dir) = p {
-            let cand = dir.join("local-engine");
-            if cand.exists() {
-                return cand;
-            }
-            p = dir.parent();
-        }
-    }
+
     // ── 策略 5：.app 同级目录 ──
     if let Ok(exe) = std::env::current_exe() {
         if let Some(mac_os_dir) = exe.parent() {
@@ -317,9 +341,11 @@ fn kill_process_on_port(port: u16) {
     }
 }
 
-/// 把包内 Resources/local-engine 的源码同步到软件目录（app_data_dir/local-engine），
-/// 确保重建 .app 后运行的是新版代码，无需手动点「安装」。
-/// 仅覆盖源码文件；.venv 等运行时产物不在 Resources 中，不会被触及。
+/// 把包内 Resources/local-engine（含自包含 runtime + 引擎代码）同步到软件目录
+/// （app_data_dir/local-engine），确保重建 .app 后运行的是新版，无需手动点「安装」。
+/// 差量策略：dest 的 runtime/VERSION 与 src 一致、且 dest/main.py 已存在，则跳过
+/// 整目录拷贝（runtime 体积大，避免每次启动都复制数百 MB）。
+/// 拷贝排除 __pycache__ / .venv / .git / .deps_hash 等无需产物。
 /// 无 app_data_dir 或 Resources 缺失时跳过（开发模式沿用既有目录）。
 fn sync_engine_source(app: &tauri::AppHandle) {
     let src = match app.path().resource_dir() {
@@ -333,19 +359,27 @@ fn sync_engine_source(app: &tauri::AppHandle) {
         Ok(d) => d.join("local-engine"),
         Err(_) => return,
     };
+    // 差量：版本一致且代码已存在，跳过（runtime 大，避免重复拷贝）
+    let src_ver = fs::read_to_string(src.join("runtime").join("VERSION")).ok();
+    let dest_ver = fs::read_to_string(dest.join("runtime").join("VERSION")).ok();
+    if dest.join("main.py").exists() && src_ver == dest_ver {
+        log("引擎已是最新（runtime/VERSION 一致），跳过同步");
+        return;
+    }
+    log(&format!("同步引擎（含 runtime）到 {}", dest.display()));
     if let Err(e) = copy_dir_all(&src, &dest) {
-        log(&format!("引擎源码同步失败（不影响已部署版本）: {e}"));
+        log(&format!("引擎同步失败（不影响已部署版本）: {e}"));
     } else {
-        log(&format!("已同步引擎源码到 {}", dest.display()));
+        log(&format!("已同步引擎到 {}", dest.display()));
     }
 }
 
 /// 启动本地引擎（应用启动时自动调用）。
-/// ① 同步包内最新源码到软件目录（重建 .app 即生效）；
+/// ① 同步包内最新引擎（含 runtime）到软件目录（重建 .app 即生效）；
 /// ② 清理占用端口的残留引擎，避免孤儿进程；
-/// ③ 定位 uv 与目录后启动并轮询就绪。
+/// ③ 定位目录后启动自包含 runtime 并轮询就绪。
 fn spawn_engine(app: &tauri::AppHandle) -> Option<Child> {
-    // ① 同步最新引擎源码（覆盖旧 main.py，不触及 .venv）
+    // ① 同步最新引擎（含 runtime），覆盖旧 main.py，不触及已写缓存
     sync_engine_source(app);
 
     let dir = resolve_engine_dir(app);
@@ -366,16 +400,9 @@ fn spawn_engine(app: &tauri::AppHandle) -> Option<Child> {
         ));
     }
 
-    // ③ 拉起最新引擎
-    let uv = match find_uv(app) {
-        Some(u) => u,
-        None => {
-            log("未找到 uv（PATH 与常见路径均无），跳过引擎自动启动");
-            return None;
-        }
-    };
-    log(&format!("准备启动引擎：uv={:?} cwd={:?}", uv, dir));
-    let child = start_engine_process(app, &uv, &dir);
+    // ③ 拉起最新引擎（自包含 runtime，无需 uv）
+    log(&format!("准备启动引擎：cwd={:?}", dir));
+    let child = start_engine_process(app, &dir);
     match child {
         Some(ref c) => {
             log(&format!("引擎子进程已启动 pid={}", c.id()));
@@ -393,13 +420,23 @@ fn spawn_engine(app: &tauri::AppHandle) -> Option<Child> {
     child
 }
 
-/// 递归复制目录（用于把随包引擎源码部署到软件目录）。
+/// 递归复制引擎目录到目标（用于把随包引擎部署到软件目录）。
+/// 排除 __pycache__ / .venv / .git / .deps_hash 等无需/敏感产物，避免污染软件目录与重复拷贝体积。
 fn copy_dir_all(src: &Path, dst: &Path) -> std::io::Result<()> {
     fs::create_dir_all(dst)?;
     for entry in fs::read_dir(src)? {
         let entry = entry?;
+        let name = entry.file_name();
+        let name_str = name.to_string_lossy();
+        if name_str == "__pycache__"
+            || name_str == ".venv"
+            || name_str == ".git"
+            || name_str == ".deps_hash"
+        {
+            continue;
+        }
         let ty = entry.file_type()?;
-        let target = dst.join(entry.file_name());
+        let target = dst.join(&name);
         if ty.is_dir() {
             copy_dir_all(&entry.path(), &target)?;
         } else {
@@ -409,329 +446,12 @@ fn copy_dir_all(src: &Path, dst: &Path) -> std::io::Result<()> {
     Ok(())
 }
 
-/// 安装本地引擎：把 Resources 里的引擎源码复制到软件目录，uv sync 建 venv，再启动服务。
-/// 幂等：已安装且引擎已在跑 → 直接成功；已部署但没跑 → 跳过拷贝/sync 直接启动。
-/// 在后台线程执行，通过事件向前端回报进度；命令本身立即返回。
-#[tauri::command]
-/// 真正执行安装/升级的后台工作，返回 Result<成功消息, 失败原因>。
-/// 进度通过 `engine-install-progress` 事件回流；成功就绪时仍发 `engine-ready`。
-/// 命令层（install_local_engine）在 async 运行时里 spawn_blocking 它，
-/// 使前端 invoke 在后台真正干完后才 resolve/reject，期间 webview 不被冻结。
-fn run_install(app: tauri::AppHandle) -> Result<String, String> {
-    // 复制 Arc 供安装线程回填运行中的子进程
-    let state = app.state::<EngineState>();
-    let child_arc = state.0.clone();
-    let app_for_pump = app.clone();
+// （已移除 run_install：引擎改为构建期自包含 runtime 随包分发，应用启动即自动拉起，
+// 无需运行时 uv sync「安装」。相关热更新逻辑见 update_engine 命令。）
 
-    let emit_progress = |msg: String| {
-        let _ = app.emit("engine-install-progress", msg);
-    };
-    let emit_ready = |port: u16, msg: String| {
-        let _ = app.emit(
-            "engine-ready",
-            serde_json::json!({ "port": port, "msg": msg }),
-        );
-    };
-
-    // 引擎已在运行 → 检查是否为最新版本（新版 /api/health 含 model_ready 字段）。
-    // 旧版进程占着端口时，liveness 通过但 freshness 不通过 → 走杀进程+重装升级路径。
-    let port = resolve_engine_port(&app);
-    if engine_health_ok(port) {
-        let is_stale = match engine_health_json(port) {
-            Some(ref json) => json.get("model_ready").is_none(),
-            None => true, // JSON 解析失败 → 视为过期
-        };
-        if !is_stale {
-            emit_progress("检测到引擎已在运行且为最新版本".into());
-            emit_ready(port, "引擎已就绪".into());
-            return Ok("引擎已就绪".into());
-        }
-        emit_progress("检测到旧版引擎正在运行，将自动重启升级…".into());
-    }
-
-    let resource_dir = match app.path().resource_dir() {
-        Ok(d) => d,
-        Err(e) => {
-            emit_progress(format!("无法定位资源目录: {e}"));
-            return Err("资源目录缺失".into());
-        }
-    };
-    let engine_src = resource_dir.join("local-engine");
-    let uv_bin = resource_dir.join("uv");
-
-    if !engine_src.exists() {
-        emit_progress("安装包内未找到引擎源码（Resources/local-engine）".into());
-        return Err("引擎源码缺失".into());
-    }
-
-    let data_dir = match app.path().app_data_dir() {
-        Ok(d) => d,
-        Err(e) => {
-            emit_progress(format!("无法定位软件目录: {e}"));
-            return Err("软件目录缺失".into());
-        }
-    };
-    let dest = data_dir.join("local-engine");
-
-    // 把 uv 一并部署到软件目录：包内的 uv 可能被 macOS quarantine 拦截，
-    // 复制到 app_data_dir 后不再带隔离标记，可直接执行。
-    let uv = if uv_bin.exists() {
-        let uv_dest = dest.join("uv");
-        match fs::copy(&uv_bin, &uv_dest) {
-            Ok(_) => {
-                #[cfg(unix)]
-                {
-                    use std::os::unix::fs::PermissionsExt;
-                    let _ = fs::set_permissions(&uv_dest, fs::Permissions::from_mode(0o755));
-                }
-                uv_dest
-            }
-            Err(e) => {
-                emit_progress(format!("复制 uv 失败: {e}，回退系统 uv"));
-                match find_uv(&app) {
-                    Some(u) => u,
-                    None => {
-                        emit_progress("未找到 uv，无法安装依赖".into());
-                        return Err("uv 缺失".into());
-                    }
-                }
-            }
-        }
-    } else {
-        match find_uv(&app) {
-            Some(u) => u,
-            None => {
-                emit_progress("未找到 uv，无法安装依赖".into());
-                return Err("uv 缺失".into());
-            }
-        }
-    };
-
-    // 始终重新拷贝源码，确保引擎逻辑（如固定端口）随包更新生效。
-    // 走到这里说明引擎未在运行（前面 health 检查已拦截在跑的情况），覆盖安全。
-    emit_progress(format!("部署引擎到: {}", dest.display()));
-    if let Err(e) = copy_dir_all(&engine_src, &dest) {
-        emit_progress(format!("复制源码失败: {e}"));
-        return Err("复制失败".into());
-    }
-
-    // 仅当 .venv 不存在才 uv sync（避免重复 sync 抢锁失败）
-    if !dest.join(".venv").exists() {
-        emit_progress("开始安装依赖（首次需联网下载，请稍候）…".into());
-        let mut sync = match Command::new(&uv)
-            .arg("sync")
-            .current_dir(&dest)
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
-        {
-            Ok(c) => c,
-            Err(e) => {
-                emit_progress(format!("uv sync 启动失败: {e}"));
-                return Err("uv sync 失败".into());
-            }
-        };
-        // stdout 流式回报进度（独立线程，避免阻塞）
-        if let Some(out) = sync.stdout.take() {
-            let pump_app = app_for_pump.clone();
-            std::thread::spawn(move || {
-                for line in BufReader::new(out).lines().map_while(Result::ok) {
-                    let _ = pump_app.emit("engine-install-progress", line);
-                }
-            });
-        }
-        // stderr 收集，失败时回显具体原因
-        let mut err_out = String::new();
-        if let Some(err) = sync.stderr.take() {
-            for line in BufReader::new(err).lines().map_while(Result::ok) {
-                err_out.push_str(&line);
-                err_out.push('\n');
-            }
-        }
-        let sync_status = match sync.wait() {
-            Ok(s) => s,
-            Err(e) => {
-                emit_progress(format!("uv sync 等待失败: {e}"));
-                return Err("uv sync 失败".into());
-            }
-        };
-        if !sync_status.success() {
-            let tail = err_out.lines().rev().take(8).collect::<Vec<_>>().join("\n");
-            emit_progress(format!("uv sync 未成功完成:\n{}", tail));
-            return Err("依赖安装失败".into());
-        }
-        emit_progress("依赖安装完成".into());
-    } else {
-        emit_progress("依赖已安装，跳过 uv sync".into());
-    }
-
-    // 预下载并缓存 ffmpeg 静态二进制（imageio-ffmpeg），使 MP3/FLAC/OGG/AAC 在
-    // 离线状态下也能解码。安装阶段有网络（uv sync 已用），此处一次性缓存到用户 cache，
-    // 之后运行自检/上传均不再需要联网。失败不影响 WAV，仅警告。
-    emit_progress("正在准备 ffmpeg（音频解码所需，首次需联网）…".into());
-    let ffmpeg_probe = Command::new(&uv)
-        .arg("run")
-        .arg("python")
-        .arg("-c")
-        .arg("import imageio_ffmpeg; imageio_ffmpeg.get_ffmpeg_exe()")
-        .current_dir(&dest)
-        .output();
-    match ffmpeg_probe {
-        Ok(o) if o.status.success() => {
-            emit_progress("ffmpeg 已就绪（MP3/FLAC/OGG/AAC 可用）".into())
-        }
-        Ok(o) => emit_progress(format!(
-            "ffmpeg 准备提醒：{}",
-            String::from_utf8_lossy(&o.stderr)
-                .lines()
-                .rev()
-                .take(2)
-                .collect::<Vec<_>>()
-                .join(" ")
-        )),
-        Err(e) => emit_progress(format!("ffmpeg 准备跳过（不影响 WAV）：{e}")),
-    }
-
-    // 启动引擎：先回收已记录的旧进程，再用 kill_process_on_port 清理任何占用端口的孤儿进程。
-    // 这样即使上一会话残留的引擎不在此 EngineState 中，按钮也能自带清端口能力。
-    if let Some(mut old) = child_arc.lock().unwrap().take() {
-        let _ = old.kill();
-    }
-    let port = resolve_engine_port(&app);
-    kill_process_on_port(port);
-    emit_progress("正在启动本地引擎…".into());
-    match start_engine_process(&app, &uv, &dest) {
-        Some(child) => {
-            *child_arc.lock().unwrap() = Some(child);
-            if wait_engine_ready(port, Duration::from_secs(30)) {
-                emit_progress(format!(
-                    "引擎已就绪 http://{}:{}",
-                    ENGINE_HOST, port
-                ));
-                emit_ready(port, "引擎已启动".into());
-                return Ok("安装并启动成功".into());
-            }
-            emit_progress("引擎启动后健康检查未通过，详见软件目录 engine.log".into());
-            return Err("引擎未就绪（见 engine.log）".into());
-        }
-        None => {
-            emit_progress("引擎启动失败，详见软件目录 engine.log".into());
-            return Err("引擎启动失败".into());
-        }
-    }
-}
-
-#[tauri::command]
-async fn install_local_engine(app: tauri::AppHandle) -> Result<String, String> {
-    // spawn_blocking 让重活跑在专用线程，前端 invoke 在真正干完后才 resolve/reject，
-    // 期间 webview 不被冻结，loading 转圈与进度日志保持实时。
-    let handle = tauri::async_runtime::spawn_blocking(move || run_install(app));
-    match handle.await {
-        Ok(result) => result,
-        Err(_) => Err("安装任务异常终止".into()),
-    }
-}
-
-/// 资产 id -> PyPI 包名（用于 uv sync --reinstall-package 精准重装，确保随 wheel 的
-/// data_files 权重/模型重新落地）。ffmpeg 走 imageio 拉取，不在此映射内。
-fn asset_pkg_name(asset_id: &str) -> Option<&'static str> {
-    match asset_id {
-        "lv_weights" => Some("lv-chordia"),
-        "madmom_models" => Some("madmom"),
-        "chord_romanizer" => Some("chord-romanizer"),
-        _ => None,
-    }
-}
-
-/// 检测面板「下载/修复」按钮触发：对指定资产做本地拉取，消除运行时下载。
-/// - ffmpeg: 经 imageio-ffmpeg 下载并缓存静态二进制（一次性）。
-/// - lv_weights / madmom_models / chord_romanizer: 重新 uv sync（必要时 --reinstall-package）
-///   修复缺失的 Python 包 / 模型权重（随 wheel 安装的 data_files）。
-/// 返回成功消息；失败返回含真实原因的 Err（前端展示 + 提示需联网）。
-fn run_prefetch(app: &tauri::AppHandle, asset_id: &str) -> Result<String, String> {
-    let dir = resolve_engine_dir(app);
-    let uv = find_uv(app).ok_or("uv 缺失，无法拉取依赖")?;
-    match asset_id {
-        "ffmpeg" => {
-            // imageio-ffmpeg 是解码 mp3/flac/ogg/aac 必需。但打包副本的 pyproject 可能滞后、
-            // 未声明它，导致 uv sync 没把它装进 venv。先确保包装好：已装则秒过；
-            // 缺失则 uv add 安装（并写回 pyproject，使后续 uv sync 不再丢失）；离线才真失败。
-            let add = Command::new(&uv)
-                .arg("add")
-                .arg("imageio-ffmpeg")
-                .current_dir(&dir)
-                .output()
-                .map_err(|e| format!("uv add 启动失败：{e}"))?;
-            if !add.status.success() {
-                return Err(format!(
-                    "imageio-ffmpeg 安装失败（需联网）：{}",
-                    String::from_utf8_lossy(&add.stderr)
-                        .lines()
-                        .rev()
-                        .take(3)
-                        .collect::<Vec<_>>()
-                        .join(" ")
-                ));
-            }
-            // 再拉取 ffmpeg 静态二进制（首次联网下载，缓存到用户 cache 目录）。
-            let out = Command::new(&uv)
-                .arg("run")
-                .arg("python")
-                .arg("-c")
-                .arg("import imageio_ffmpeg; print(imageio_ffmpeg.get_ffmpeg_exe())")
-                .current_dir(&dir)
-                .output()
-                .map_err(|e| format!("调用 imageio-ffmpeg 失败：{e}"))?;
-            if out.status.success() {
-                Ok("ffmpeg 已下载并缓存，MP3/FLAC/OGG/AAC 可解码".into())
-            } else {
-                Err(format!(
-                    "ffmpeg 二进制下载失败（需联网）：{}",
-                    String::from_utf8_lossy(&out.stderr)
-                        .lines()
-                        .rev()
-                        .take(3)
-                        .collect::<Vec<_>>()
-                        .join(" ")
-                ))
-            }
-        }
-        id if asset_pkg_name(id).is_some() => {
-            let pkg = asset_pkg_name(id).unwrap();
-            let out = Command::new(&uv)
-                .arg("sync")
-                .arg("--reinstall-package")
-                .arg(pkg)
-                .current_dir(&dir)
-                .output()
-                .map_err(|e| format!("uv sync 启动失败：{e}"))?;
-            if out.status.success() {
-                Ok(format!("已重新安装 {pkg}，缺失的模型/权重已补齐"))
-            } else {
-                Err(format!(
-                    "{pkg} 修复失败（需联网）：{}",
-                    String::from_utf8_lossy(&out.stderr)
-                        .lines()
-                        .rev()
-                        .take(5)
-                        .collect::<Vec<_>>()
-                        .join(" ")
-                ))
-            }
-        }
-        _ => Err(format!("未知资产：{asset_id}")),
-    }
-}
-
-#[tauri::command]
-async fn prefetch_asset(app: tauri::AppHandle, asset_id: String) -> Result<String, String> {
-    // spawn_blocking 让重活跑在专用线程，前端 invoke 在真正干完后才 resolve/reject。
-    let handle = tauri::async_runtime::spawn_blocking(move || run_prefetch(&app, &asset_id));
-    match handle.await {
-        Ok(result) => result,
-        Err(_) => Err("下载任务异常终止".into()),
-    }
-}
+// （已移除 install_local_engine / run_prefetch / prefetch_asset / asset_pkg_name：
+// 引擎改为构建期自包含 runtime 随包分发，无需运行时 uv 安装 / 逐资产下载。
+// 新版本经签名引擎包热更新，见 update_engine 命令。）
 
 /// 客户端模式下，网页经 Rust 代理调用本地引擎做扒谱。
 ///
@@ -810,24 +530,30 @@ async fn analyze_local_engine(file_name: String, file_bytes: Vec<u8>) -> Result<
     run_analyze(&file_name, file_bytes).await
 }
 
-/// 查询引擎安装/运行状态，供前端在上传前展示依赖清单。
-/// 返回：uv 运行时是否就绪、随包源码是否存在、依赖环境(.venv)是否已建、
-/// 引擎服务是否在跑、在跑时的端口、端到端自检(analysis_ok)是否通过。
+/// 查询引擎状态，供前端检测面板展示与「更新」按钮判定。
+/// 方案 A 自包含 runtime 的新结构：
+/// - source_present：引擎代码 main.py 是否存在
+/// - bundled_ok：自包含 runtime（runtime/bin/python3）是否已随包分发
+/// - engine_version：runtime/VERSION（供热更新比对）
+/// - update_available：check_engine_update 拉取清单比对后写入的进程内缓存
+/// - running / model_ready / layers / analysis_ok / ffmpeg_available / compress_ok：运行时健康度
 #[tauri::command]
 fn get_engine_status(app: tauri::AppHandle) -> serde_json::Value {
-    let uv_present = find_uv(&app).is_some();
     let dir = resolve_engine_dir(&app);
+    let runtime = dir.join("runtime");
     let source_present = dir.join("main.py").exists();
-    let venv_present = app
-        .path()
-        .app_data_dir()
-        .map(|d| d.join("local-engine").join(".venv").exists())
+    let bundled_ok = runtime.join("bin").join("python3").exists();
+    let engine_version = fs::read_to_string(runtime.join("VERSION")).unwrap_or_default();
+    let update_available = ENGINE_UPDATE_CACHE
+        .get()
+        .and_then(|m| m.lock().ok().and_then(|g| *g))
         .unwrap_or(false);
+
     let port = resolve_engine_port(&app);
     let running = engine_health_ok(port);
     // 服务在跑时再读 /api/health 的 JSON，提取 model_ready 与三层 layers。
     // 不可达（running=false）时直接置 false / null，避免多余探测。
-    let (model_ready, layers, analysis_ok, ffmpeg_available, compress_ok, assets) = if running {
+    let (model_ready, layers, analysis_ok, ffmpeg_available, compress_ok) = if running {
         let health = engine_health_json(port);
         // 新版 /api/health 含 model_ready + layers；旧版仅有 status。
         // 缺失时返回 Null（前端显示"未知"），避免误判为 false（永远 ❌）。
@@ -858,23 +584,9 @@ fn get_engine_status(app: tauri::AppHandle) -> serde_json::Value {
         let co = sc
             .as_ref()
             .and_then(|j| j.get("compress_ok").and_then(|b| b.as_bool()));
-        // 逐条资产就绪状态（lv 权重 / madmom 模型 / chord-romanizer / ffmpeg）。
-        // 缺失项即检测面板要展示并提供「下载/修复」按钮的内容。
-        let aj = engine_assets_json(port);
-        let assets_val = aj
-            .as_ref()
-            .and_then(|j| j.get("assets").cloned())
-            .unwrap_or(serde_json::Value::Null);
-        (mr, ly, ao, fa, co, assets_val)
+        (mr, ly, ao, fa, co)
     } else {
-        (
-            None,
-            serde_json::Value::Null,
-            None,
-            None,
-            None,
-            serde_json::Value::Null,
-        )
+        (None, serde_json::Value::Null, None, None, None)
     };
     let port_val = if running {
         serde_json::json!(port)
@@ -882,16 +594,16 @@ fn get_engine_status(app: tauri::AppHandle) -> serde_json::Value {
         serde_json::Value::Null
     };
     serde_json::json!({
-        "uv_present": uv_present,
         "source_present": source_present,
-        "venv_present": venv_present,
+        "bundled_ok": bundled_ok,
+        "engine_version": engine_version,
+        "update_available": update_available,
         "running": running,
         "model_ready": model_ready,
         "layers": layers,
         "analysis_ok": analysis_ok,
         "ffmpeg_available": ffmpeg_available,
         "compress_ok": compress_ok,
-        "assets": assets,
         "port": port_val
     })
 }
@@ -910,7 +622,7 @@ fn main() {
             *engine_child_setup.lock().unwrap() = child;
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![install_local_engine, get_engine_status, analyze_local_engine, prefetch_asset])
+        .invoke_handler(tauri::generate_handler![get_engine_status, analyze_local_engine, update_engine, check_engine_update])
         .build(tauri::generate_context!())
         .expect("error while building tauri application");
 

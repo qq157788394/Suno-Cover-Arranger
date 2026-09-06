@@ -421,12 +421,14 @@ export interface TranscriptionChordSegment {
 
 /** 节奏网格 */
 export interface TranscriptionRhythm {
-  /** 每拍时间戳（秒） */
+  /** 每拍时间戳（秒），来自 DBN 全量拍（与 beat_positions 对齐） */
   beats: number[];
+  /** 每拍的小节内拍序（1 起），与 beats 等长 */
+  beat_positions: number[];
   /** 每小节强拍时间戳（秒） */
   downbeats: number[];
-  /** 每小节拍数 */
-  beats_per_bar: number | null;
+  /** 拍号标签："2/4" | "3/4" | "4/4" | "6/8"（由逐拍 position 推断） */
+  meter: string | null;
   /** 小节数 */
   bars: number;
 }

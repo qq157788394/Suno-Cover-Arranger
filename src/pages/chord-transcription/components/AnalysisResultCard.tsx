@@ -5,6 +5,7 @@ const { Title } = Typography;
 import { ReloadOutlined } from "@ant-design/icons";
 import React, { useState } from "react";
 import type { TranscriptionResult } from "@/shared/types/types";
+import { formatKeyLabel } from "@/shared/utils/note";
 import BeatGrid from "./BeatGrid";
 import type { ChordDisplayMode } from "./beatGridUtils";
 
@@ -29,12 +30,13 @@ export function AnalysisResultCard({
         <Flex vertical flex="auto">
           <Title level={5}>{result.fileName || fileName}</Title>
           <Flex gap="small">
-            {result.key != null && <Tag color="magenta">Key: {result.key}</Tag>}
+            {result.key != null && (
+              <Tag color="magenta">Key: {formatKeyLabel(result.key)}</Tag>
+            )}
             {result.bpm != null && <Tag color="orange">BPM：{result.bpm}</Tag>}
             {result.rhythm && (
               <Tag color="cyan">
-                {result.rhythm.bars} 小节 / {result.rhythm.beats_per_bar ?? "?"}{" "}
-                拍每小节
+                {result.rhythm.bars} 小节 · {result.rhythm.meter ?? "未知拍号"}
               </Tag>
             )}
           </Flex>

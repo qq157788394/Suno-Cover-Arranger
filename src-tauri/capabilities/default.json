@@ -6,10 +6,10 @@
   "permissions": [
     "core:default",
     "core:event:default",
-    "allow-install-local-engine",
     "allow-get-engine-status",
     "allow-analyze-local-engine",
-    "allow-prefetch-asset"
+    "allow-update-engine",
+    "allow-check-engine-update"
   ],
   "remote": { "urls": ["https://*.github.io"] }
 }

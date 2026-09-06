@@ -3,13 +3,12 @@
  *
  * 覆盖：
  * - buildBeatCells：时间段 → 拍级映射
- * - splitIntoBars：按小节切分
- * - groupBarsIntoRows：按 4 小节/行分组
+ * - splitIntoBars：按逐拍 position 切分为小节（支持弱起/变拍）
+ * - groupBarsIntoRows：按目标拍数/行分组（恒定行宽，适配 2/4/3/4/4/4/6/8）
  * - findActiveBeatIndex：播放进度 → beat 索引
  */
 
 import {
-  BARS_PER_ROW,
   buildBeatCells,
   findActiveBeatIndex,
   groupBarsIntoRows,
@@ -24,6 +23,10 @@ const MOCK_CHORDS = [
   { start_time: 4, end_time: 6, chord: "A:min", chordLabel: "Am" },
   { start_time: 6, end_time: 8, chord: "F:maj", chordLabel: "F" },
 ];
+
+/** 生成长度为 count、每小节 bpb 拍的 position 序列（1 起） */
+const positions = (bpb: number, count: number): number[] =>
+  Array.from({ length: count }, (_, i) => (i % bpb) + 1);
 
 // ── buildBeatCells ─────────────────────────────────────
 
@@ -70,30 +73,28 @@ describe("buildBeatCells", () => {
 
 // ── splitIntoBars ──────────────────────────────────────
 
-describe("splitIntoBars", () => {
-  it("按 beatsPerBar 分组为 BarRow", () => {
+describe("splitIntoBars（positions 驱动，支持弱起/变拍）", () => {
+  it("按 position 序列切分为小节（4/4，16 拍 → 4 小节）", () => {
     const cells = Array.from({ length: 16 }, (_, i) => ({
       chordLabel: ["C", "G", "Am", "F"][i % 4],
       romanLabel: "",
       isEmpty: false,
     }));
-    const bars = splitIntoBars(cells, 4);
+    const bars = splitIntoBars(cells, positions(4, 16));
     expect(bars).toHaveLength(4);
     expect(bars[0].barNumber).toBe(1);
     expect(bars[0].cells).toHaveLength(4);
     expect(bars[3].barNumber).toBe(4);
   });
 
-  it("末尾不足一小节时填充空格", () => {
+  it("短尾小节不填充（按 position 自然切分）", () => {
     const cells = [
       { chordLabel: "C", romanLabel: "", isEmpty: false },
       { chordLabel: "G", romanLabel: "", isEmpty: false },
     ];
-    const bars = splitIntoBars(cells, 4);
+    const bars = splitIntoBars(cells, positions(4, 2)); // [1, 2]
     expect(bars).toHaveLength(1);
-    expect(bars[0].cells).toHaveLength(4);
-    expect(bars[0].cells[2].isEmpty).toBe(true);
-    expect(bars[0].cells[3].isEmpty).toBe(true);
+    expect(bars[0].cells).toHaveLength(2); // 不填充空格
   });
 
   it("每个格独立不合并", () => {
@@ -102,28 +103,54 @@ describe("splitIntoBars", () => {
       romanLabel: "",
       isEmpty: false,
     }));
-    const bars = splitIntoBars(cells, 4);
-    // 同和弦 C 出现在所有 8 个格中，不合并
+    const bars = splitIntoBars(cells, positions(4, 8));
     expect(bars[0].cells.length).toBe(4);
     expect(bars[1].cells.length).toBe(4);
     expect(bars[0].cells.every((c) => c.label === "C")).toBe(true);
     expect(bars[1].cells.every((c) => c.label === "C")).toBe(true);
   });
+
+  it("携带全局 beatIndex 与小节内 beatPosition", () => {
+    const cells = Array.from({ length: 8 }, (_, i) => ({
+      chordLabel: `C${i}`,
+      romanLabel: "",
+      isEmpty: false,
+    }));
+    const bars = splitIntoBars(cells, positions(4, 8));
+    expect(bars[0].cells.map((c) => c.beatIndex)).toEqual([0, 1, 2, 3]);
+    expect(bars[0].cells.map((c) => c.beatPosition)).toEqual([1, 2, 3, 4]);
+  });
 });
 
 // ── groupBarsIntoRows ───────────────────────────────────
 
-describe("groupBarsIntoRows", () => {
-  it("按 BARS_PER_ROW 分组", () => {
-    const bars = Array.from({ length: 10 }, (_, i) => ({
-      barNumber: i + 1,
-      cells: [],
+describe("groupBarsIntoRows（目标拍数/行，恒定行宽）", () => {
+  /** 构造 count 个长度为 len 的小节 */
+  const mkBars = (count: number, len: number) =>
+    Array.from({ length: count }, (_, bi) => ({
+      barNumber: bi + 1,
+      cells: Array.from({ length: len }, (_, ci) => ({
+        label: `b${bi}c${ci}`,
+        subLabel: "",
+        isEmpty: false,
+        beatIndex: bi * len + ci,
+        beatPosition: ci + 1,
+      })),
     }));
-    const rows = groupBarsIntoRows(bars, BARS_PER_ROW);
-    expect(rows).toHaveLength(3); // ceil(10/4)=3
+
+  it("默认 16 拍/行：10 个 4 拍小节 → 3 行（4/4/2）", () => {
+    const rows = groupBarsIntoRows(mkBars(10, 4));
+    expect(rows).toHaveLength(3); // ceil(40/16)=3
     expect(rows[0].barRows).toHaveLength(4);
     expect(rows[1].barRows).toHaveLength(4);
     expect(rows[2].barRows).toHaveLength(2); // 最后一个不满
+  });
+
+  it("6/8（6 拍/小节）：4 节 → 2 行 × 2 节（12 拍/行）", () => {
+    const rows = groupBarsIntoRows(mkBars(4, 6));
+    expect(rows).toHaveLength(2);
+    expect(rows[0].barRows).toHaveLength(2);
+    expect(rows[1].barRows).toHaveLength(2);
   });
 });
 
@@ -155,23 +182,20 @@ describe("findActiveBeatIndex", () => {
 
 // ── 网格全局拍索引不变量（高亮跟随播放的前提） ──────────
 //
-// 组件渲染时用 exactGlobalIdx = (barNumber-1)*bpb + ci 计算每格的全局拍序，
-// 再与 findActiveBeatIndex(currentTime) 的结果比较来高亮。
-// 该不变量要求：逐行遍历 rows→bars→cells 时，exactGlobalIdx
+// 组件渲染时用 cell.beatIndex 与 findActiveBeatIndex(currentTime) 的结果比较来高亮。
+// 该不变量要求：逐行遍历 rows→bars→cells 时，cell.beatIndex
 // 必须严格递增且等于 0,1,2,...,N-1（与拍级序列顺序一致）。
 // 一旦分组/编号逻辑错位，高亮就会偏移到错误的拍，此测试立即红。
 
 describe("网格全局拍索引不变量", () => {
-  const bpb = 4;
-
   const buildGrid = (totalBeats: number) => {
     const cells = Array.from({ length: totalBeats }, (_, i) => ({
       chordLabel: `C${i}`,
       romanLabel: "",
       isEmpty: false,
     }));
-    const bars = splitIntoBars(cells, bpb);
-    return groupBarsIntoRows(bars, BARS_PER_ROW);
+    const bars = splitIntoBars(cells, positions(4, totalBeats));
+    return groupBarsIntoRows(bars);
   };
 
   it("恰好一行（4 小节）时索引连续 0..15", () => {
@@ -179,8 +203,8 @@ describe("网格全局拍索引不变量", () => {
     const seen: number[] = [];
     rows.forEach((row) => {
       row.barRows.forEach((bar) => {
-        bar.cells.forEach((_, ci) => {
-          seen.push((bar.barNumber - 1) * bpb + ci);
+        bar.cells.forEach((c) => {
+          seen.push(c.beatIndex);
         });
       });
     });
@@ -192,8 +216,8 @@ describe("网格全局拍索引不变量", () => {
     const seen: number[] = [];
     rows.forEach((row) => {
       row.barRows.forEach((bar) => {
-        bar.cells.forEach((_, ci) => {
-          seen.push((bar.barNumber - 1) * bpb + ci);
+        bar.cells.forEach((c) => {
+          seen.push(c.beatIndex);
         });
       });
     });
@@ -201,16 +225,14 @@ describe("网格全局拍索引不变量", () => {
     expect(seen).toEqual(Array.from({ length: 40 }, (_, i) => i));
   });
 
-  it("每小节内拍序从 0 开始递增", () => {
+  it("每小节内拍序从 1 开始递增", () => {
     const rows = buildGrid(16);
     const firstRow = rows[0];
     const inBarIdx = firstRow.barRows.map((bar) =>
-      bar.cells
-        .map((_, ci) => (bar.barNumber - 1) * bpb + ci)
-        .map((g) => g % bpb),
+      bar.cells.map((c) => c.beatPosition),
     );
-    // 第一个小节内应为 [0,1,2,3]
-    expect(inBarIdx[0]).toEqual([0, 1, 2, 3]);
+    // 第一个小节内应为 [1, 2, 3, 4]
+    expect(inBarIdx[0]).toEqual([1, 2, 3, 4]);
   });
 });
 
