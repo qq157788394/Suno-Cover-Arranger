@@ -673,7 +673,7 @@ dependencies = [
 
 [[package]]
 name = "dashi-shell"
-version = "0.1.0"
+version = "2.3.0"
 dependencies = [
  "aes",
  "aes-gcm",
