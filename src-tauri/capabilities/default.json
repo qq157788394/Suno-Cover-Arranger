@@ -9,7 +9,10 @@
     "allow-get-engine-status",
     "allow-analyze-local-engine",
     "allow-update-engine",
-    "allow-check-engine-update"
+    "allow-check-engine-update",
+    "allow-run-trial-cache",
+    "allow-reveal-in-folder",
+    "allow-save-trial-mp3"
   ],
   "remote": { "urls": ["https://*.github.io"] }
 }

@@ -4,6 +4,35 @@
 # 产物 local-engine/runtime/ 完全自包含，不依赖 uv / 软链 / 用户机器编译。
 set -euo pipefail
 
+# ── 自动检测并应用 macOS 系统代理（解决国内 github.com 不可达的问题）──
+# 仅在用户未手动设置 http_proxy/https_proxy 时，从 scutil 读取系统代理配置。
+detect_macos_proxy() {
+  [[ "$(uname -s)" != "Darwin" ]] && return 0
+  # 若用户已显式设置代理环境变量，则尊重用户配置，不覆盖
+  [[ -n "${http_proxy:-}" || -n "${https_proxy:-}" || -n "${HTTP_PROXY:-}" || -n "${HTTPS_PROXY:-}" ]] && return 0
+  local proxy_cfg proxy_host proxy_port
+  proxy_cfg="$(scutil --proxy 2>/dev/null)" || return 0
+  # 优先 HTTPS 代理，回退 HTTP 代理
+  if echo "$proxy_cfg" | grep -q "HTTPSEnable : 1"; then
+    proxy_host="$(echo "$proxy_cfg" | awk '/HTTPSProxy / {print $3}')"
+    proxy_port="$(echo "$proxy_cfg" | awk '/HTTPSPort / {print $3}')"
+  elif echo "$proxy_cfg" | grep -q "HTTPEnable : 1"; then
+    proxy_host="$(echo "$proxy_cfg" | awk '/HTTPProxy / {print $3}')"
+    proxy_port="$(echo "$proxy_cfg" | awk '/HTTPPort / {print $3}')"
+  else
+    return 0
+  fi
+  [[ -z "$proxy_host" || -z "$proxy_port" ]] && return 0
+  # 验证代理端口可达
+  nc -z "$proxy_host" "$proxy_port" 2>/dev/null || return 0
+  export http_proxy="http://${proxy_host}:${proxy_port}"
+  export https_proxy="http://${proxy_host}:${proxy_port}"
+  export HTTP_PROXY="$http_proxy"
+  export HTTPS_PROXY="$https_proxy"
+  echo "    检测到系统代理: ${proxy_host}:${proxy_port}（已应用到 curl/pip）"
+}
+detect_macos_proxy
+
 PLATFORM="${1:-macos-aarch64}"
 
 # 项目根 = scripts/ 的上一级

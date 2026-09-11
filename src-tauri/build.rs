@@ -8,6 +8,9 @@ fn main() {
             "analyze_local_engine",
             "update_engine",
             "check_engine_update",
+            "run_trial_cache",
+            "reveal_in_folder",
+            "save_trial_mp3",
         ]),
     );
     tauri_build::try_build(attrs).expect("tauri build failed");

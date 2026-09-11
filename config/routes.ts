@@ -55,6 +55,12 @@ export default [
     component: "./chord-transcription",
   },
   {
+    name: "Suno 试听缓存",
+    icon: "CloudDownloadOutlined",
+    path: "/suno-trial-cache",
+    component: "./suno-trial-cache",
+  },
+  {
     name: "音乐理解·简易版",
     icon: "BulbOutlined",
     path: "/music-insight",

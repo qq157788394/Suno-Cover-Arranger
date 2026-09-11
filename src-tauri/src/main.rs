@@ -20,6 +20,15 @@ use tauri::{Emitter, Manager};
 mod engine_update;
 use engine_update::{check_engine_update, update_engine};
 
+/// Suno 试听缓存网络层（M1）：解析分享链接 → 取权 → 下载加密 m4a。
+mod suno_probe;
+
+/// Suno 试听缓存解密层（M2）：SHA256(glt) → AES-GCM 解包 → AES-CTR 还原 fMP4。
+mod suno_decrypt;
+
+/// Suno 试听缓存转码层（M2）：ffmpeg 转 320kbps MP3 落盘。
+mod suno_transcode;
+
 /// 全局持有引擎子进程句柄，供退出时回收、安装线程回填。
 struct EngineState(pub Arc<Mutex<Option<Child>>>);
 
@@ -85,9 +94,8 @@ fn engine_get_json(port: u16, path: &str) -> Option<serde_json::Value> {
     let mut stream = TcpStream::connect((ENGINE_HOST, port)).ok()?;
     // 读超时：自检可能跑数十秒，给足 60s 上限，但引擎异常时不至于永久阻塞（审查 #7）。
     let _ = stream.set_read_timeout(Some(Duration::from_secs(60)));
-    let req = format!(
-        "GET {path} HTTP/1.1\r\nHost: {ENGINE_HOST}:{port}\r\nConnection: close\r\n\r\n"
-    );
+    let req =
+        format!("GET {path} HTTP/1.1\r\nHost: {ENGINE_HOST}:{port}\r\nConnection: close\r\n\r\n");
     stream.write_all(req.as_bytes()).ok()?;
     let mut reader = BufReader::new(stream);
     let mut headers_done = false;
@@ -184,7 +192,10 @@ fn start_engine_process(app: &tauri::AppHandle, dir: &Path) -> Option<Child> {
     let rt = dir.join("runtime");
     let py = rt.join("bin").join("python3");
     if !py.exists() {
-        log(&format!("runtime 缺失解释器：{:?}（引擎未打包或构建失败）", py));
+        log(&format!(
+            "runtime 缺失解释器：{:?}（引擎未打包或构建失败）",
+            py
+        ));
         return None;
     }
     let main_py = dir.join("main.py");
@@ -530,6 +541,127 @@ async fn analyze_local_engine(file_name: String, file_bytes: Vec<u8>) -> Result<
     run_analyze(&file_name, file_bytes).await
 }
 
+/// Tauri 命令：Suno 试听缓存 M1 冒烟（解析 → 取权 → 下载加密 m4a）。
+/// browser-token 生成算法尚未具备前，内部会以明确消息失败，其他逻辑已可编译。
+#[tauri::command]
+async fn suno_trial_probe(link: String) -> Result<serde_json::Value, String> {
+    suno_probe::probe(&link).await
+}
+
+/// Tauri 命令：Suno 试听缓存端到端（M1+M2）：解析 → 取权 → 下载 → 解密 → ffmpeg 转 320k MP3。
+/// 产物落临时目录，返回 `{ content_id, mp3_size, mp3_path }` 供前端接管/呈现。
+/// engine_dir 由 Rust 侧 resolve_engine_dir 决定，用于兜底定位 imageio_ffmpeg。
+#[tauri::command]
+async fn run_trial_cache(app: tauri::AppHandle, link: String) -> Result<serde_json::Value, String> {
+    let engine_dir = resolve_engine_dir(&app);
+    // 缓存产物落 appData 固定子目录；取不到 appData 时兜底系统临时目录。
+    let data_dir_res = app.path().app_data_dir();
+    log(&format!(
+        "run_trial_cache app_data_dir={:?}",
+        data_dir_res.as_ref().map(|p| p.to_string_lossy().to_string())
+    ));
+    let cache_dir = data_dir_res
+        .map(|d| d.join("suno_trial_cache"))
+        .unwrap_or_else(|_| std::env::temp_dir().join("suno_trial_cache"));
+    log(&format!("run_trial_cache cache_dir={}", cache_dir.display()));
+    // 阶段进度事件：前端 listen("suno-trial-progress") 接收 { stage }，逐步渲染步骤条。
+    let app_handle = app.clone();
+    suno_probe::run_trial_pipeline(&link, Some(&engine_dir), &cache_dir, move |stage: &str| {
+        let _ = app_handle.emit("suno-trial-progress", serde_json::json!({ "stage": stage }));
+    })
+    .await
+}
+
+/// Tauri 命令：在系统文件管理器中打开指定文件所在文件夹并选中该文件。
+/// macOS 用 `open -R`；Windows 用 `explorer /select,`；其余平台用 `xdg-open` 打开父目录。
+#[tauri::command]
+fn reveal_in_folder(path: String) -> Result<(), String> {
+    let p = PathBuf::from(&path);
+    if !p.exists() {
+        return Err(format!("文件不存在：{path}"));
+    }
+    #[cfg(target_os = "macos")]
+    {
+        Command::new("open")
+            .args(["-R", &path])
+            .spawn()
+            .map_err(|e| format!("打开所在文件夹失败：{e}"))?;
+    }
+    #[cfg(target_os = "windows")]
+    {
+        Command::new("explorer")
+            .arg(format!("/select,{}", p.display()))
+            .spawn()
+            .map_err(|e| format!("打开所在文件夹失败：{e}"))?;
+    }
+    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
+    {
+        if let Some(parent) = p.parent() {
+            Command::new("xdg-open")
+                .arg(parent)
+                .spawn()
+                .map_err(|e| format!("打开所在文件夹失败：{e}"))?;
+        }
+    }
+    Ok(())
+}
+
+/// 启动时清空试听缓存目录（上次会话的 fmp4/mp3 产物无留存价值，避免磁盘累积）。
+/// 该功能定位为「缓存」而非「下载」，按用户要求每次启动即清空，不留历史。
+fn clear_trial_cache(app: &tauri::AppHandle) {
+    let Ok(dir) = app.path().app_data_dir() else {
+        return;
+    };
+    let cache_dir = dir.join("suno_trial_cache");
+    if cache_dir.exists() {
+        if let Err(e) = std::fs::remove_dir_all(&cache_dir) {
+            log(&format!("清空试听缓存目录失败：{e}"));
+        }
+    }
+}
+
+/// Tauri 命令：把试听缓存 mp3 另存到系统「下载」目录（macOS 即 ~/Downloads），
+/// 文件名用歌曲名（非法字符已清理，重名自动追加 ` (n)` 避免覆盖），返回最终保存的绝对路径。
+/// 前端据此提示「已保存」并提供「打开所在文件夹」（reveal_in_folder 定位真实文件）。
+#[tauri::command]
+async fn save_trial_mp3(
+    app: tauri::AppHandle,
+    mp3_path: String,
+    filename: String,
+) -> Result<String, String> {
+    let src = PathBuf::from(&mp3_path);
+    if !src.exists() {
+        return Err(format!("缓存文件不存在：{mp3_path}"));
+    }
+    let base = suno_probe::sanitize_filename(&filename);
+    let dest_dir = app
+        .path()
+        .download_dir()
+        .map_err(|e| format!("获取下载目录失败：{e}"))?;
+    // 文件复制（10MB+）放 blocking 线程执行，避免阻塞 async runtime / 主线程。
+    tauri::async_runtime::spawn_blocking(move || {
+        std::fs::create_dir_all(&dest_dir).map_err(|e| format!("创建下载目录失败：{e}"))?;
+        // 重名追加 (n)，超过上限后追加时间戳兜底，避免死循环。
+        let mut dest = dest_dir.join(format!("{base}.mp3"));
+        let mut n = 1;
+        while dest.exists() && n <= 999 {
+            dest = dest_dir.join(format!("{base} ({n}).mp3"));
+            n += 1;
+        }
+        if dest.exists() {
+            let ts = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_millis())
+                .unwrap_or(0);
+            dest = dest_dir.join(format!("{base}-{ts}.mp3"));
+        }
+        std::fs::copy(&src, &dest).map_err(|e| format!("保存 MP3 失败：{e}"))?;
+        Ok::<String, String>(dest.to_string_lossy().to_string())
+    })
+    .await
+    .map_err(|e| format!("保存任务失败：{e}"))?
+}
+
 /// 查询引擎状态，供前端检测面板展示与「更新」按钮判定。
 /// 方案 A 自包含 runtime 的新结构：
 /// - source_present：引擎代码 main.py 是否存在
@@ -617,12 +749,23 @@ fn main() {
     let app = tauri::Builder::default()
         .manage(EngineState(engine_child.clone()))
         .setup(move |app| {
+            // 启动即清空上次会话的试听缓存（fmp4/mp3 不作为持久产物留存）。
+            clear_trial_cache(app.handle());
             // 启动即尝试拉起已安装/存在的本地引擎；未安装会失败（页面提示安装按钮）
             let child = spawn_engine(app.handle());
             *engine_child_setup.lock().unwrap() = child;
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![get_engine_status, analyze_local_engine, update_engine, check_engine_update])
+        .invoke_handler(tauri::generate_handler![
+            get_engine_status,
+            analyze_local_engine,
+            update_engine,
+            check_engine_update,
+            suno_trial_probe,
+            run_trial_cache,
+            reveal_in_folder,
+            save_trial_mp3
+        ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application");
 
