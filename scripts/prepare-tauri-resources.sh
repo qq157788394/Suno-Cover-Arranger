@@ -3,7 +3,7 @@
 # 这样 dmg 分发的 .app 自带完整引擎（含 python-build-standalone 解释器 + 依赖 + 模型权重），
 # 用户无需联网安装即可离线使用；新版本经热更新（update_engine）原子替换。
 #
-# 排除项：__pycache__ / .venv / .git / .deps_hash / .local-engine.port 等无需或敏感产物。
+# 排除项：__pycache__ / .venv / .git / .deps_hash / .local-engine.port / default.profraw 等无需或敏感产物。
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -23,6 +23,9 @@ echo "==> 复制引擎（源码 + 自包含 runtime，排除 __pycache__/.venv/.
     --exclude='.git' \
     --exclude='.deps_hash' \
     --exclude='.local-engine.port' \
+    --exclude='default.profraw' \
+    --exclude='.pytest_cache' \
+    --exclude='.mypy_cache' \
     . ) | ( cd "$ENGINE_RES" && tar xf - )
 
 # 解除 macOS 下载隔离，避免打包/首次运行被拦截

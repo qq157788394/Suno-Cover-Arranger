@@ -29,7 +29,31 @@ const MIN_BITRATE_KBPS: u32 = 312;
 /// 常见平台 ffmpeg 可执行文件名。
 const FFMPEG_BINARIES: [&str; 2] = ["ffmpeg", "ffmpeg.exe"];
 
+/// GUI 启动的桌面 App（尤其 macOS）**不继承登录 Shell 的 PATH**，
+/// 运行时只能用 launchd 给的最小 PATH（通常仅 `/usr/bin:/bin:/usr/sbin:/sbin`），
+/// 于是 Homebrew / MacPorts / 手动安装的 ffmpeg 通过 `which` 探测不到。
+/// 这里显式补扫各平台常见安装目录作为兜底，避免「本机明明装了 ffmpeg 却报未找到」。
+#[cfg(target_os = "macos")]
+const FFMPEG_COMMON_DIRS: &[&str] = &[
+    "/opt/homebrew/bin",     // Apple Silicon Homebrew
+    "/usr/local/bin",        // Intel Homebrew / 手动安装
+    "/opt/local/bin",        // MacPorts
+    "/usr/local/ffmpeg/bin", // 手动编译常见路径
+    "/usr/bin",              // 系统自带（通常无，兜底）
+];
+
+#[cfg(target_os = "windows")]
+const FFMPEG_COMMON_DIRS: &[&str] = &[
+    "C:\\ffmpeg\\bin",
+    "C:\\Program Files\\ffmpeg\\bin",
+    "C:\\ProgramData\\chocolatey\\bin",
+];
+
+#[cfg(not(any(target_os = "macos", target_os = "windows")))]
+const FFMPEG_COMMON_DIRS: &[&str] = &["/usr/local/bin", "/opt/local/bin", "/usr/bin"];
+
 /// 通过 PATH 探测系统 ffmpeg 绝对路径（macOS/Linux 用 `which`，Windows 用 `where`）。
+/// `which` 落空时（GUI 启动无登录 Shell PATH），再补扫 [`FFMPEG_COMMON_DIRS`]。
 fn probe_path_ffmpeg() -> Option<PathBuf> {
     let which = if cfg!(target_os = "windows") {
         "where"
@@ -45,9 +69,18 @@ fn probe_path_ffmpeg() -> Option<PathBuf> {
                     .unwrap_or("")
                     .trim()
                     .to_string();
-                if !line.is_empty() {
+                if !line.is_empty() && is_executable(Path::new(&line)) {
                     return Some(PathBuf::from(line));
                 }
+            }
+        }
+    }
+    // GUI 启动无登录 Shell PATH 时 `which` 必然落空，补扫常见安装位置。
+    for dir in FFMPEG_COMMON_DIRS {
+        for name in FFMPEG_BINARIES {
+            let cand = Path::new(dir).join(name);
+            if is_executable(&cand) {
+                return Some(cand);
             }
         }
     }
