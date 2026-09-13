@@ -1,6 +1,6 @@
 [package]
 name = "dashi-shell"
-version = "2.3.0"
+version = "2.3.1"
 description = "《大师来了》渐进式客户端壳 (Tauri 薄壳)"
 authors = ["dashi"]
 edition = "2021"

@@ -75,7 +75,11 @@ rm -f "$TMP_TARBALL"
 # 清除 macOS 下载隔离属性（否则首次运行可能被拦截）
 xattr -dr com.apple.quarantine "$RUNTIME_DIR" 2>/dev/null || true
 
-PY="$RUNTIME_DIR/bin/python3"
+# PBS 解释器路径随平台不同：Windows 位于根目录 python.exe，macOS/Linux 位于 bin/python3。
+case "$PLATFORM" in
+  windows-x86_64) PY="$RUNTIME_DIR/python.exe" ;;
+  *) PY="$RUNTIME_DIR/bin/python3" ;;
+esac
 "$PY" -m pip install --upgrade pip >/dev/null 2>&1 || true
 echo "    PBS python: $("$PY" --version 2>&1)"
 

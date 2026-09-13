@@ -1,11 +1,11 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "大师来了",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "identifier": "com.dashi",
   "build": {
-    "beforeBuildCommand": "bash ../scripts/build-engine.sh macos-aarch64 && bash ../scripts/prepare-tauri-resources.sh",
-    "beforeDevCommand": "bash ../scripts/setup-engine.sh",
+    "beforeBuildCommand": "bash scripts/build-engine.sh macos-aarch64 && bash scripts/prepare-tauri-resources.sh",
+    "beforeDevCommand": "bash scripts/setup-engine.sh",
     "devUrl": "http://localhost:8000",
     "frontendDist": "https://qq157788394.github.io/Suno-Cover-Arranger/"
   },
